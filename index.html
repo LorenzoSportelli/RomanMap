@@ -549,7 +549,7 @@ var tt=document.getElementById("tt");
 var mw=document.getElementById("mapwrap");
 var geoLayer=null;
 
-fetch("[cdn.jsdelivr.net](https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces.geojson)")
+fetch("https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces.geojson")
   .then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
   .then(function(data){
     geoLayer=L.geoJSON(data,{

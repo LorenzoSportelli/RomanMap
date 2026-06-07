@@ -177,18 +177,64 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   transform-origin: bottom right;
 }
 
+#hdr{
+  height:70px;
+  background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  padding:0 20px;
+  position:relative;
+}
+
+#hdr-left{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  margin-top:6px;
+}
+
+#hdr-title{
+  font-family:'Inter', sans-serif;
+  font-size:1.05rem;
+  letter-spacing:.12em;
+  font-weight:600;
+}
+
+#hdr-title{
+  font-family:'Inter', sans-serif;
+  font-size:1.05rem;
+  letter-spacing:.12em;
+  font-weight:600;
+}
+
+#hdr-right{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+  
 </style>
 </head>
 <body>
 
 <div id="hdr">
-  <div>
+  <div id="hdr-left">
     <div id="hdr-title">ROMAN EMPIRE · NUMISMATIC COLLECTION</div>
     <div id="hdr-sub">Provinces at 117 AD</div>
   </div>
+
   <div id="hdr-sep"></div>
-  <div id="hdr-count">Coins: <span id="hc">0</span></div>
-  <button id="btn-add" onclick="openModal()">+ ADD COIN</button>
+
+  <div id="hdr-right">
+    <div id="hdr-count">Coins: <span id="hc">0</span></div>
+    <button id="btn-add" onclick="openModal()">+ ADD COIN</button>
+  </div>
 </div>
 
 <div id="body">

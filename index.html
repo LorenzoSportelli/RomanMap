@@ -492,7 +492,15 @@ function getMax(gl){
   return m;
 }
 
-var map=L.map("map",{center:[38,18],zoom:4,minZoom:3,maxZoom:8,attributionControl:false});
+var map = L.map("map", {
+  center: [38, 18],
+  zoom: 3.8,        // <-- base leggermente più zoom-out
+  minZoom: 3.8,     // <-- NON puoi andare più fuori di questo
+  maxZoom: 8,
+  zoomSnap: 0.1,    // <-- permette zoom non interi (fondamentale)
+  zoomDelta: 0.5
+});
+  
 var tt=document.getElementById("tt");
 var mw=document.getElementById("mapwrap");
 var geoLayer=null;

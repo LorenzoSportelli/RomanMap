@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Impero Romano — Collezione</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+html,body { height:100%; overflow:hidden; background:#16130c; color:#ede5cf; font-family:Georgia,serif; }
+#header { height:46px; background:#0c0a06; border-bottom:1px solid #3e3418; display:flex; align-items:center; padding:0 18px; gap:16px; z-index:1000; }
+#header h1 { font-size:0.9rem; color:#c8a84a; letter-spacing:0.12em; font-weight:normal; }
+#header p  { font-size:0.74rem; color:#7a6e52; font-style:italic; }
+.tabs { margin-left:auto; display:flex; border:1px solid #3e3418; }
+.tab  { background:transparent; border:none; border-right:1px solid #3e3418; color:#7a6e52; font-size:0.68rem; letter-spacing:0.08em; padding:5px 15px; cursor:pointer; }
+.tab:last-child { border-right:none; }
+.tab.on { background:#c8a84a; color:#0c0a06; }
+#body { display:flex; height:calc(100vh - 46px); }
+#mapwrap { flex:1; position:relative; }
+#map { width:100%; height:100%; }
+#loading { position:absolute; inset:0; background:#0d1820ee; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; z-index:500; }
+#loading b { color:#c8a84a; letter-spacing:0.1em; font-weight:normal; font-size:0.95rem; }
+#loading small { color:#7a6e52; font-style:italic; font-size:0.75rem; }
+#tt { display:none; position:absolute; background:#16130c; border:1px solid #c8a84a; padding:8px 12px; z-index:9999; pointer-events:none; min-width:165px; box-shadow:0 3px 18px #000000aa; font-size:0.82rem; }
+#tt strong { display:block; color:#c8a84a; font-size:0.67rem; letter-spacing:0.07em; text-transform:uppercase; margin-bottom:4px; }
+#tt .tl { color:#9a8e72; }
+#tt .tl b { color:#ede5cf; }
+#tt .tc { color:#5a5040; font-style:italic; font-size:0.7rem; margin-top:2px; }
+#legend { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); z-index:900; background:#16130ccc; border:1px solid #3e3418; padding:5px 13px; display:flex; align-items:center; gap:8px; font-size:0.72rem; color:#9a8e72; pointer-events:none; }
+#legbar { width:150px; height:9px; border-radius:1px; background:linear-gradient(to right,#c8c8b3,#50d068,#98b820,#d07010,#780808); }
+#panel { width:290px; background:#100d07; border-left:1px solid #3e3418; display:flex; flex-direction:column; flex-shrink:0; }
+#ph { padding:10px 12px 7px; border-bottom:1px solid #3e3418; flex-shrink:0; }
+#ph h2 { font-size:0.68rem; color:#c8a84a; letter-spacing:0.1em; font-weight:normal; margin-bottom:6px; }
+#srch { width:100%; background:#16130c; border:1px solid #3e3418; color:#ede5cf; font-family:Georgia,serif; font-size:0.84rem; padding:4px 8px; outline:none; }
+#srch:focus { border-color:#c8a84a; }
+#srch::placeholder { color:#55441a; }
+#clist { flex:1; overflow-y:auto; }
+#clist::-webkit-scrollbar { width:3px; }
+#clist::-webkit-scrollbar-thumb { background:#3e3418; }
+.crow { display:flex; align-items:center; gap:6px; padding:5px 12px; cursor:pointer; border-bottom:1px solid #ffffff05; }
+.crow:hover { background:#ffffff07; }
+.crow.on { background:#c8a84a0d; }
+.chk { width:13px; height:13px; border:1.5px solid #3e3418; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:8px; color:#0c0a06; }
+.crow.on .chk { background:#c8a84a; border-color:#c8a84a; }
+.cm { flex:1; min-width:0; }
+.cr { font-size:0.61rem; color:#c8b870; letter-spacing:0.02em; }
+.cd { font-size:0.76rem; color:#6a5e42; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-style:italic; }
+.cp { font-size:0.61rem; color:#508050; }
+.bdg { font-size:0.54rem; padding:1px 4px; border:1px solid; flex-shrink:0; letter-spacing:0.03em; }
+.rrc  { color:#c07030; border-color:#c0703033; background:#2a1a08; }
+.rpc  { color:#50a060; border-color:#50a06033; background:#0a2014; }
+.ocre { color:#7060c0; border-color:#7060c033; background:#14102a; }
+.qw { display:flex; align-items:center; gap:2px; flex-shrink:0; }
+.qb { width:15px; height:15px; background:#3e3418; border:none; color:#ede5cf; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; }
+.qb:hover { background:#c8a84a; color:#0c0a06; }
+.qn { font-size:0.66rem; color:#c8a84a; width:14px; text-align:center; }
+#foot { padding:6px 12px; border-top:1px solid #3e3418; font-size:0.71rem; color:#5a5040; flex-shrink:0; display:flex; gap:12px; }
+#foot span { color:#c8a84a; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div>
+    <h1>IMPERO ROMANO · COLLEZIONE NUMISMATICA</h1>
+    <p>Province al 117 d.C. &mdash; RRC &middot; RPC &middot; OCRE</p>
+  </div>
+  <div class="tabs">
+    <button class="tab on" id="t-types" onclick="setMode('types')">Tipi</button>
+    <button class="tab"    id="t-items" onclick="setMode('items')">Quantità</button>
+  </div>
+</div>
+
+<div id="body">
+  <div id="mapwrap">
+    <div id="map"></div>
+    <div id="loading"><b>Caricamento mappa…</b><small>Province romane al 117 d.C.</small></div>
+    <div id="tt"></div>
+    <div id="legend"><span>0</span><div id="legbar"></div><span id="legmax">0</span></div>
+  </div>
+  <div id="panel">
+    <div id="ph">
+      <h2>MONETE IN COLLEZIONE</h2>
+      <input id="srch" type="text" placeholder="Cerca riferimento o provincia…" oninput="renderList()">
+    </div>
+    <div id="clist"></div>
+    <div id="foot">Tipi: <span id="ft">0</span> &nbsp; Esemplari: <span id="fi">0</span></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+
+var COINS = [
+  {id:1,  ref:"RRC 44/5",    desc:"As, Giano bifronte / prora",         corpus:"RRC",  prov:"Italia"},
+  {id:2,  ref:"RRC 56/2",    desc:"Denario Roma / Dioscuri",            corpus:"RRC",  prov:"Italia"},
+  {id:3,  ref:"RRC 253/1",   desc:"Denario Cn. Lucretius Trio",         corpus:"RRC",  prov:"Italia"},
+  {id:4,  ref:"RRC 328/1",   desc:"Denario L. Scipio Asiaticus",        corpus:"RRC",  prov:"Italia"},
+  {id:5,  ref:"RRC 401/1",   desc:"Denario M. Aemilius Lepidus",        corpus:"RRC",  prov:"Italia"},
+  {id:6,  ref:"RRC 443/1",   desc:"Aureo Giulio Cesare",                corpus:"RRC",  prov:"Gallia Lugdunensis"},
+  {id:7,  ref:"RRC 452/2",   desc:"Denario Marco Antonio",              corpus:"RRC",  prov:"Gallia Narbonensis"},
+  {id:8,  ref:"RRC 478/1",   desc:"Denario Bruto, EID MAR",             corpus:"RRC",  prov:"Macedonia"},
+  {id:9,  ref:"OCRE aug.1a", desc:"Aureo Augusto, Lugdunum",            corpus:"OCRE", prov:"Gallia Lugdunensis"},
+  {id:10, ref:"OCRE aug.207",desc:"Denario Augusto, Roma",              corpus:"OCRE", prov:"Italia"},
+  {id:11, ref:"OCRE tra.14", desc:"Denario Traiano, Roma",              corpus:"OCRE", prov:"Italia"},
+  {id:12, ref:"OCRE tra.98", desc:"Sesterzio Traiano SPQR",             corpus:"OCRE", prov:"Italia"},
+  {id:13, ref:"OCRE had.1",  desc:"Denario Adriano, Roma",              corpus:"OCRE", prov:"Italia"},
+  {id:14, ref:"OCRE had.85", desc:"Sesterzio Adriano AEGYPTOS",         corpus:"OCRE", prov:"Aegyptus"},
+  {id:15, ref:"OCRE ant.1",  desc:"Aureo Antonino Pio",                 corpus:"OCRE", prov:"Italia"},
+  {id:16, ref:"OCRE sep.1",  desc:"Denario Settimio Severo",            corpus:"OCRE", prov:"Syria"},
+  {id:17, ref:"OCRE ner.45", desc:"Denario Nerone, Lugdunum",           corpus:"OCRE", prov:"Gallia Lugdunensis"},
+  {id:18, ref:"OCRE ves.1",  desc:"Denario Vespasiano IVDAEA",          corpus:"OCRE", prov:"Iudaea"},
+  {id:19, ref:"OCRE dom.1",  desc:"Denario Domiziano, Roma",            corpus:"OCRE", prov:"Italia"},
+  {id:20, ref:"OCRE cl.1",   desc:"Aureo Claudio, Roma",                corpus:"OCRE", prov:"Italia"},
+  {id:21, ref:"RPC I 985",   desc:"AE Antiochia, Augusto",              corpus:"RPC",  prov:"Syria"},
+  {id:22, ref:"RPC I 1234",  desc:"AE Smirne, Tiberio",                 corpus:"RPC",  prov:"Asia"},
+  {id:23, ref:"RPC I 2178",  desc:"AE Alessandria, Augusto",            corpus:"RPC",  prov:"Aegyptus"},
+  {id:24, ref:"RPC I 2456",  desc:"Tetradrammo Antiochia, Nerone",      corpus:"RPC",  prov:"Syria"},
+  {id:25, ref:"RPC I 3412",  desc:"AE Corinto, Claudio",                corpus:"RPC",  prov:"Achaia"},
+  {id:26, ref:"RPC I 4001",  desc:"AE Hispalis, Augusto",               corpus:"RPC",  prov:"Hispania Baetica"},
+  {id:27, ref:"RPC II 1102", desc:"AE Efeso, Domiziano",                corpus:"RPC",  prov:"Asia"},
+  {id:28, ref:"RPC III 2801",desc:"AE Antiochia, Traiano",              corpus:"RPC",  prov:"Syria"},
+  {id:29, ref:"RPC IV 3201", desc:"AE Nicomedia, Adriano",              corpus:"RPC",  prov:"Bithynia et Pontus"},
+  {id:30, ref:"RPC I 1601",  desc:"AE Tessalonica, Augusto",            corpus:"RPC",  prov:"Macedonia"},
+  {id:31, ref:"RPC I 3904",  desc:"AE Tarraco, Augusto",                corpus:"RPC",  prov:"Hispania Tarraconensis"},
+  {id:32, ref:"RPC I 5001",  desc:"AE Cesarea Mauretania",              corpus:"RPC",  prov:"Mauretania Caesariensis"},
+  {id:33, ref:"RPC I 6201",  desc:"AE Cartagine, Augusto",              corpus:"RPC",  prov:"Africa Proconsularis"},
+  {id:34, ref:"RPC I 7001",  desc:"AE Cirene, Augusto",                 corpus:"RPC",  prov:"Cyrenaica et Creta"},
+  {id:35, ref:"RPC II 2301", desc:"AE Cesarea, Cappadocia",             corpus:"RPC",  prov:"Cappadocia"},
+  {id:36, ref:"RPC I 2901",  desc:"AE Atene, Augusto",                  corpus:"RPC",  prov:"Achaia"},
+  {id:37, ref:"RPC I 1401",  desc:"AE Bisanzio, Caligola",              corpus:"RPC",  prov:"Thracia"},
+  {id:38, ref:"RPC I 3101",  desc:"AE Salonicco, Vespasiano",           corpus:"RPC",  prov:"Macedonia"},
+  {id:39, ref:"RPC I 801",   desc:"AE Lugdunum, Augusto",               corpus:"RPC",  prov:"Gallia Lugdunensis"},
+  {id:40, ref:"RPC III 1501",desc:"AE Pannonia, Traiano",               corpus:"RPC",  prov:"Pannonia"}
+];
+
+var STEPS = [
+  [200,200,183],[168,215,168],[128,200,140],[88,180,118],[58,160,98],
+  [48,145,80],[80,165,50],[130,180,35],[180,185,25],[210,175,22],
+  [225,150,22],[228,125,20],[225,100,18],[218,78,15],[205,58,12],
+  [188,40,10],[165,28,9],[140,18,8],[112,12,7],[85,8,6],[60,5,5]
+];
+
+function val2color(v, mx) {
+  if (!v || !mx) return "#c8c8b3";
+  var i = Math.min(Math.ceil(v / mx * 20), 20);
+  var s = STEPS[i];
+  return "rgb("+s[0]+","+s[1]+","+s[2]+")";
+}
+
+var mode = "types";
+var owned = {};
+var geoLayer = null;
+
+function norm(s) { return (s||"").toLowerCase().trim(); }
+
+function provVal(name) {
+  var cs = COINS.filter(function(c){ return norm(c.prov) === norm(name); });
+  if (mode === "types") return cs.filter(function(c){ return owned[c.id]; }).length;
+  return cs.filter(function(c){ return owned[c.id]; }).reduce(function(s,c){ return s+(owned[c.id]||0); }, 0);
+}
+
+function getMax() {
+  if (!geoLayer) return 0;
+  var m = 0;
+  geoLayer.eachLayer(function(l){
+    var n = l.feature && l.feature.properties && l.feature.properties.name || "";
+    m = Math.max(m, provVal(n));
+  });
+  return m;
+}
+
+function updateMap() {
+  if (!geoLayer) return;
+  var mx = getMax();
+  document.getElementById("legmax").textContent = mx;
+  geoLayer.eachLayer(function(l){
+    var n = l.feature && l.feature.properties && l.feature.properties.name || "";
+    var v = provVal(n);
+    l.setStyle({ fillColor: val2color(v, mx), fillOpacity: 0.83, color: "#6a5020", weight: 0.8 });
+  });
+  renderStats();
+}
+
+var map = L.map("map", { center:[38,18], zoom:4, minZoom:3, maxZoom:8, attributionControl:false });
+var tt  = document.getElementById("tt");
+var mw  = document.getElementById("mapwrap");
+
+fetch("https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces.geojson")
+  .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+  .then(function(data){
+    geoLayer = L.geoJSON(data, {
+      style: function(){ return { fillColor:"#c8c8b3", fillOpacity:0.83, color:"#6a5020", weight:0.8 }; },
+      onEachFeature: function(feat, lyr) {
+        var name = feat.properties && feat.properties.name || "";
+        lyr.on({
+          mouseover: function(e) {
+            lyr.setStyle({ weight:2, color:"#e8c020", fillOpacity:0.95 });
+            lyr.bringToFront();
+            var v  = provVal(name);
+            var cs = COINS.filter(function(c){ return norm(c.prov)===norm(name) && owned[c.id]; });
+            var it = cs.reduce(function(s,c){ return s+(owned[c.id]||0); }, 0);
+            var cp = [];
+            cs.forEach(function(c){ if(cp.indexOf(c.corpus)<0) cp.push(c.corpus); });
+            tt.innerHTML = "<strong>"+name+"</strong><div class='tl'>Tipi: <b>"+v+"</b> &middot; Esemplari: <b>"+it+"</b></div><div class='tc'>"+(cp.join(" · ")||"Nessuna moneta")+"</div>";
+            tt.style.display = "block";
+            postt(e.originalEvent);
+          },
+          mousemove: function(e){ postt(e.originalEvent); },
+          mouseout:  function(){ tt.style.display="none"; updateMap(); }
+        });
+      }
+    }).addTo(map);
+    document.getElementById("loading").style.display = "none";
+    updateMap();
+  })
+  .catch(function(e){
+    var l = document.getElementById("loading");
+    l.innerHTML = "<b style='color:#c84a4a'>Errore: "+e.message+"</b>";
+  });
+
+function postt(e) {
+  var r = mw.getBoundingClientRect();
+  var x = e.clientX - r.left + 14;
+  var y = e.clientY - r.top  - 8;
+  if (x + 185 > mw.offsetWidth)  x = e.clientX - r.left - 190;
+  if (y + 90  > mw.offsetHeight) y = e.clientY - r.top  - 90;
+  tt.style.left = x + "px";
+  tt.style.top  = y + "px";
+}
+
+function renderList() {
+  var q  = document.getElementById("srch").value.toLowerCase();
+  var el = document.getElementById("clist");
+  el.innerHTML = "";
+  COINS.filter(function(c){
+    return c.ref.toLowerCase().indexOf(q)>=0 ||
+           c.desc.toLowerCase().indexOf(q)>=0 ||
+           c.prov.toLowerCase().indexOf(q)>=0;
+  }).forEach(function(c){
+    var isO = !!owned[c.id];
+    var d   = document.createElement("div");
+    d.className = "crow" + (isO ? " on" : "");
+    d.innerHTML =
+      "<div class='chk'>"+(isO?"&#10003;":"")+"</div>"+
+      "<div class='cm'>"+
+        "<div class='cr'>"+c.ref+"</div>"+
+        "<div class='cd'>"+c.desc+"</div>"+
+        "<div class='cp'>"+c.prov+"</div>"+
+      "</div>"+
+      "<span class='bdg "+c.corpus.toLowerCase()+"'>"+c.corpus+"</span>"+
+      (isO ?
+        "<div class='qw'>"+
+          "<button class='qb' onclick='event.stopPropagation();chg("+c.id+",-1)'>&#8722;</button>"+
+          "<span class='qn'>"+owned[c.id]+"</span>"+
+          "<button class='qb' onclick='event.stopPropagation();chg("+c.id+",1)'>+</button>"+
+        "</div>" : "");
+    d.onclick = function(){ tog(c.id); };
+    el.appendChild(d);
+  });
+  renderStats();
+}
+
+function renderStats() {
+  var ow = COINS.filter(function(c){ return owned[c.id]; });
+  document.getElementById("ft").textContent = ow.length;
+  document.getElementById("fi").textContent = ow.reduce(function(s,c){ return s+(owned[c.id]||0); }, 0);
+}
+
+function tog(id) {
+  if (owned[id]) delete owned[id]; else owned[id] = 1;
+  renderList(); updateMap();
+}
+function chg(id, d) {
+  if (!owned[id]) return;
+  owned[id] = Math.max(1, owned[id]+d);
+  renderList(); updateMap();
+}
+function setMode(m) {
+  mode = m;
+  document.getElementById("t-types").className = "tab" + (m==="types" ? " on" : "");
+  document.getElementById("t-items").className = "tab" + (m==="items" ? " on" : "");
+  updateMap(); renderList();
+}
+
+renderList();
+</script>
+</body>
+</html>

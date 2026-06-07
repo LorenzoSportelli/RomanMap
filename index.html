@@ -247,7 +247,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <input id="f-auth" type="text" placeholder="generale, governatore…">
         </div>
       </div>
-
+    </div>
+    
     <div id="block-prov" style="display:none">
       <div class="frow">
         <label>AUTORITÀ / EMITTENTE PROVINCIALE</label>
@@ -608,11 +609,14 @@ function updateMap(){
 
 function setPeriod(p){
   currentPeriod=p;
+
   document.getElementById('r-rep').className='radio-opt'+(p==='rep'?' on':'');
   document.getElementById('r-imp').className='radio-opt'+(p==='imp'?' on':'');
+  document.getElementById('r-prov').className='radio-opt'+(p==='prov'?' on':'');
+
   document.getElementById('block-rep').style.display=p==='rep'?'':'none';
   document.getElementById('block-imp').style.display=p==='imp'?'':'none';
-  document.getElementById('block-prov').style.display = p==='prov' ? '' : 'none';
+  document.getElementById('block-prov').style.display=p==='prov'?'':'none';
 }
 
 function openModal(id){

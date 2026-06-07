@@ -493,7 +493,7 @@ function getMax(gl){
 }
 
 var map = L.map("map", {
-  center: [38, 18],
+  // center: [38, 18],
   zoom: 4.85,        // <-- base
   minZoom: 4.85,     // <-- NON puoi andare più fuori di questo
   maxZoom: 8,
@@ -553,6 +553,11 @@ fetch("https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces
         });
       }
     }).addTo(map);
+
+    map.fitBounds(geoLayer.getBounds(), { // DA CONTROLLARE
+      padding: [20, 20]
+    });
+    
     document.getElementById("loading").style.display="none";
     updateMap();
   })

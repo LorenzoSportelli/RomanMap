@@ -1,47 +1,42 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Impero Romano — Collezione Numismatica</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<title>Roman Empire — Numismatic Collection</title>
+<link rel="stylesheet" href="[unpkg.com](https://unpkg.com/leaflet@1.9.4/dist/leaflet.css)"/>
+<link href="[fonts.googleapis.com](https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap)" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --gold:#c8a84a;--gold-dim:#7a6230;--gold-pale:#ede0b0;
-  --bg:#13100a;--bg2:#0c0a06;--bg3:#1a1610;
-  --border:#3a3018;--border2:#504528;
-  --text:#ede5cf;--text2:#9a8e72;--text3:#5a5040;
-  --red:#a03820;--panel:300px;
+  --gold:#111111;--gold-dim:#555555;--gold-pale:#222222;
+  --bg:#ffffff;--bg2:#f7f7f7;--bg3:#efefef;
+  --border:#d8d8d8;--border2:#bbbbbb;
+  --text:#111111;--text2:#555555;--text3:#999999;
+  --red:#c0392b;--panel:300px;
 }
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Crimson Text',Georgia,serif}
-
 #hdr{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;position:relative;z-index:1000}
-#hdr-title{font-family:'Cinzel',serif;font-size:.85rem;color:var(--gold);letter-spacing:.15em;font-weight:500}
+#hdr-title{font-family:'Cinzel',serif;font-size:.85rem;color:#111;letter-spacing:.15em;font-weight:500}
 #hdr-sub{font-size:.72rem;color:var(--text3);font-style:italic}
 #hdr-sep{flex:1}
 #hdr-count{font-size:.72rem;color:var(--text2);font-family:'Cinzel',serif;letter-spacing:.08em}
-#hdr-count span{color:var(--gold)}
-#btn-add{background:transparent;border:1px solid var(--gold-dim);color:var(--gold);font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.1em;padding:5px 14px;cursor:pointer;transition:all .2s}
-#btn-add:hover{background:var(--gold);color:var(--bg2)}
-
+#hdr-count span{color:#111}
+#btn-add{background:transparent;border:1px solid var(--border2);color:#111;font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.1em;padding:5px 14px;cursor:pointer;transition:all .2s}
+#btn-add:hover{background:#111;color:#fff}
 #body{display:flex;height:calc(100vh - 48px)}
 #mapwrap{flex:1;position:relative}
 #map{width:100%;height:100%}
-
-#loading{position:absolute;inset:0;background:#0d1820ee;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:500}
-#loading b{color:var(--gold);letter-spacing:.1em;font-weight:400;font-family:'Cinzel',serif}
+#loading{position:absolute;inset:0;background:#ffffffee;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:500}
+#loading b{color:#111;letter-spacing:.1em;font-weight:400;font-family:'Cinzel',serif}
 #loading small{color:var(--text3);font-style:italic;font-size:.75rem}
-
-#tt{display:none;position:absolute;background:var(--bg);border:1px solid var(--gold);padding:9px 13px;z-index:9999;pointer-events:none;min-width:180px;box-shadow:0 4px 20px #00000099}
-#tt strong{display:block;font-family:'Cinzel',serif;color:var(--gold);font-size:.64rem;letter-spacing:.08em;margin-bottom:5px;font-weight:500}
+#tt{display:none;position:absolute;background:#fff;border:1px solid #111;padding:9px 13px;z-index:9999;pointer-events:none;min-width:180px;box-shadow:0 4px 20px #00000022}
+#tt strong{display:block;font-family:'Cinzel',serif;color:#111;font-size:.64rem;letter-spacing:.08em;margin-bottom:5px;font-weight:500}
 #tt .tl{font-size:.82rem;color:var(--text2)}
-#tt .tl b{color:var(--text)}
+#tt .tl b{color:#111}
 #tt .coins{margin-top:5px;font-size:.72rem;color:var(--text3);font-style:italic;border-top:1px solid var(--border);padding-top:4px}
 #tt .coin-item{color:var(--text2);padding:1px 0}
-
-#legend{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:900;background:#13100acc;border:1px solid var(--border);padding:5px 14px;display:flex;align-items:center;gap:8px;font-size:.7rem;color:var(--text2);pointer-events:none;font-family:'Cinzel',serif;letter-spacing:.05em}
+#legend{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:900;background:#ffffffcc;border:1px solid var(--border);padding:5px 14px;display:flex;align-items:center;gap:8px;font-size:.7rem;color:var(--text2);pointer-events:none;font-family:'Cinzel',serif;letter-spacing:.05em}
 #legbar{
   width:150px;
   height:9px;
@@ -66,272 +61,239 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     rgb(211,44,25)
   );
 }
-
 #panel{width:var(--panel);background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
 #panel-head{padding:12px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
-#panel-head h2{font-family:'Cinzel',serif;font-size:.65rem;color:var(--gold);letter-spacing:.12em;font-weight:500;margin-bottom:8px}
-#srch{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Crimson Text',serif;font-size:.9rem;padding:4px 8px;outline:none}
-#srch:focus{border-color:var(--gold-dim)}
+#panel-head h2{font-family:'Cinzel',serif;font-size:.65rem;color:#111;letter-spacing:.12em;font-weight:500;margin-bottom:8px}
+#srch{width:100%;background:#fff;border:1px solid var(--border);color:var(--text);font-family:'Crimson Text',serif;font-size:.9rem;padding:4px 8px;outline:none}
+#srch:focus{border-color:#111}
 #srch::placeholder{color:var(--text3)}
 .filter-row{display:flex;gap:4px;margin-top:6px}
 .ftab{flex:1;background:transparent;border:1px solid var(--border);color:var(--text3);font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.08em;padding:3px 6px;cursor:pointer;transition:all .15s}
-.ftab.on{background:var(--gold-dim);border-color:var(--gold-dim);color:var(--gold-pale)}
+.ftab.on{background:#111;border-color:#111;color:#fff}
 .ftab:hover:not(.on){border-color:var(--border2);color:var(--text2)}
-
 #clist{flex:1;overflow-y:auto}
 #clist::-webkit-scrollbar{width:3px}
 #clist::-webkit-scrollbar-thumb{background:var(--border)}
 .empty-msg{padding:24px 14px;text-align:center;font-style:italic;color:var(--text3);font-size:.82rem}
-
-.crow{padding:7px 14px;border-bottom:1px solid #ffffff04;cursor:pointer;transition:background .1s}
-.crow:hover{background:#ffffff06}
-.crow-ref{font-family:'Cinzel',serif;font-size:.62rem;color:var(--gold);letter-spacing:.05em}
+.crow{padding:7px 14px;border-bottom:1px solid #00000008;cursor:pointer;transition:background .1s}
+.crow:hover{background:#00000006}
+.crow-ref{font-family:'Cinzel',serif;font-size:.62rem;color:#111;letter-spacing:.05em}
 .crow-desc{font-size:.82rem;color:var(--text2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .crow-meta{display:flex;gap:6px;margin-top:3px;flex-wrap:wrap}
 .ctag{font-size:.58rem;padding:1px 5px;border:1px solid;letter-spacing:.04em}
-  
 .ct-rep{
   color:#6bbcff;
   border-color:#6bbcff33;
-  background:#0b1f33;
+  background:#eef5ff;
 }
-
 .ct-imp{
   color:#b28cff;
   border-color:#b28cff33;
-  background:#1a102a;
+  background:#f5f0ff;
 }
-  
 .ct-prov{
   color:#ffb25c;
   border-color:#ffb25c33;
-  background:#2a1a08;
+  background:#fff8ee;
 }
-
 .ct-prov-name{
-  color:#7de3a1;
-  border:1px solid #7de3a133;
-  background:#0f1f14;
+  color:#3daa72;
+  border:1px solid #3daa7233;
+  background:#eef8f2;
 }
-  
-.ct-mat{color:#807060;border-color:#80706033;background:#1a1810}
+.ct-mat{color:#888;border-color:#88888833;background:#f5f5f5}
 .crow-actions{float:right;display:flex;gap:3px;opacity:0;transition:opacity .15s}
 .crow:hover .crow-actions{opacity:1}
 .ca{width:18px;height:18px;background:transparent;border:1px solid var(--border);color:var(--text3);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center}
-.ca:hover{border-color:var(--gold-dim);color:var(--gold)}
-.ca.del:hover{border-color:var(--red);color:#e05030}
-
+.ca:hover{border-color:#111;color:#111}
+.ca.del:hover{border-color:var(--red);color:var(--red)}
 #foot{padding:7px 14px;border-top:1px solid var(--border);font-family:'Cinzel',serif;font-size:.62rem;color:var(--text3);flex-shrink:0;display:flex;gap:16px;letter-spacing:.06em}
-#foot span{color:var(--gold)}
-
-#overlay{display:none;position:fixed;inset:0;background:#00000088;z-index:2000;align-items:center;justify-content:center}
+#foot span{color:#111}
+#overlay{display:none;position:fixed;inset:0;background:#00000044;z-index:2000;align-items:center;justify-content:center}
 #overlay.open{display:flex}
-#modal{background:var(--bg2);border:1px solid var(--border2);width:520px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 60px #000000cc}
+#modal{background:#fff;border:1px solid var(--border2);width:520px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 60px #00000022}
 #modal-head{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
-#modal-head h3{font-family:'Cinzel',serif;font-size:.8rem;color:var(--gold);letter-spacing:.12em;font-weight:500;flex:1}
+#modal-head h3{font-family:'Cinzel',serif;font-size:.8rem;color:#111;letter-spacing:.12em;font-weight:500;flex:1}
 #modal-head button{background:transparent;border:none;color:var(--text3);font-size:1.2rem;cursor:pointer;line-height:1}
-#modal-head button:hover{color:var(--text)}
+#modal-head button:hover{color:#111}
 #modal-body{padding:16px 18px;overflow-y:auto;flex:1}
 #modal-body::-webkit-scrollbar{width:3px}
 #modal-body::-webkit-scrollbar-thumb{background:var(--border)}
 #modal-foot{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
-
 .frow{margin-bottom:13px}
 .frow label{display:block;font-family:'Cinzel',serif;font-size:.6rem;color:var(--text3);letter-spacing:.1em;margin-bottom:5px}
-.frow label span{color:var(--gold-dim)}
-.frow input,.frow select,.frow textarea{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Crimson Text',serif;font-size:.95rem;padding:5px 9px;outline:none;resize:vertical}
-.frow input:focus,.frow select:focus,.frow textarea:focus{border-color:var(--gold-dim)}
-.frow select option{background:var(--bg3);color:var(--text)}
+.frow label span{color:#555}
+.frow input,.frow select,.frow textarea{width:100%;background:#f7f7f7;border:1px solid var(--border);color:var(--text);font-family:'Crimson Text',serif;font-size:.95rem;padding:5px 9px;outline:none;resize:vertical}
+.frow input:focus,.frow select:focus,.frow textarea:focus{border-color:#111}
+.frow select option{background:#f7f7f7;color:var(--text)}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .frow textarea{min-height:60px}
 .fsep{height:1px;background:var(--border);margin:16px 0 14px;position:relative}
-.fsep-label{position:absolute;left:50%;transform:translateX(-50%) translateY(-50%);background:var(--bg2);padding:0 10px;font-family:'Cinzel',serif;font-size:.58rem;color:var(--text3);letter-spacing:.1em}
+.fsep-label{position:absolute;left:50%;transform:translateX(-50%) translateY(-50%);background:#fff;padding:0 10px;font-family:'Cinzel',serif;font-size:.58rem;color:var(--text3);letter-spacing:.1em}
 .radio-group{display:flex;gap:8px}
 .radio-opt{flex:1;border:1px solid var(--border);padding:7px 10px;cursor:pointer;text-align:center;font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.08em;color:var(--text3);transition:all .2s}
-.radio-opt.on{border-color:var(--gold-dim);background:#1e1a0e;color:var(--gold)}
+.radio-opt.on{border-color:#111;background:#111;color:#fff}
 .radio-opt:hover:not(.on){border-color:var(--border2);color:var(--text2)}
-
 .btn{background:transparent;border:1px solid var(--border2);color:var(--text2);font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.1em;padding:7px 18px;cursor:pointer;transition:all .2s}
-.btn:hover{border-color:var(--text3);color:var(--text)}
-.btn-gold{background:var(--gold-dim);border-color:var(--gold-dim);color:var(--gold-pale)}
-.btn-gold:hover{background:var(--gold);color:var(--bg2);border-color:var(--gold)}
-
-#confirm{display:none;position:fixed;inset:0;background:#00000099;z-index:3000;align-items:center;justify-content:center}
+.btn:hover{border-color:#111;color:#111}
+.btn-gold{background:#111;border-color:#111;color:#fff}
+.btn-gold:hover{background:#333;border-color:#333;color:#fff}
+#confirm{display:none;position:fixed;inset:0;background:#00000066;z-index:3000;align-items:center;justify-content:center}
 #confirm.open{display:flex}
-#confirm-box{background:var(--bg2);border:1px solid var(--border2);padding:24px 28px;text-align:center;max-width:340px}
+#confirm-box{background:#fff;border:1px solid var(--border2);padding:24px 28px;text-align:center;max-width:340px}
 #confirm-box p{font-style:italic;color:var(--text2);margin-bottom:14px;font-size:.95rem}
 #confirm-box .btns{display:flex;gap:8px;justify-content:center}
-
-.leaflet-container{background:#0d1008}
-.leaflet-control-zoom a{background:var(--bg2)!important;color:var(--gold)!important;border-color:var(--border)!important}
-
+.leaflet-container{background:#e8e8e0}
+.leaflet-control-zoom a{background:#fff!important;color:#111!important;border-color:var(--border)!important}
 .leaflet-control-attribution {
   font-size: 7px !important;
   line-height: 1.1 !important;
   opacity: 0.65 !important;
-  background: rgba(19,16,10,0.55) !important;
-  color: #ffffff !important;
-  border: 1px solid #3a3018 !important;
+  background: rgba(255,255,255,0.75) !important;
+  color: #555 !important;
+  border: 1px solid #d8d8d8 !important;
   padding: 2px 5px !important;
   border-radius: 3px;
   transform-origin: bottom right;
 }
-  
 </style>
 </head>
 <body>
-
 <div id="hdr">
   <div>
-    <div id="hdr-title">IMPERO ROMANO · COLLEZIONE NUMISMATICA</div>
-    <div id="hdr-sub">Province al 117 d.C.</div>
+    <div id="hdr-title">ROMAN EMPIRE · NUMISMATIC COLLECTION</div>
+    <div id="hdr-sub">Provinces at 117 AD</div>
   </div>
   <div id="hdr-sep"></div>
-  <div id="hdr-count">Monete: <span id="hc">0</span></div>
-  <button id="btn-add" onclick="openModal()">+ AGGIUNGI MONETA</button>
+  <div id="hdr-count">Coins: <span id="hc">0</span></div>
+  <button id="btn-add" onclick="openModal()">+ ADD COIN</button>
 </div>
-
 <div id="body">
   <div id="mapwrap">
     <div id="map"></div>
-    <div id="loading"><b>Caricamento mappa…</b><small>Province romane al 117 d.C.</small></div>
+    <div id="loading"><b>Loading map…</b><small>Roman provinces at 117 AD</small></div>
     <div id="tt"></div>
     <div id="legend"><span>0</span><div id="legbar"></div><span id="legmax">0</span></div>
   </div>
-
   <div id="panel">
     <div id="panel-head">
-      <h2>COLLEZIONE</h2>
-      <input id="srch" type="text" placeholder="Cerca…" oninput="renderList()">
+      <h2>COLLECTION</h2>
+      <input id="srch" type="text" placeholder="Search…" oninput="renderList()">
       <div class="filter-row">
-        <button class="ftab on" onclick="setFilter('all',this)">Tutto</button>
-        <button class="ftab" onclick="setFilter('rep',this)">Repubblicane</button>
-        <button class="ftab" onclick="setFilter('imp',this)">Imperiali</button>
-        <button class="ftab" onclick="setFilter('prov',this)">Provinciali</button>
+        <button class="ftab on" onclick="setFilter('all',this)">All</button>
+        <button class="ftab" onclick="setFilter('rep',this)">Republican</button>
+        <button class="ftab" onclick="setFilter('imp',this)">Imperial</button>
+        <button class="ftab" onclick="setFilter('prov',this)">Provincial</button>
       </div>
     </div>
     <div id="clist"></div>
-    <div id="foot">Monete: <span id="fcount">0</span></div>
+    <div id="foot">Coins: <span id="fcount">0</span></div>
   </div>
 </div>
-
-<!-- MODAL INSERIMENTO -->
+<!-- ADD / EDIT MODAL -->
 <div id="overlay" onclick="if(event.target===this)closeModal()">
 <div id="modal">
   <div id="modal-head">
-    <h3 id="modal-title">AGGIUNGI MONETA</h3>
+    <h3 id="modal-title">ADD COIN</h3>
     <button onclick="closeModal()">&#215;</button>
   </div>
   <div id="modal-body">
-
     <div class="frow">
-      <label>PERIODO</label>
+      <label>PERIOD</label>
       <div class="radio-group">
-        <div class="radio-opt on" id="r-rep" onclick="setPeriod('rep')">REPUBBLICANA</div>
-        <div class="radio-opt" id="r-imp" onclick="setPeriod('imp')">IMPERIALE</div>
-        <div class="radio-opt" id="r-prov" onclick="setPeriod('prov')">PROVINCIALE</div>
+        <div class="radio-opt on" id="r-rep" onclick="setPeriod('rep')">REPUBLICAN</div>
+        <div class="radio-opt" id="r-imp" onclick="setPeriod('imp')">IMPERIAL</div>
+        <div class="radio-opt" id="r-prov" onclick="setPeriod('prov')">PROVINCIAL</div>
       </div>
     </div>
-
     <div class="frow">
-      <label>RIFERIMENTO <span style="font-size:.55rem;letter-spacing:.05em;color:var(--text3)">(es. RRC 44/5 · RPC I 985 · RIC 207)</span></label>
+      <label>REFERENCE <span style="font-size:.55rem;letter-spacing:.05em;color:var(--text3)">(e.g. RRC 44/5 · RPC I 985 · RIC 207)</span></label>
       <input id="f-ref" type="text" placeholder="RRC 44/5">
     </div>
-
     <div class="fgrid">
       <div class="frow">
-        <label>PROVINCIA / REGIONE <span>*</span></label>
+        <label>PROVINCE / REGION <span>*</span></label>
         <select id="f-prov"></select>
       </div>
       <div class="frow">
-        <label>ZECCA</label>
+        <label>MINT</label>
         <input id="f-mint" type="text" placeholder="Roma, Lugdunum…">
       </div>
     </div>
-
-    <div class="fsep"><div class="fsep-label">EMISSIONE</div></div>
-
+    <div class="fsep"><div class="fsep-label">ISSUE</div></div>
     <div id="block-rep">
       <div class="frow">
-        <label>MAGISTRATO / TRESVIRI</label>
+        <label>MAGISTRATE / TRESVIRI</label>
         <input id="f-mag" type="text" placeholder="L. Aemilius Lepidus, M. Furius Philus…">
       </div>
     </div>
-
     <div id="block-imp" style="display:none">
       <div class="fgrid">
         <div class="frow">
-          <label>IMPERATORE / AUTORITÀ</label>
-          <input id="f-imp" type="text" placeholder="Augusto, Traiano…">
+          <label>EMPEROR / AUTHORITY</label>
+          <input id="f-imp" type="text" placeholder="Augustus, Trajan…">
         </div>
         <div class="frow">
-          <label>EMESSA DA <span style="font-size:.5rem">(se diverso)</span></label>
-          <input id="f-auth" type="text" placeholder="generale, governatore…">
+          <label>ISSUED BY <span style="font-size:.5rem">(if different)</span></label>
+          <input id="f-auth" type="text" placeholder="general, governor…">
         </div>
       </div>
     </div>
-    
     <div id="block-prov" style="display:none">
       <div class="frow">
-        <label>AUTORITÀ / EMITTENTE PROVINCIALE</label>
-        <input id="f-prov-auth" type="text" placeholder="Governatore, città, magistrato locale…">
+        <label>PROVINCIAL AUTHORITY / ISSUER</label>
+        <input id="f-prov-auth" type="text" placeholder="Governor, city, local magistrate…">
       </div>
     </div>
-
-    <div class="fsep"><div class="fsep-label">CARATTERISTICHE</div></div>
-
+    <div class="fsep"><div class="fsep-label">CHARACTERISTICS</div></div>
     <div class="fgrid">
       <div class="frow">
-        <label>METALLO</label>
+        <label>METAL</label>
         <select id="f-metal">
-          <option value="">— seleziona —</option>
-          <option>Oro (AV)</option>
-          <option>Argento (AR)</option>
-          <option>Bronzo (AE)</option>
-          <option>Biglione</option>
-          <option>Piombo</option>
-          <option>Altro</option>
+          <option value="">— select —</option>
+          <option>Gold (AV)</option>
+          <option>Silver (AR)</option>
+          <option>Bronze (AE)</option>
+          <option>Billon</option>
+          <option>Lead</option>
+          <option>Other</option>
         </select>
       </div>
       <div class="frow">
-        <label>NOMINALE</label>
-        <input id="f-denom" type="text" placeholder="Denario, Sesterzio, As…">
+        <label>DENOMINATION</label>
+        <input id="f-denom" type="text" placeholder="Denarius, Sestertius, As…">
       </div>
       <div class="frow" style="grid-column:1/-1">
-        <label>PERIODO / DATAZIONE</label>
-        <input id="f-date" type="text" placeholder="es. 211–208 a.C.">
+        <label>PERIOD / DATE</label>
+        <input id="f-date" type="text" placeholder="e.g. 211–208 BC">
       </div>
     </div>
-
     <div class="frow">
-      <label>DESCRIZIONE (dritto / rovescio)</label>
-      <textarea id="f-desc" placeholder="Testa elmata di Roma / Dioscuri a cavallo…"></textarea>
+      <label>DESCRIPTION (obverse / reverse)</label>
+      <textarea id="f-desc" placeholder="Helmeted head of Roma / Dioscuri on horseback…"></textarea>
     </div>
     <div class="frow">
-      <label>NOTE</label>
-      <textarea id="f-notes" placeholder="Conservazione, provenienza, acquisto…" style="min-height:48px"></textarea>
+      <label>NOTES</label>
+      <textarea id="f-notes" placeholder="Condition, provenance, purchase…" style="min-height:48px"></textarea>
     </div>
-
   </div>
   <div id="modal-foot">
-    <button class="btn" onclick="closeModal()">ANNULLA</button>
-    <button class="btn btn-gold" onclick="saveCoin()">SALVA MONETA</button>
+    <button class="btn" onclick="closeModal()">CANCEL</button>
+    <button class="btn btn-gold" onclick="saveCoin()">SAVE COIN</button>
   </div>
 </div>
 </div>
-
-<!-- CONFERMA ELIMINA -->
+<!-- DELETE CONFIRM -->
 <div id="confirm">
 <div id="confirm-box">
-  <p>Eliminare questa moneta dalla collezione?</p>
+  <p>Remove this coin from the collection?</p>
   <div class="btns">
-    <button class="btn" onclick="closeConfirm()">ANNULLA</button>
-    <button class="btn" style="border-color:var(--red);color:#e05030" onclick="doDelete()">ELIMINA</button>
+    <button class="btn" onclick="closeConfirm()">CANCEL</button>
+    <button class="btn" style="border-color:var(--red);color:var(--red)" onclick="doDelete()">DELETE</button>
   </div>
 </div>
 </div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="[unpkg.com](https://unpkg.com/leaflet@1.9.4/dist/leaflet.js)"></script>
 <script>
 var PROVS = [
   "Achaia",
@@ -353,8 +315,8 @@ var PROVS = [
   "Dalmatia",
   "Galatia et Cappadocia",
   "Germania Inferior",
-  "Germania Superior", 
-  "Italia", 
+  "Germania Superior",
+  "Italia",
   "Iudaea",
   "Lugdunensis",
   "Lusitania",
@@ -387,7 +349,6 @@ var PROVS = [
   "Italia — Regio X — Venetia et Histria",
   "Italia — Regio XI — Transpadana",
 ];
-
 var GEO_MAP = {
   "Achaia":"Achaia",
   "Aegyptus":"Aegyptus",
@@ -445,7 +406,6 @@ var GEO_MAP = {
   "X":"Italia — Regio X — Venetia et Histria",
   "XI":"Italia — Regio XI — Transpadana"
 };
-
 const STEPS = [
   [207,207,207],
   [121,160,211],
@@ -464,19 +424,16 @@ const STEPS = [
   [214,61,28],
   [211,44,25]
 ];
-
 var coins = JSON.parse(localStorage.getItem('numismatica_v2') || '[]');
 var nextId = parseInt(localStorage.getItem('numismatica_nid') || '1');
 var editId = null;
 var deleteId = null;
 var filterMode = 'all';
 var currentPeriod = 'rep';
-
 function save(){
   localStorage.setItem('numismatica_v2', JSON.stringify(coins));
   localStorage.setItem('numismatica_nid', String(nextId));
 }
-
 (function(){
   var sel = document.getElementById('f-prov');
   PROVS.forEach(function(p){
@@ -484,19 +441,13 @@ function save(){
     o.value = p; o.textContent = p; sel.appendChild(o);
   });
 })();
-
 function val2color(v, mx) {
-
   if (!v || !mx)
     return "rgb(" + STEPS[0].join(",") + ")";
-
   var idx = Math.ceil((v / mx) * (STEPS.length - 1));
-
   idx = Math.max(1, Math.min(idx, STEPS.length - 1));
-
   return "rgb(" + STEPS[idx].join(",") + ")";
 }
-
 function geoToOur(geoName){
   if(!geoName)return null;
   if(GEO_MAP[geoName])return GEO_MAP[geoName];
@@ -505,27 +456,20 @@ function geoToOur(geoName){
   for(var k in GEO_MAP){if(low.indexOf(k.toLowerCase())>=0)return GEO_MAP[k];}
   return null;
 }
-
 function provCount(ourName){
-
   return coins.filter(function(c){
-
     if(c.prov === "Italia"){
       return ourName &&
              (ourName === "Italia" ||
               ourName.indexOf("Italia") === 0);
     }
-
     if(ourName === "Italia"){
       return c.prov &&
              c.prov.indexOf("Italia") === 0;
     }
-
     return c.prov === ourName;
-
   }).length;
 }
-
 function getMax(gl){
   var m=0;
   gl.eachLayer(function(l){
@@ -535,57 +479,47 @@ function getMax(gl){
   });
   return m;
 }
-
 var map = L.map("map", {
-  // center: [38, 18],
-  zoom: 4.85,        // <-- base
-  minZoom: 4.85,     // <-- NON puoi andare più fuori di questo
+  zoom: 4.85,
+  minZoom: 4.85,
   maxZoom: 8,
-  zoomSnap: 0.1,    // <-- permette zoom non interi (fondamentale)
+  zoomSnap: 0.1,
   zoomDelta: 0.5
 });
-  
 var tt=document.getElementById("tt");
 var mw=document.getElementById("mapwrap");
 var geoLayer=null;
-
-fetch("https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces.geojson")
+fetch("[cdn.jsdelivr.net](https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces.geojson)")
   .then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
   .then(function(data){
     geoLayer=L.geoJSON(data,{
-      style:function(){return{fillColor:"#c8c8b3",fillOpacity:.83,color:"#6a5020",weight:.8};},
+      style:function(){return{fillColor:"#d4d0c4",fillOpacity:.83,color:"#888",weight:.8};},
       onEachFeature:function(feat,lyr){
         var geoName=feat.properties&&feat.properties.name||"";
         var ourName=geoToOur(geoName);
         lyr.on({
           mouseover:function(e){
-            lyr.setStyle({weight:2,color:"#e8c020",fillOpacity:.95});
+            lyr.setStyle({weight:2,color:"#111",fillOpacity:.95});
             lyr.bringToFront();
-            
             var pc = ourName ? coins.filter(function(c){
-            
               if(c.prov === "Italia"){
                 return ourName === "Italia" ||
                        ourName.startsWith("Italia");
               }
-            
               if(ourName === "Italia"){
                 return c.prov && c.prov.startsWith("Italia");
               }
-            
               return c.prov === ourName;
-            
             }) : [];
-            
             var html="<strong>"+(ourName||geoName)+"</strong>";
-            html+="<div class='tl'>Monete: <b>"+pc.length+"</b></div>";
+            html+="<div class='tl'>Coins: <b>"+pc.length+"</b></div>";
             if(pc.length){
               html+="<div class='coins'>";
               pc.slice(0,4).forEach(function(c){
                 var label=c.ref||(c.period==='rep'?c.mag:c.imp)||c.denom||'—';
                 html+="<div class='coin-item'>"+label+(c.denom&&c.ref?" · "+c.denom:"")+"</div>";
               });
-              if(pc.length>4)html+="<div class='coin-item'>…e altre "+(pc.length-4)+"</div>";
+              if(pc.length>4)html+="<div class='coin-item'>…and "+(pc.length-4)+" more</div>";
               html+="</div>";
             }
             tt.innerHTML=html;
@@ -597,23 +531,16 @@ fetch("https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces
         });
       }
     }).addTo(map);
-
     var b = geoLayer.getBounds();
-    
-    map.fitBounds(b, {
-      padding: [20, 20]
-    });
-    
+    map.fitBounds(b, {padding: [20, 20]});
     map.setMaxBounds(b);
     map.options.maxBoundsViscosity = 1.0;
-    
     document.getElementById("loading").style.display="none";
     updateMap();
   })
   .catch(function(e){
-    document.getElementById("loading").innerHTML="<b style='color:#c84a4a'>Errore: "+e.message+"</b>";
+    document.getElementById("loading").innerHTML="<b style='color:var(--red)'>Error: "+e.message+"</b>";
   });
-
 function postt(e){
   var r=mw.getBoundingClientRect();
   var x=e.clientX-r.left+14,y=e.clientY-r.top-8;
@@ -621,7 +548,6 @@ function postt(e){
   if(y+110>mw.offsetHeight)y=e.clientY-r.top-110;
   tt.style.left=x+"px";tt.style.top=y+"px";
 }
-
 function updateMap(){
   if(!geoLayer)return;
   var mx=getMax(geoLayer);
@@ -630,25 +556,21 @@ function updateMap(){
     var n=l.feature&&l.feature.properties&&l.feature.properties.name||"";
     var our=geoToOur(n);
     var v=our?provCount(our):0;
-    l.setStyle({fillColor:val2color(v,mx),fillOpacity:.83,color:"#6a5020",weight:.8});
+    l.setStyle({fillColor:val2color(v,mx),fillOpacity:.83,color:"#888",weight:.8});
   });
 }
-
 function setPeriod(p){
   currentPeriod=p;
-
   document.getElementById('r-rep').className='radio-opt'+(p==='rep'?' on':'');
   document.getElementById('r-imp').className='radio-opt'+(p==='imp'?' on':'');
   document.getElementById('r-prov').className='radio-opt'+(p==='prov'?' on':'');
-
   document.getElementById('block-rep').style.display=p==='rep'?'':'none';
   document.getElementById('block-imp').style.display=p==='imp'?'':'none';
   document.getElementById('block-prov').style.display=p==='prov'?'':'none';
 }
-
 function openModal(id){
   editId=id||null;
-  document.getElementById('modal-title').textContent=id?'MODIFICA MONETA':'AGGIUNGI MONETA';
+  document.getElementById('modal-title').textContent=id?'EDIT COIN':'ADD COIN';
   ['f-ref','f-mint','f-mag','f-imp','f-auth','f-prov-auth','f-denom','f-date','f-desc','f-notes'].forEach(function(i){
     document.getElementById(i).value='';
   });
@@ -668,12 +590,10 @@ function openModal(id){
   }
   document.getElementById('overlay').classList.add('open');
 }
-
 function closeModal(){
   document.getElementById('overlay').classList.remove('open');
   editId=null;
 }
-
 function saveCoin(){
   var prov=document.getElementById('f-prov').value;
   if(!prov){document.getElementById('f-prov').focus();return;}
@@ -701,7 +621,6 @@ function saveCoin(){
   }
   save();closeModal();renderList();updateMap();updateHeaderCount();
 }
-
 function askDelete(id,e){
   e.stopPropagation();deleteId=id;
   document.getElementById('confirm').classList.add('open');
@@ -711,14 +630,12 @@ function doDelete(){
   coins=coins.filter(function(c){return c.id!==deleteId;});
   save();closeConfirm();renderList();updateMap();updateHeaderCount();
 }
-
 function setFilter(f,el){
   filterMode=f;
   document.querySelectorAll('.ftab').forEach(function(t){t.classList.remove('on');});
   el.classList.add('on');
   renderList();
 }
-
 function renderList(){
   var q=document.getElementById('srch').value.toLowerCase();
   var filtered=coins.filter(function(c){
@@ -731,39 +648,34 @@ function renderList(){
   var el=document.getElementById('clist');
   el.innerHTML='';
   if(!filtered.length){
-    el.innerHTML='<div class="empty-msg">Nessuna moneta'+(q?' trovata':'')+'.</div>';
+    el.innerHTML='<div class="empty-msg">No coins'+(q?' found':'')+'.</div>';
     document.getElementById('fcount').textContent='0';
     return;
   }
   filtered.forEach(function(c){
     var d=document.createElement('div');
     d.className='crow';
-    
     var who =
       c.period === 'rep' ? c.mag :
       c.period === 'imp' ? (c.imp || c.auth || '') :
       c.period === 'prov' ? (c.auth || c.imp || '') :
       '';
-    
     var periodClass =
       c.period === 'rep' ? 'ct-rep' :
       c.period === 'imp' ? 'ct-imp' :
       'ct-prov';
-    
     var periodLabel =
       c.period === 'rep' ? 'REP' :
       c.period === 'imp' ? 'IMP' :
       'PROV';
-    
     var tags = '<span class="ctag ' + periodClass + '">' + periodLabel + '</span>';
-    
     if(c.metal)tags+='<span class="ctag ct-mat">'+c.metal.split(' ')[0]+'</span>';
     if(c.denom)tags+='<span class="ctag ct-mat">'+c.denom+'</span>';
     if(c.prov){
       var p = c.prov.replace('Italia — ','');
       tags += '<span class="ctag ct-prov-name">'+p+'</span>';
     }
-    var refLine=c.ref||'(senza riferimento)';
+    var refLine=c.ref||'(no reference)';
     d.innerHTML=
       '<div style="display:flex;align-items:flex-start;gap:4px">'+
       '<div style="flex:1;min-width:0">'+
@@ -773,19 +685,17 @@ function renderList(){
         '<div class="crow-meta">'+tags+'</div>'+
       '</div>'+
       '<div class="crow-actions">'+
-        '<button class="ca" title="Modifica" onclick="openModal('+c.id+')">&#9998;</button>'+
-        '<button class="ca del" title="Elimina" onclick="askDelete('+c.id+',event)">&#x2715;</button>'+
+        '<button class="ca" title="Edit" onclick="openModal('+c.id+')">&#9998;</button>'+
+        '<button class="ca del" title="Delete" onclick="askDelete('+c.id+',event)">&#x2715;</button>'+
       '</div>'+
       '</div>';
     el.appendChild(d);
   });
   document.getElementById('fcount').textContent=filtered.length;
 }
-
 function updateHeaderCount(){
   document.getElementById('hc').textContent=coins.length;
 }
-
 renderList();
 updateHeaderCount();
 </script>

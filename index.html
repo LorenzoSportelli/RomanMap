@@ -247,6 +247,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <input id="f-auth" type="text" placeholder="generale, governatore…">
         </div>
       </div>
+
+    <div id="block-prov" style="display:none">
+      <div class="frow">
+        <label>AUTORITÀ / EMITTENTE PROVINCIALE</label>
+        <input id="f-prov-auth" type="text" placeholder="Governatore, città, magistrato locale…">
+      </div>
     </div>
 
     <div class="fsep"><div class="fsep-label">CARATTERISTICHE</div></div>
@@ -606,12 +612,13 @@ function setPeriod(p){
   document.getElementById('r-imp').className='radio-opt'+(p==='imp'?' on':'');
   document.getElementById('block-rep').style.display=p==='rep'?'':'none';
   document.getElementById('block-imp').style.display=p==='imp'?'':'none';
+  document.getElementById('block-prov').style.display = p==='prov' ? '' : 'none';
 }
 
 function openModal(id){
   editId=id||null;
   document.getElementById('modal-title').textContent=id?'MODIFICA MONETA':'AGGIUNGI MONETA';
-  ['f-ref','f-mint','f-mag','f-imp','f-auth','f-denom','f-date','f-desc','f-notes'].forEach(function(i){
+  ['f-ref','f-mint','f-mag','f-imp','f-auth','f-prov-auth','f-denom','f-date','f-desc','f-notes'].forEach(function(i){
     document.getElementById(i).value='';
   });
   document.getElementById('f-metal').value='';
@@ -621,7 +628,7 @@ function openModal(id){
     var c=coins.find(function(x){return x.id===id;});
     if(c){
       setPeriod(c.period);
-      ['ref','mint','mag','imp','auth','metal','denom','date','desc','notes'].forEach(function(k){
+      ['ref','mint','mag','imp','auth','authProv','metal','denom','date','desc','notes'].forEach(function(k){
         var el=document.getElementById('f-'+k);
         if(el)el.value=c[k]||'';
       });
@@ -653,6 +660,7 @@ function saveCoin(){
     date: document.getElementById('f-date').value.trim(),
     desc: document.getElementById('f-desc').value.trim(),
     notes: document.getElementById('f-notes').value.trim(),
+    authProv: document.getElementById('f-prov-auth').value.trim(),
   };
   if(editId){
     var idx=coins.findIndex(function(x){return x.id===editId;});
@@ -703,7 +711,8 @@ function renderList(){
     var who =
       c.period === 'rep' ? c.mag :
       c.period === 'imp' ? (c.imp || c.auth || '') :
-      (c.auth || '');
+      c.period === 'prov' ? (c.auth || c.imp || '') :
+      '';
     
     var periodClass =
       c.period === 'rep' ? 'ct-rep' :

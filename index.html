@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Impero Romano — Collezione Numismatica</title>
+<link rel="stylesheet" href="[unpkg.com](https://unpkg.com/leaflet@1.9.4/dist/leaflet.css)"/>
+<link href="[fonts.googleapis.com](https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap)" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;
+  --bg2:#f5f5f5;
+  --bg3:#ebebeb;
+  --border:#d0d0d0;
+  --border2:#b0b0b0;
+  --text:#111111;
+  --text2:#444444;
+  --text3:#888888;
+  --accent:#111111;
+  --accent-dim:#555555;
+  --panel:300px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Crimson Text',Georgia,serif}
+#hdr{height:48px;background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;position:relative;z-index:1000}
+#hdr-title{font-family:'Cinzel',serif;font-size:.85rem;color:var(--text);letter-spacing:.15em;font-weight:500}
+#hdr-sub{font-size:.72rem;color:var(--text3);font-style:italic}
+#hdr-sep{flex:1}
+#hdr-count{font-size:.72rem;color:var(--text2);font-family:'Cinzel',serif;letter-spacing:.08em}
+#hdr-count span{color:var(--text);font-weight:600}
+#btn-add{background:transparent;border:1px solid var(--border2);color:var(--text2);font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.1em;padding:5px 14px;cursor:pointer;transition:all .2s}
+#btn-add:hover{background:var(--text);color:var(--bg)}
+#body{display:flex;height:calc(100vh - 48px)}
+#mapwrap{flex:1;position:relative}
+#map{width:100%;height:100%}
+#loading{position:absolute;inset:0;background:#ffffffee;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:500}
+#loading b{color:var(--text);letter-spacing:.1em;font-weight:400;font-family:'Cinzel',serif}
+#loading small{color:var(--text3);font-style:italic;font-size:.75rem}
+#tt{display:none;position:absolute;background:var(--bg);border:1px solid var(--border2);padding:9px 13px;z-index:9999;pointer-events:none;min-width:180px;box-shadow:0 2px 12px rgba(0,0,0,.1)}
+#tt strong{display:block;font-family:'Cinzel',serif;color:var(--text);font-size:.64rem;letter-spacing:.08em;margin-bottom:5px;font-weight:600}
+#tt .tl{font-size:.82rem;color:var(--text2)}
+#tt .tl b{color:var(--text)}
+#tt .coins{margin-top:5px;font-size:.72rem;color:var(--text3);font-style:italic;border-top:1px solid var(--border);padding-top:4px}
+#tt .coin-item{color:var(--text2);padding:1px 0}
+#legend{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:900;background:#ffffffcc;border:1px solid var(--border);padding:5px 14px;display:flex;align-items:center;gap:8px;font-size:.7rem;color:var(--text2);pointer-events:none;font-family:'Cinzel',serif;letter-spacing:.05em}
+#legbar{
+  width:150px;height:9px;border-radius:1px;
+  background:linear-gradient(
+    to right,
+    rgb(207,207,207),rgb(121,160,211),rgb(128,172,160),rgb(171,197,132),
+    rgb(236,213,120),rgb(239,201,96),rgb(243,184,75),rgb(242,171,61),
+    rgb(241,157,52),rgb(238,143,46),rgb(234,127,41),rgb(229,111,38),
+    rgb(223,96,35),rgb(218,79,31),rgb(214,61,28),rgb(211,44,25)
+  );
+}
+#panel{width:var(--panel);background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+#panel-head{padding:12px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+#panel-head h2{font-family:'Cinzel',serif;font-size:.65rem;color:var(--text);letter-spacing:.12em;font-weight:600;margin-bottom:8px}
+#srch{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Crimson Text',serif;font-size:.9rem;padding:4px 8px;outline:none}
+#srch:focus{border-color:var(--border2)}
+#srch::placeholder{color:var(--text3)}
+.filter-row{display:flex;gap:4px;margin-top:6px}
+.ftab{flex:1;background:transparent;border:1px solid var(--border);color:var(--text3);font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.08em;padding:3px 6px;cursor:pointer;transition:all .15s}
+.ftab.on{background:var(--text);border-color:var(--text);color:var(--bg)}
+.ftab:hover:not(.on){border-color:var(--border2);color:var(--text2)}
+#clist{flex:1;overflow-y:auto}
+#clist::-webkit-scrollbar{width:3px}
+#clist::-webkit-scrollbar-thumb{background:var(--border)}
+.empty-msg{padding:24px 14px;text-align:center;font-style:italic;color:var(--text3);font-size:.82rem}
+.crow{padding:7px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+.crow:hover{background:var(--bg3)}
+.crow-ref{font-family:'Cinzel',serif;font-size:.62rem;color:var(--text);letter-spacing:.05em;font-weight:500}
+.crow-desc{font-size:.82rem;color:var(--text2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crow-meta{display:flex;gap:6px;margin-top:3px;flex-wrap:wrap}
+.ctag{font-size:.58rem;padding:1px 5px;border:1px solid;letter-spacing:.04em}
+.ct-rep{color:#333;border-color:#aaa;background:#eee}
+.ct-imp{color:#555;border-color:#bbb;background:#f0f0f0}
+.ct-prov{color:#444;border-color:#b0b0b0;background:#e8e8e8}
+.ct-mat{color:#666;border-color:#c0c0c0;background:#f5f5f5}
+.crow-actions{float:right;display:flex;gap:3px;opacity:0;transition:opacity .15s}
+.crow:hover .crow-actions{opacity:1}
+.ca{width:18px;height:18px;background:transparent;border:1px solid var(--border);color:var(--text3);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center}
+.ca:hover{border-color:var(--text);color:var(--text)}
+.ca.del:hover{border-color:#999;color:#333}
+#foot{padding:7px 14px;border-top:1px solid var(--border);font-family:'Cinzel',serif;font-size:.62rem;color:var(--text3);flex-shrink:0;display:flex;gap:16px;letter-spacing:.06em}
+#foot span{color:var(--text);font-weight:600}
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:2000;align-items:center;justify-content:center}
+#overlay.open{display:flex}
+#modal{background:var(--bg);border:1px solid var(--border2);width:520px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 4px 32px rgba(0,0,0,.15)}
+#modal-head{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+#modal-head h3{font-family:'Cinzel',serif;font-size:.8rem;color:var(--text);letter-spacing:.12em;font-weight:600;flex:1}
+#modal-head button{background:transparent;border:none;color:var(--text3);font-size:1.2rem;cursor:pointer;line-height:1}
+#modal-head button:hover{color:var(--text)}
+#modal-body{padding:16px 18px;overflow-y:auto;flex:1}
+#modal-body::-webkit-scrollbar{width:3px}
+#modal-body::-webkit-scrollbar-thumb{background:var(--border)}
+#modal-foot{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+.frow{margin-bottom:13px}
+.frow label{display:block;font-family:'Cinzel',serif;font-size:.6rem;color:var(--text3);letter-spacing:.1em;margin-bottom:5px}
+.frow label span{color:var(--text2)}
+.frow input,.frow select,.frow textarea{width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:'Crimson Text',serif;font-size:.95rem;padding:5px 9px;outline:none;resize:vertical}
+.frow input:focus,.frow select:focus,.frow textarea:focus{border-color:var(--border2)}
+.frow select option{background:var(--bg);color:var(--text)}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.frow textarea{min-height:60px}
+.fsep{height:1px;background:var(--border);margin:16px 0 14px;position:relative}
+.fsep-label{position:absolute;left:50%;transform:translateX(-50%) translateY(-50%);background:var(--bg);padding:0 10px;font-family:'Cinzel',serif;font-size:.58rem;color:var(--text3);letter-spacing:.1em}
+.radio-group{display:flex;gap:8px}
+.radio-opt{flex:1;border:1px solid var(--border);padding:7px 10px;cursor:pointer;text-align:center;font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.08em;color:var(--text3);transition:all .2s}
+.radio-opt.on{border-color:var(--text);background:var(--text);color:var(--bg)}
+.radio-opt:hover:not(.on){border-color:var(--border2);color:var(--text2)}
+.btn{background:transparent;border:1px solid var(--border2);color:var(--text2);font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.1em;padding:7px 18px;cursor:pointer;transition:all .2s}
+.btn:hover{border-color:var(--text);color:var(--text)}
+.btn-primary{background:var(--text);border-color:var(--text);color:var(--bg)}
+.btn-primary:hover{background:var(--accent-dim);border-color:var(--accent-dim);color:var(--bg)}
+#confirm{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:3000;align-items:center;justify-content:center}
+#confirm.open{display:flex}
+#confirm-box{background:var(--bg);border:1px solid var(--border2);padding:24px 28px;text-align:center;max-width:340px;box-shadow:0 4px 24px rgba(0,0,0,.12)}
+#confirm-box p{font-style:italic;color:var(--text2);margin-bottom:14px;font-size:.95rem}
+#confirm-box .btns{display:flex;gap:8px;justify-content:center}
+.leaflet-container{background:#e8e8e0}
+.leaflet-control-zoom a{background:var(--bg)!important;color:var(--text)!important;border-color:var(--border)!important}
+</style>
+</head>
+<body>
+<div id="hdr">
+  <div>
+    <div id="hdr-title">IMPERO ROMANO · COLLEZIONE NUMISMATICA</div>
+    <div id="hdr-sub">Province al 117 d.C.</div>
+  </div>
+  <div id="hdr-sep"></div>
+  <div id="hdr-count">Monete: <span id="hc">0</span></div>
+  <button id="btn-add" onclick="openModal()">+ AGGIUNGI MONETA</button>
+</div>
+<div id="body">
+  <div id="mapwrap">
+    <div id="map"></div>
+    <div id="loading"><b>Caricamento mappa…</b><small>Province romane al 117 d.C.</small></div>
+    <div id="tt"></div>
+    <div id="legend"><span>0</span><div id="legbar"></div><span id="legmax">0</span></div>
+  </div>
+  <div id="panel">
+    <div id="panel-head">
+      <h2>COLLEZIONE</h2>
+      <input id="srch" type="text" placeholder="Cerca…" oninput="renderList()">
+      <div class="filter-row">
+        <button class="ftab on" onclick="setFilter('all',this)">Tutto</button>
+        <button class="ftab" onclick="setFilter('rep',this)">Repubblicane</button>
+        <button class="ftab" onclick="setFilter('imp',this)">Imperiali</button>
+      </div>
+    </div>
+    <div id="clist"></div>
+    <div id="foot">Monete: <span id="fcount">0</span></div>
+  </div>
+</div>
+<!-- MODAL INSERIMENTO -->
+<div id="overlay" onclick="if(event.target===this)closeModal()">
+<div id="modal">
+  <div id="modal-head">
+    <h3 id="modal-title">AGGIUNGI MONETA</h3>
+    <button onclick="closeModal()">&#215;</button>
+  </div>
+  <div id="modal-body">
+    <div class="frow">
+      <label>PERIODO</label>
+      <div class="radio-group">
+        <div class="radio-opt on" id="r-rep" onclick="setPeriod('rep')">REPUBBLICANA</div>
+        <div class="radio-opt" id="r-imp" onclick="setPeriod('imp')">IMPERIALE</div>
+      </div>
+    </div>
+    <div class="frow">
+      <label>RIFERIMENTO <span style="font-size:.55rem;letter-spacing:.05em;color:var(--text3)">(es. RRC 44/5 · RPC I 985 · RIC 207)</span></label>
+      <input id="f-ref" type="text" placeholder="RRC 44/5">
+    </div>
+    <div class="fgrid">
+      <div class="frow">
+        <label>PROVINCIA / REGIONE <span>*</span></label>
+        <select id="f-prov"></select>
+      </div>
+      <div class="frow">
+        <label>ZECCA</label>
+        <input id="f-mint" type="text" placeholder="Roma, Lugdunum…">
+      </div>
+    </div>
+    <div class="fsep"><div class="fsep-label">EMISSIONE</div></div>
+    <div id="block-rep">
+      <div class="frow">
+        <label>MAGISTRATO / TRESVIRI</label>
+        <input id="f-mag" type="text" placeholder="L. Aemilius Lepidus, M. Furius Philus…">
+      </div>
+    </div>
+    <div id="block-imp" style="display:none">
+      <div class="fgrid">
+        <div class="frow">
+          <label>IMPERATORE / AUTORITÀ</label>
+          <input id="f-imp" type="text" placeholder="Augusto, Traiano…">
+        </div>
+        <div class="frow">
+          <label>EMESSA DA <span style="font-size:.5rem">(se diverso)</span></label>
+          <input id="f-auth" type="text" placeholder="generale, governatore…">
+        </div>
+      </div>
+    </div>
+    <div class="fsep"><div class="fsep-label">CARATTERISTICHE</div></div>
+    <div class="fgrid">
+      <div class="frow">
+        <label>METALLO</label>
+        <select id="f-metal">
+          <option value="">— seleziona —</option>
+          <option>Oro (AV)</option>
+          <option>Argento (AR)</option>
+          <option>Bronzo (AE)</option>
+          <option>Biglione</option>
+          <option>Piombo</option>
+          <option>Altro</option>
+        </select>
+      </div>
+      <div class="frow">
+        <label>NOMINALE</label>
+        <input id="f-denom" type="text" placeholder="Denario, Sesterzio, As…">
+      </div>
+      <div class="frow" style="grid-column:1/-1">
+        <label>PERIODO / DATAZIONE</label>
+        <input id="f-date" type="text" placeholder="es. 211–208 a.C.">
+      </div>
+    </div>
+    <div class="frow">
+      <label>DESCRIZIONE (dritto / rovescio)</label>
+      <textarea id="f-desc" placeholder="Testa elmata di Roma / Dioscuri a cavallo…"></textarea>
+    </div>
+    <div class="frow">
+      <label>NOTE</label>
+      <textarea id="f-notes" placeholder="Conservazione, provenienza, acquisto…" style="min-height:48px"></textarea>
+    </div>
+  </div>
+  <div id="modal-foot">
+    <button class="btn" onclick="closeModal()">ANNULLA</button>
+    <button class="btn btn-primary" onclick="saveCoin()">SALVA MONETA</button>
+  </div>
+</div>
+</div>
+<!-- CONFERMA ELIMINA -->
+<div id="confirm">
+<div id="confirm-box">
+  <p>Eliminare questa moneta dalla collezione?</p>
+  <div class="btns">
+    <button class="btn" onclick="closeConfirm()">ANNULLA</button>
+    <button class="btn" style="border-color:#888;color:#333" onclick="doDelete()">ELIMINA</button>
+  </div>
+</div>
+</div>
+<script src="[unpkg.com](https://unpkg.com/leaflet@1.9.4/dist/leaflet.js)"></script>
+<script>
+var PROVS = [
+  "Achaia","Aegyptus","Alpes Cottiae","Alpes Graiae et Poeninae","Alpes Maritimae",
+  "Aquitania","Arabia","Armenia Mesopotamia","Asia","Baetica","Belgica",
+  "Bithynia et Pontus","Britannia","Cilicia","Creta et Cyrene","Dacia","Dalmatia",
+  "Galatia et Cappadocia","Germania Inferior","Germania Superior","Iudaea",
+  "Lugdunensis","Lusitania","Lycia et Pamphylia","Macedonia","Mauretania Caesariensis",
+  "Mauretania Tingitana","Moesia Inferior","Moesia Superior","Narbonensis","Noricum",
+  "Numidia","Pannonia Inferior","Pannonia Superior","Raetia","Sardinia et Corsica",
+  "Sicilia","Syria","Tarraconensis","Thracia",
+  "Italia — Regio I","Italia — Regio II","Italia — Regio III","Italia — Regio IV",
+  "Italia — Regio V","Italia — Regio VI","Italia — Regio VII","Italia — Regio VIII",
+  "Italia — Regio IX","Italia — Regio X","Italia — Regio XI"
+];
+var GEO_MAP = {
+  "Achaia":"Achaia","Aegyptus":"Aegyptus","Alpes Cottiae":"Alpes Cottiae",
+  "Alpes Graiae et Poeninae":"Alpes Graiae et Poeninae","Alpes Maritimae":"Alpes Maritimae",
+  "Aquitania":"Aquitania","Arabia":"Arabia","Armenia":"Armenia Mesopotamia",
+  "Mesopotamia":"Armenia Mesopotamia","Asia":"Asia","Baetica":"Baetica","Belgica":"Belgica",
+  "Bithynia et Pontus":"Bithynia et Pontus","Britannia":"Britannia",
+  "Cilicia":"Cilicia","Creta et Cyrenaica":"Creta et Cyrene","Cyrenaica":"Creta et Cyrene",
+  "Dacia":"Dacia","Dalmatia":"Dalmatia","Galatia":"Galatia et Cappadocia",
+  "Cappadocia":"Galatia et Cappadocia","Germania Inferior":"Germania Inferior",
+  "Germania Superior":"Germania Superior","Iudaea":"Iudaea","Lugdunensis":"Lugdunensis",
+  "Lusitania":"Lusitania","Lycia et Pamphylia":"Lycia et Pamphylia",
+  "Macedonia":"Macedonia","Mauretania Caesariensis":"Mauretania Caesariensis",
+  "Mauretania Tingitana":"Mauretania Tingitana","Moesia Inferior":"Moesia Inferior",
+  "Moesia Superior":"Moesia Superior","Narbonensis":"Narbonensis","Noricum":"Noricum",
+  "Numidia":"Numidia","Pannonia Inferior":"Pannonia Inferior",
+  "Pannonia Superior":"Pannonia Superior","Raetia":"Raetia",
+  "Sardinia et Corsica":"Sardinia et Corsica","Sicilia":"Sicilia","Syria":"Syria",
+  "Tarraconensis":"Tarraconensis","Thracia":"Thracia","Italia":"Italia"
+};
+const STEPS = [
+  [207,207,207],[121,160,211],[128,172,160],[171,197,132],
+  [236,213,120],[239,201,96],[243,184,75],[242,171,61],
+  [241,157,52],[238,143,46],[234,127,41],[229,111,38],
+  [223,96,35],[218,79,31],[214,61,28],[211,44,25]
+];
+var coins = JSON.parse(localStorage.getItem('numismatica_v2') || '[]');
+var nextId = parseInt(localStorage.getItem('numismatica_nid') || '1');
+var editId = null;
+var deleteId = null;
+var filterMode = 'all';
+var currentPeriod = 'rep';
+function save(){
+  localStorage.setItem('numismatica_v2', JSON.stringify(coins));
+  localStorage.setItem('numismatica_nid', String(nextId));
+}
+(function(){
+  var sel = document.getElementById('f-prov');
+  PROVS.forEach(function(p){
+    var o = document.createElement('option');
+    o.value = p; o.textContent = p; sel.appendChild(o);
+  });
+})();
+function val2color(v, mx){
+  if(!v||!mx) return "rgb("+STEPS[0].join(",")+")";
+  var idx = Math.ceil((v/mx)*(STEPS.length-1));
+  idx = Math.max(1, Math.min(idx, STEPS.length-1));
+  return "rgb("+STEPS[idx].join(",")+")";
+}
+function geoToOur(geoName){
+  if(!geoName) return null;
+  if(GEO_MAP[geoName]) return GEO_MAP[geoName];
+  var low = geoName.toLowerCase();
+  for(var k in GEO_MAP){ if(k.toLowerCase()===low) return GEO_MAP[k]; }
+  for(var k in GEO_MAP){ if(low.indexOf(k.toLowerCase())>=0) return GEO_MAP[k]; }
+  return null;
+}
+function provCount(ourName){
+  return coins.filter(function(c){
+    if(ourName==="Italia") return c.prov&&c.prov.startsWith("Italia");
+    return c.prov===ourName;
+  }).length;
+}
+function getMax(gl){
+  var m=0;
+  gl.eachLayer(function(l){
+    var n=l.feature&&l.feature.properties&&l.feature.properties.name||"";
+    var our=geoToOur(n);
+    if(our) m=Math.max(m,provCount(our));
+  });
+  return m;
+}
+var map=L.map("map",{center:[38,18],zoom:4,minZoom:3,maxZoom:8,attributionControl:false});
+var tt=document.getElementById("tt");
+var mw=document.getElementById("mapwrap");
+var geoLayer=null;
+fetch("[cdn.jsdelivr.net](https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces.geojson)")
+  .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+  .then(function(data){
+    geoLayer=L.geoJSON(data,{
+      style:function(){ return{fillColor:"#d0cfc0",fillOpacity:.85,color:"#888",weight:.8}; },
+      onEachFeature:function(feat,lyr){
+        var geoName=feat.properties&&feat.properties.name||"";
+        var ourName=geoToOur(geoName);
+        lyr.on({
+          mouseover:function(e){
+            lyr.setStyle({weight:2,color:"#333",fillOpacity:.95});
+            lyr.bringToFront();
+            var pc=ourName?coins.filter(function(c){
+              if(ourName==="Italia") return c.prov&&c.prov.startsWith("Italia");
+              return c.prov===ourName;
+            }):[];
+            var html="<strong>"+(ourName||geoName)+"</strong>";
+            html+="<div class='tl'>Monete: <b>"+pc.length+"</b></div>";
+            if(pc.length){
+              html+="<div class='coins'>";
+              pc.slice(0,4).forEach(function(c){
+                var label=c.ref||(c.period==='rep'?c.mag:c.imp)||c.denom||'—';
+                html+="<div class='coin-item'>"+label+(c.denom&&c.ref?" · "+c.denom:"")+"</div>";
+              });
+              if(pc.length>4) html+="<div class='coin-item'>…e altre "+(pc.length-4)+"</div>";
+              html+="</div>";
+            }
+            tt.innerHTML=html;
+            tt.style.display="block";
+            postt(e.originalEvent);
+          },
+          mousemove:function(e){ postt(e.originalEvent); },
+          mouseout:function(){ tt.style.display="none"; updateMap(); }
+        });
+      }
+    }).addTo(map);
+    document.getElementById("loading").style.display="none";
+    updateMap();
+  })
+  .catch(function(e){
+    document.getElementById("loading").innerHTML="<b style='color:#555'>Errore: "+e.message+"</b>";
+  });
+function postt(e){
+  var r=mw.getBoundingClientRect();
+  var x=e.clientX-r.left+14, y=e.clientY-r.top-8;
+  if(x+200>mw.offsetWidth) x=e.clientX-r.left-205;
+  if(y+110>mw.offsetHeight) y=e.clientY-r.top-110;
+  tt.style.left=x+"px"; tt.style.top=y+"px";
+}
+function updateMap(){
+  if(!geoLayer) return;
+  var mx=getMax(geoLayer);
+  document.getElementById("legmax").textContent=mx;
+  geoLayer.eachLayer(function(l){
+    var n=l.feature&&l.feature.properties&&l.feature.properties.name||"";
+    var our=geoToOur(n);
+    var v=our?provCount(our):0;
+    l.setStyle({fillColor:val2color(v,mx),fillOpacity:.85,color:"#888",weight:.8});
+  });
+}
+function setPeriod(p){
+  currentPeriod=p;
+  document.getElementById('r-rep').className='radio-opt'+(p==='rep'?' on':'');
+  document.getElementById('r-imp').className='radio-opt'+(p==='imp'?' on':'');
+  document.getElementById('block-rep').style.display=p==='rep'?'':'none';
+  document.getElementById('block-imp').style.display=p==='imp'?'':'none';
+}
+function openModal(id){
+  editId=id||null;
+  document.getElementById('modal-title').textContent=id?'MODIFICA MONETA':'AGGIUNGI MONETA';
+  ['f-ref','f-mint','f-mag','f-imp','f-auth','f-denom','f-date','f-desc','f-notes'].forEach(function(i){
+    document.getElementById(i).value='';
+  });
+  document.getElementById('f-metal').value='';
+  document.getElementById('f-prov').value=PROVS[0];
+  setPeriod('rep');
+  if(id){
+    var c=coins.find(function(x){ return x.id===id; });
+    if(c){
+      setPeriod(c.period);
+      ['ref','mint','mag','imp','auth','metal','denom','date','desc','notes'].forEach(function(k){
+        var el=document.getElementById('f-'+k);
+        if(el) el.value=c[k]||'';
+      });
+      document.getElementById('f-prov').value=c.prov||PROVS[0];
+    }
+  }
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal(){
+  document.getElementById('overlay').classList.remove('open');
+  editId=null;
+}
+function saveCoin(){
+  var prov=document.getElementById('f-prov').value;
+  if(!prov){ document.getElementById('f-prov').focus(); return; }
+  var coin={
+    id: editId||nextId++,
+    period: currentPeriod,
+    ref: document.getElementById('f-ref').value.trim(),
+    prov: prov,
+    mint: document.getElementById('f-mint').value.trim(),
+    mag: document.getElementById('f-mag').value.trim(),
+    imp: document.getElementById('f-imp').value.trim(),
+    auth: document.getElementById('f-auth').value.trim(),
+    metal: document.getElementById('f-metal').value,
+    denom: document.getElementById('f-denom').value.trim(),
+    date: document.getElementById('f-date').value.trim(),
+    desc: document.getElementById('f-desc').value.trim(),
+    notes: document.getElementById('f-notes').value.trim(),
+  };
+  if(editId){
+    var idx=coins.findIndex(function(x){ return x.id===editId; });
+    if(idx>=0) coins[idx]=coin;
+  } else {
+    coins.push(coin);
+  }
+  save(); closeModal(); renderList(); updateMap(); updateHeaderCount();
+}
+function askDelete(id,e){
+  e.stopPropagation(); deleteId=id;
+  document.getElementById('confirm').classList.add('open');
+}
+function closeConfirm(){ document.getElementById('confirm').classList.remove('open'); deleteId=null; }
+function doDelete(){
+  coins=coins.filter(function(c){ return c.id!==deleteId; });
+  save(); closeConfirm(); renderList(); updateMap(); updateHeaderCount();
+}
+function setFilter(f,el){
+  filterMode=f;
+  document.querySelectorAll('.ftab').forEach(function(t){ t.classList.remove('on'); });
+  el.classList.add('on');
+  renderList();
+}
+function renderList(){
+  var q=document.getElementById('srch').value.toLowerCase();
+  var filtered=coins.filter(function(c){
+    if(filterMode==='rep'&&c.period!=='rep') return false;
+    if(filterMode==='imp'&&c.period!=='imp') return false;
+    if(!q) return true;
+    return (c.ref+c.prov+c.desc+c.mag+c.imp+c.denom+c.mint).toLowerCase().indexOf(q)>=0;
+  });
+  var el=document.getElementById('clist');
+  el.innerHTML='';
+  if(!filtered.length){
+    el.innerHTML='<div class="empty-msg">Nessuna moneta'+(q?' trovata':'')+'.</div>';
+    document.getElementById('fcount').textContent='0';
+    return;
+  }
+  filtered.forEach(function(c){
+    var d=document.createElement('div');
+    d.className='crow';
+    var who=c.period==='rep'?c.mag:(c.imp||(c.auth||''));
+    var tags='<span class="ctag '+(c.period==='rep'?'ct-rep':'ct-imp')+'">'+(c.period==='rep'?'REP':'IMP')+'</span>';
+    if(c.metal) tags+='<span class="ctag ct-mat">'+c.metal.split(' ')[0]+'</span>';
+    if(c.denom) tags+='<span class="ctag ct-mat">'+c.denom+'</span>';
+    if(c.prov)  tags+='<span class="ctag ct-prov">'+c.prov.replace('Italia — ','')+'</span>';
+    var refLine=c.ref||'(senza riferimento)';
+    d.innerHTML=
+      '<div style="display:flex;align-items:flex-start;gap:4px">'+
+      '<div style="flex:1;min-width:0">'+
+        '<div class="crow-ref">'+refLine+'</div>'+
+        (who?'<div class="crow-desc">'+who+'</div>':'')+
+        (c.desc?'<div class="crow-desc" style="font-style:italic">'+c.desc+'</div>':'')+
+        '<div class="crow-meta">'+tags+'</div>'+
+      '</div>'+
+      '<div class="crow-actions">'+
+        '<button class="ca" title="Modifica" onclick="openModal('+c.id+')">&#9998;</button>'+
+        '<button class="ca del" title="Elimina" onclick="askDelete('+c.id+',event)">&#x2715;</button>'+
+      '</div>'+
+      '</div>';
+    el.appendChild(d);
+  });
+  document.getElementById('fcount').textContent=filtered.length;
+}
+function updateHeaderCount(){
+  document.getElementById('hc').textContent=coins.length;
+}
+renderList();
+updateHeaderCount();
+</script>
+</body>
+</html>

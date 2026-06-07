@@ -350,11 +350,7 @@ function getMax(gl){
   m = Math.max(m, italiaCount);
   return m;
 }
-var map = L.map("map", {
-  center: [38, 18],
-  zoom: 5,
-  minZoom: 5,       // ← dezoom bloccato
-  maxZoom: 8,
+var map = L.map("map", { center:[38,18], zoom:4, minZoom:3, maxZoom:8,
   attributionControl: false
 });
 var tt = document.getElementById("tt");

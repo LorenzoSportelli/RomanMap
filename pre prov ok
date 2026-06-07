@@ -344,17 +344,17 @@ var PROVS = [
   "Syria",
   "Tarraconensis",
   "Thracia",
-  "Italia — Regio I",
-  "Italia — Regio II",
-  "Italia — Regio III",
-  "Italia — Regio IV",
-  "Italia — Regio V",
-  "Italia — Regio VI",
-  "Italia — Regio VII",
-  "Italia — Regio VIII",
-  "Italia — Regio IX",
-  "Italia — Regio X",
-  "Italia — Regio XI"
+  "Italia — Regio I — Latium et Campania",
+  "Italia — Regio II — Apulia et Calabria",
+  "Italia — Regio III — Lucania et Bruttii",
+  "Italia — Regio IV — Samnium",
+  "Italia — Regio V — Picenum",
+  "Italia — Regio VI — Umbria et Ager Gallicus",
+  "Italia — Regio VII — Etruria",
+  "Italia — Regio VIII — Aemilia",
+  "Italia — Regio IX — Liguria",
+  "Italia — Regio X — Venetia et Histria",
+  "Italia — Regio XI — Transpadana",
 ];
 
 var GEO_MAP = {
@@ -402,17 +402,17 @@ var GEO_MAP = {
   "Tarraconensis":"Tarraconensis",
   "Thracia":"Thracia",
   "Italia":"Italia",
-  "I":"Italia — Regio I",
-  "II":"Italia — Regio II",
-  "III":"Italia — Regio III",
-  "IV":"Italia — Regio IV",
-  "V":"Italia — Regio V",
-  "VI":"Italia — Regio VI",
-  "VII":"Italia — Regio VII",
-  "VIII":"Italia — Regio VIII",
-  "IX":"Italia — Regio IX",
-  "X":"Italia — Regio X",
-  "XI":"Italia — Regio XI"
+  "I":"Italia — Regio I — Latium et Campania",
+  "II":"Italia — Regio II — Apulia et Calabria",
+  "III":"Italia — Regio III — Lucania et Bruttii",
+  "IV":"Italia — Regio IV — Samnium",
+  "V":"Italia — Regio V — Picenum",
+  "VI":"Italia — Regio VI — Umbria et Ager Gallicus",
+  "VII":"Italia — Regio VII — Etruria",
+  "VIII":"Italia — Regio VIII — Aemilia",
+  "IX":"Italia — Regio IX — Liguria",
+  "X":"Italia — Regio X — Venetia et Histria",
+  "XI":"Italia — Regio XI — Transpadana"
 };
 
 const STEPS = [

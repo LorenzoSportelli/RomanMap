@@ -185,6 +185,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <button class="ftab on" onclick="setFilter('all',this)">Tutto</button>
         <button class="ftab" onclick="setFilter('rep',this)">Repubblicane</button>
         <button class="ftab" onclick="setFilter('imp',this)">Imperiali</button>
+        <button class="ftab" onclick="setFilter('prov',this)">Provinciali</button>
       </div>
     </div>
     <div id="clist"></div>
@@ -206,6 +207,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="radio-group">
         <div class="radio-opt on" id="r-rep" onclick="setPeriod('rep')">REPUBBLICANA</div>
         <div class="radio-opt" id="r-imp" onclick="setPeriod('imp')">IMPERIALE</div>
+        <div class="radio-opt" id="r-prov" onclick="setPeriod('prov')">PROVINCIALE</div>
       </div>
     </div>
 
@@ -683,6 +685,7 @@ function renderList(){
   var filtered=coins.filter(function(c){
     if(filterMode==='rep'&&c.period!=='rep')return false;
     if(filterMode==='imp'&&c.period!=='imp')return false;
+    if(filterMode==='prov'&&c.period!=='prov')return false;
     if(!q)return true;
     return (c.ref+c.prov+c.desc+c.mag+c.imp+c.denom+c.mint).toLowerCase().indexOf(q)>=0;
   });
@@ -696,8 +699,24 @@ function renderList(){
   filtered.forEach(function(c){
     var d=document.createElement('div');
     d.className='crow';
-    var who=c.period==='rep'?c.mag:(c.imp||(c.auth||''));
-    var tags='<span class="ctag '+(c.period==='rep'?'ct-rep':'ct-imp')+'">'+(c.period==='rep'?'REP':'IMP')+'</span>';
+    
+    var who =
+      c.period === 'rep' ? c.mag :
+      c.period === 'imp' ? (c.imp || c.auth || '') :
+      (c.auth || '');
+    
+    var periodClass =
+      c.period === 'rep' ? 'ct-rep' :
+      c.period === 'imp' ? 'ct-imp' :
+      'ct-prov';
+    
+    var periodLabel =
+      c.period === 'rep' ? 'REP' :
+      c.period === 'imp' ? 'IMP' :
+      'PROV';
+    
+    var tags = '<span class="ctag ' + periodClass + '">' + periodLabel + '</span>';
+    
     if(c.metal)tags+='<span class="ctag ct-mat">'+c.metal.split(' ')[0]+'</span>';
     if(c.denom)tags+='<span class="ctag ct-mat">'+c.denom+'</span>';
     if(c.prov)tags+='<span class="ctag ct-prov">'+c.prov.replace('Italia — ','')+'</span>';

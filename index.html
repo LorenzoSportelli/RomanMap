@@ -42,7 +42,30 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 #tt .coin-item{color:var(--text2);padding:1px 0}
 
 #legend{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:900;background:#13100acc;border:1px solid var(--border);padding:5px 14px;display:flex;align-items:center;gap:8px;font-size:.7rem;color:var(--text2);pointer-events:none;font-family:'Cinzel',serif;letter-spacing:.05em}
-#legbar{width:140px;height:8px;border-radius:1px;background:linear-gradient(to right,#c8c8b3,#50d068,#98b820,#d07010,#780808)}
+#legbar{
+  width:150px;
+  height:9px;
+  border-radius:1px;
+  background:linear-gradient(
+    to right,
+    rgb(207,207,207),
+    rgb(121,160,211),
+    rgb(128,172,160),
+    rgb(171,197,132),
+    rgb(236,213,120),
+    rgb(239,201,96),
+    rgb(243,184,75),
+    rgb(242,171,61),
+    rgb(241,157,52),
+    rgb(238,143,46),
+    rgb(234,127,41),
+    rgb(229,111,38),
+    rgb(223,96,35),
+    rgb(218,79,31),
+    rgb(214,61,28),
+    rgb(211,44,25)
+  );
+}
 
 #panel{width:var(--panel);background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
 #panel-head{padding:12px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
@@ -300,11 +323,23 @@ var GEO_MAP = {
   "Tarraconensis":"Tarraconensis","Thracia":"Thracia","Italia":"Italia"
 };
 
-var STEPS = [
-  [200,200,183],[168,215,168],[128,200,140],[88,180,118],[58,160,98],
-  [48,145,80],[80,165,50],[130,180,35],[180,185,25],[210,175,22],
-  [225,150,22],[228,125,20],[225,100,18],[218,78,15],[205,58,12],
-  [188,40,10],[165,28,9],[140,18,8],[112,12,7],[85,8,6],[60,5,5]
+const STEPS = [
+  [207,207,207],
+  [121,160,211],
+  [128,172,160],
+  [171,197,132],
+  [236,213,120],
+  [239,201,96],
+  [243,184,75],
+  [242,171,61],
+  [241,157,52],
+  [238,143,46],
+  [234,127,41],
+  [229,111,38],
+  [223,96,35],
+  [218,79,31],
+  [214,61,28],
+  [211,44,25]
 ];
 
 var coins = JSON.parse(localStorage.getItem('numismatica_v2') || '[]');
@@ -327,10 +362,16 @@ function save(){
   });
 })();
 
-function val2color(v,mx){
-  if(!v||!mx)return"#c8c8b3";
-  var i=Math.min(Math.ceil(v/mx*20),20);
-  var s=STEPS[i];return"rgb("+s[0]+","+s[1]+","+s[2]+")";
+function val2color(v, mx) {
+
+  if (!v || !mx)
+    return "rgb(" + STEPS[0].join(",") + ")";
+
+  var idx = Math.ceil((v / mx) * (STEPS.length - 1));
+
+  idx = Math.max(1, Math.min(idx, STEPS.length - 1));
+
+  return "rgb(" + STEPS[idx].join(",") + ")";
 }
 
 function geoToOur(geoName){

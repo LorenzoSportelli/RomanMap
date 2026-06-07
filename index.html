@@ -107,6 +107,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   border-color:#ffb25c33;
   background:#2a1a08;
 }
+
+.ct-prov-name{
+  color:#7de3a1;
+  border:1px solid #7de3a133;
+  background:#0f1f14;
+}
   
 .ct-mat{color:#807060;border-color:#80706033;background:#1a1810}
 .crow-actions{float:right;display:flex;gap:3px;opacity:0;transition:opacity .15s}
@@ -748,7 +754,10 @@ function renderList(){
     
     if(c.metal)tags+='<span class="ctag ct-mat">'+c.metal.split(' ')[0]+'</span>';
     if(c.denom)tags+='<span class="ctag ct-mat">'+c.denom+'</span>';
-    if(c.prov)tags+='<span class="ctag ct-prov">'+c.prov.replace('Italia — ','')+'</span>';
+    if(c.prov){
+      var p = c.prov.replace('Italia — ','');
+      tags += '<span class="ctag ct-prov-name">'+p+'</span>';
+    }
     var refLine=c.ref||'(senza riferimento)';
     d.innerHTML=
       '<div style="display:flex;align-items:flex-start;gap:4px">'+

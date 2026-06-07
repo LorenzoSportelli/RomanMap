@@ -384,17 +384,18 @@ function geoToOur(geoName){
 }
 
 function provCount(ourName){
+
   return coins.filter(function(c){
 
-    // una moneta assegnata a "Italia"
-    // conta per tutte le regioni italiane
     if(c.prov === "Italia"){
-      return ourName === "Italia" ||
-             ourName.startsWith("Italia");
+      return ourName &&
+             (ourName === "Italia" ||
+              ourName.indexOf("Italia") === 0);
     }
 
     if(ourName === "Italia"){
-      return c.prov && c.prov.startsWith("Italia");
+      return c.prov &&
+             c.prov.indexOf("Italia") === 0;
     }
 
     return c.prov === ourName;

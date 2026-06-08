@@ -343,9 +343,16 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     </div>
 
     <div id="block-prov" style="display:none">
-      <div class="frow">
-        <label>PROVINCIAL AUTHORITY / ISSUER</label>
-        <input id="f-prov-auth" type="text" placeholder="Governor, city, local magistrate…">
+      <div class="fgrid">
+        <div class="frow">
+          <label>EMPEROR / AUTHORITY</label>
+          <input id="f-prov-imp" type="text" placeholder="Trajan, Hadrian, Antoninus Pius…">
+        </div>
+    
+        <div class="frow">
+          <label>PROVINCIAL AUTHORITY / ISSUER <span style="font-size:.5rem">(if different)</span></label>
+          <input id="f-prov-auth" type="text" placeholder="City, governor, koinon, local magistrate…">
+        </div>
       </div>
     </div>
 
@@ -722,23 +729,35 @@ function setPeriod(p){
 function openModal(id){
   editId=id||null;
   document.getElementById('modal-title').textContent=id?'EDIT COIN':'ADD COIN';
-  ['f-ref','f-mint','f-mag','f-imp','f-auth','f-prov-auth','f-denom','f-date','f-desc','f-notes'].forEach(function(i){
+
+  ['f-ref','f-mint','f-mag','f-imp','f-auth','f-prov-imp','f-prov-auth','f-denom','f-date','f-desc','f-notes'].forEach(function(i){
     document.getElementById(i).value='';
   });
+
   document.getElementById('f-metal').value='';
   document.getElementById('f-prov').value=PROVS[0];
+
   setPeriod('rep');
+
   if(id){
     var c=coins.find(function(x){return x.id===id;});
+
     if(c){
       setPeriod(c.period);
-      ['ref','mint','mag','imp','auth','authProv','metal','denom','date','desc','notes'].forEach(function(k){
+
+      ['ref','mint','mag','imp','auth','metal','denom','date','desc','notes'].forEach(function(k){
         var el=document.getElementById('f-'+k);
-        if(el)el.value=c[k]||'';
+        if(el) el.value = c[k] || '';
       });
-      document.getElementById('f-prov').value=c.prov||PROVS[0];
+
+      // campi provinciali
+      document.getElementById('f-prov-imp').value = c.provImp || '';
+      document.getElementById('f-prov-auth').value = c.authProv || '';
+
+      document.getElementById('f-prov').value = c.prov || PROVS[0];
     }
   }
+
   document.getElementById('overlay').classList.add('open');
 }
 
@@ -765,6 +784,7 @@ function saveCoin(){
     desc: document.getElementById('f-desc').value.trim(),
     notes: document.getElementById('f-notes').value.trim(),
     authProv: document.getElementById('f-prov-auth').value.trim(),
+    provImp: document.getElementById('f-prov-imp').value.trim(),
   };
   if(editId){
     var idx=coins.findIndex(function(x){return x.id===editId;});
@@ -815,7 +835,7 @@ function renderList(){
     var who =
       c.period === 'rep' ? c.mag :
       c.period === 'imp' ? (c.imp || c.auth || '') :
-      c.period === 'prov' ? (c.auth || c.imp || '') :
+      c.period === 'prov' ? [c.provImp, c.authProv].filter(Boolean).join(' · ') :
       '';
     
     var periodClass =

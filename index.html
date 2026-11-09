@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Roman Empire — Numismatic Collection</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="[unpkg.com](https://unpkg.com/leaflet@1.9.4/dist/leaflet.css)"/>
+<link href="[fonts.googleapis.com](https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap)" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -15,7 +15,7 @@
   --text:#1a1a1a;--text2:#555550;--text3:#999990;
   --red:#c0392b;--panel:300px;
 }
-html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif}
 
 #hdr{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;position:relative;z-index:1000}
 #hdr-title{font-family:'Inter', sans-serif;;font-size:.85rem;color:var(--text);letter-spacing:.15em;font-weight:500}
@@ -66,6 +66,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     rgb(211,44,25)
   );
 }
+#legend .leg-hl{display:none;align-items:center;gap:5px;margin-left:10px;padding-left:10px;border-left:1px solid var(--border)}
+#legend .leg-hl i{display:inline-block;width:14px;height:9px;border:2px solid #2a7a4a;background:transparent}
+#legend.has-hl .leg-hl{display:flex}
 
 #panel{width:var(--panel);background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
 #panel-head{padding:12px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
@@ -177,6 +180,24 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .radio-opt.on{border-color:var(--text);background:var(--bg3);color:var(--text)}
 .radio-opt:hover:not(.on){border-color:var(--border2);color:var(--text2)}
 
+/* ---- Geographic multi-select picker ---- */
+.picker{position:relative}
+.pk-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px}
+.pk-chips:empty{display:none}
+.pk-chip{display:inline-flex;align-items:center;gap:5px;font-family:'Inter',sans-serif;font-size:.68rem;letter-spacing:.03em;padding:2px 6px 2px 8px;border:1px solid #2a7a4a33;background:#eaf5ee;color:#2a7a4a;border-radius:3px;max-width:100%}
+.pk-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pk-chip b{cursor:pointer;font-weight:400;color:var(--text3);font-size:.85rem;line-height:1}
+.pk-chip b:hover{color:var(--red)}
+.pk-list{display:none;position:absolute;left:0;right:0;top:100%;max-height:170px;overflow-y:auto;background:var(--bg2);border:1px solid var(--border2);z-index:50;box-shadow:0 4px 20px #00000018}
+.pk-list::-webkit-scrollbar{width:3px}
+.pk-list::-webkit-scrollbar-thumb{background:var(--border)}
+.picker.open .pk-list{display:block}
+.pk-item{padding:5px 9px;font-family:'Crimson Text',serif;font-size:.9rem;color:var(--text2);cursor:pointer;border-bottom:1px solid #00000006}
+.pk-item:hover{background:var(--bg3);color:var(--text)}
+.pk-item small{font-family:'Inter',sans-serif;font-size:.6rem;color:var(--text3);letter-spacing:.04em;margin-left:6px}
+.pk-none{padding:6px 9px;font-style:italic;font-size:.8rem;color:var(--text3)}
+.pk-hint{font-family:'Inter',sans-serif;font-size:.58rem;color:var(--text3);letter-spacing:.05em;margin-top:4px;font-style:italic}
+
 .btn{background:transparent;border:1px solid var(--border2);color:var(--text2);font-family:'Inter', sans-serif;;font-size:.65rem;letter-spacing:.1em;padding:7px 18px;cursor:pointer;transition:all .2s}
 .btn:hover{border-color:var(--text);color:var(--text)}
 .btn-gold{background:var(--text);border-color:var(--text);color:var(--bg2)}
@@ -187,6 +208,24 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 #confirm-box{background:var(--bg2);border:1px solid var(--border2);padding:24px 28px;text-align:center;max-width:340px}
 #confirm-box p{font-style:italic;color:var(--text2);margin-bottom:14px;font-size:.95rem}
 #confirm-box .btns{display:flex;gap:8px;justify-content:center}
+
+/* ---- Coin detail modal ---- */
+#detail{display:none;position:fixed;inset:0;background:#00000044;z-index:2500;align-items:center;justify-content:center}
+#detail.open{display:flex}
+#detail-box{background:var(--bg2);border:1px solid var(--border2);width:480px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 60px #00000022}
+#detail-head{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+#detail-head h3{font-family:'Inter', sans-serif;font-size:.8rem;color:var(--text);letter-spacing:.12em;font-weight:500;flex:1}
+#detail-head button{background:transparent;border:none;color:var(--text3);font-size:1.2rem;cursor:pointer;line-height:1}
+#detail-head button:hover{color:var(--text)}
+#detail-body{padding:16px 18px;overflow-y:auto;flex:1}
+#detail-body::-webkit-scrollbar{width:3px}
+#detail-body::-webkit-scrollbar-thumb{background:var(--border)}
+#detail-foot{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+.drow{margin-bottom:12px}
+.drow label{display:block;font-family:'Inter', sans-serif;font-size:.6rem;color:var(--text3);letter-spacing:.1em;margin-bottom:3px}
+.drow div{font-family:'Crimson Text',serif;font-size:.98rem;color:var(--text);white-space:pre-wrap;line-height:1.4}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.dsep{height:1px;background:var(--border);margin:6px 0 14px}
 
 .leaflet-container{background:#e8e8e0}
 .leaflet-control-zoom a{background:var(--bg2)!important;color:var(--text)!important;border-color:var(--border)!important}
@@ -231,13 +270,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   font-weight:600;
 }
 
-#hdr-title{
-  font-family:'Inter', sans-serif;
-  font-size:1.05rem;
-  letter-spacing:.12em;
-  font-weight:600;
-}
-
 #hdr-right{
   margin-left:auto;
   display:flex;
@@ -269,7 +301,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div id="map"></div>
     <div id="loading"><b>Loading map…</b><small>Roman provinces at 117 AD</small></div>
     <div id="tt"></div>
-    <div id="legend"><span>0</span><div id="legbar"></div><span id="legmax">0</span></div>
+    <div id="legend"><span>0</span><div id="legbar"></div><span id="legmax">0</span><div class="leg-hl"><i></i><span>SELECTION</span></div></div>
   </div>
 
   <div id="panel">
@@ -314,12 +346,52 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div class="fgrid">
       <div class="frow">
         <label>PROVINCE / REGION <span>*</span></label>
-        <select id="f-prov"></select>
+        <select id="f-prov" onchange="previewHighlight()"></select>
       </div>
       <div class="frow">
         <label>MINT</label>
         <input id="f-mint" type="text" placeholder="Roma, Lugdunum…">
       </div>
+    </div>
+
+    <div class="fsep"><div class="fsep-label">GEOGRAPHY</div></div>
+
+    <div class="frow">
+      <label>ADDITIONAL PROVINCES</label>
+      <div class="picker" id="pk-provs">
+        <div class="pk-chips"></div>
+        <input class="pk-in" type="text" placeholder="Search province…" autocomplete="off">
+        <div class="pk-list"></div>
+      </div>
+    </div>
+
+    <div class="fgrid">
+      <div class="frow">
+        <label>REGION</label>
+        <div class="picker" id="pk-regions">
+          <div class="pk-chips"></div>
+          <input class="pk-in" type="text" placeholder="Search region…" autocomplete="off">
+          <div class="pk-list"></div>
+        </div>
+      </div>
+      <div class="frow">
+        <label>SUBREGION</label>
+        <div class="picker" id="pk-subs">
+          <div class="pk-chips"></div>
+          <input class="pk-in" type="text" placeholder="Search subregion…" autocomplete="off">
+          <div class="pk-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frow">
+      <label>CITY</label>
+      <div class="picker" id="pk-cities">
+        <div class="pk-chips"></div>
+        <input class="pk-in" type="text" placeholder="Search city…" autocomplete="off">
+        <div class="pk-list"></div>
+      </div>
+      <div class="pk-hint" id="geo-hint"></div>
     </div>
 
     <div class="fsep"><div class="fsep-label">ISSUE</div></div>
@@ -407,11 +479,25 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 </div>
 </div>
 
+<!-- COIN DETAIL MODAL -->
+<div id="detail" onclick="if(event.target===this)closeDetail()">
+<div id="detail-box">
+  <div id="detail-head">
+    <h3 id="detail-title">COIN</h3>
+    <button onclick="closeDetail()">&#215;</button>
+  </div>
+  <div id="detail-body"></div>
+  <div id="detail-foot">
+    <button class="btn" onclick="closeDetail()">CLOSE</button>
+    <button class="btn btn-gold" onclick="editFromDetail()">EDIT</button>
+  </div>
+</div>
+</div>
+
 <!-- DELETE CONFIRMATION -->
 <div id="confirm">
 <div id="confirm-box">
   <p class="confirm-text">REMOVE THIS COIN FROM THE COLLECTION?</p>
-  </p>
   <div class="btns">
     <button class="btn" onclick="closeConfirm()">CANCEL</button>
     <button class="btn" style="border-color:var(--red);color:#c0392b" onclick="doDelete()">DELETE</button>
@@ -419,7 +505,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="[unpkg.com](https://unpkg.com/leaflet@1.9.4/dist/leaflet.js)"></script>
 <script>
 var PROVS = [
   "Achaia",
@@ -536,6 +622,149 @@ var GEO_MAP = {
   "XI":"Italia — Regio XI — Transpadana"
 };
 
+/* =====================================================================
+   GEOGRAPHICAL DATA — centralized, data-driven, editable.
+   Levels: REGION (historical) · SUBREGION · CITY · PROVINCE (Roman, 117 AD)
+   Relationships are many-to-many. Resolution order for map colouring:
+     city.provs → city.sub.provs → city.region → REGION_PROVINCES
+   Leave an array EMPTY when a relationship is not documented; never guess.
+   ===================================================================== */
+
+var REGIONS = [
+  "Aegina","Aeolis","Africa","Arabia","Armenia","Attica","Bithynia","Boeotia",
+  "Bosporus","Cappadocia","Caria","Cilicia","Commagene","Corinthia","Crete",
+  "Cyclades","Cyprus","Cyrenaica","Dacia","Egypt","Euboea","Galatia","Galilaea",
+  "Gaul","Hispania","Illyricum","Ionia","Italy","Judaea","Lesbus","Locris",
+  "Lycaonia","Lycia","Lydia","Macedonia","Mauretania","Moesia","Mysia",
+  "Pamphylia","Paphlagonia","Peloponnesus","Phocis","Phoenicia","Phrygia",
+  "Pisidia","Pontus","Samaria","Sardinia","Sarmata","Sicily","Syria",
+  "Thessaly","Thrace","Troas"
+];
+
+/* Region → Roman province(s) at 117 AD. Values must be names from PROVS. */
+var REGION_PROVINCES = {
+  "Aegina":       ["Achaia"],
+  "Aeolis":       ["Asia"],
+  "Africa":       ["Africa Proconsularis"],
+  "Arabia":       ["Arabia"],
+  "Armenia":      ["Armenia Mesopotamia"],
+  "Attica":       ["Achaia"],
+  "Bithynia":     ["Bithynia et Pontus"],
+  "Boeotia":      ["Achaia"],
+  "Bosporus":     [],                       // client kingdom — not a province of the map
+  "Cappadocia":   ["Galatia et Cappadocia"],
+  "Caria":        ["Asia"],
+  "Cilicia":      ["Cilicia"],
+  "Commagene":    ["Syria"],
+  "Corinthia":    ["Achaia"],
+  "Crete":        ["Creta et Cyrene"],
+  "Cyclades":     ["Achaia"],
+  "Cyprus":       [],                       // Cyprus is not among the provinces of this map
+  "Cyrenaica":    ["Creta et Cyrene"],
+  "Dacia":        ["Dacia"],
+  "Egypt":        ["Aegyptus"],
+  "Euboea":       ["Achaia"],
+  "Galatia":      ["Galatia et Cappadocia"],
+  "Galilaea":     ["Iudaea"],
+  "Gaul":         ["Aquitania","Lugdunensis","Belgica","Narbonensis"],
+  "Hispania":     ["Baetica","Lusitania","Tarraconensis"],
+  "Illyricum":    ["Dalmatia","Pannonia Superior","Pannonia Inferior"],
+  "Ionia":        ["Asia"],
+  "Italy":        ["Italia"],
+  "Judaea":       ["Iudaea"],
+  "Lesbus":       ["Asia"],
+  "Locris":       ["Achaia"],
+  "Lycaonia":     ["Galatia et Cappadocia","Cilicia"],
+  "Lycia":        ["Lycia et Pamphylia"],
+  "Lydia":        ["Asia"],
+  "Macedonia":    ["Macedonia"],
+  "Mauretania":   ["Mauretania Caesariensis","Mauretania Tingitana"],
+  "Moesia":       ["Moesia Superior","Moesia Inferior"],
+  "Mysia":        ["Asia"],
+  "Pamphylia":    ["Lycia et Pamphylia"],
+  "Paphlagonia":  ["Bithynia et Pontus","Galatia et Cappadocia"],
+  "Peloponnesus": ["Achaia"],
+  "Phocis":       ["Achaia"],
+  "Phoenicia":    ["Syria"],
+  "Phrygia":      ["Asia","Galatia et Cappadocia"],
+  "Pisidia":      ["Galatia et Cappadocia"],
+  "Pontus":       ["Bithynia et Pontus","Galatia et Cappadocia"],
+  "Samaria":      ["Iudaea"],
+  "Sardinia":     ["Sardinia et Corsica"],
+  "Sarmata":      [],                       // not a Roman province
+  "Sicily":       ["Sicilia"],
+  "Syria":        ["Syria"],
+  "Thessaly":     ["Macedonia"],
+  "Thrace":       ["Thracia"],
+  "Troas":        ["Asia"]
+};
+
+/* Subregions: {id, name, region, provs?}  — provs overrides region inheritance. */
+var SUBREGIONS = [
+  {id:"sub-cilicia-trachea", name:"Cilicia Trachea", region:"Cilicia"},
+  {id:"sub-cilicia-pedias",  name:"Cilicia Pedias",  region:"Cilicia"},
+  {id:"sub-pelop-achaea",    name:"Achaea",          region:"Peloponnesus"},
+  {id:"sub-pelop-argolis",   name:"Argolis",         region:"Peloponnesus"},
+  {id:"sub-pelop-laconia",   name:"Laconia",         region:"Peloponnesus"}
+];
+
+/* Cities: {id, name, region, sub?, provs?} — id must be unique (homonyms allowed
+   with different ids). Displayed as "City - Region (Subregion)".
+   Only the example cities supplied so far are listed; add the full list here. */
+var CITIES = [
+  {id:"city-cietis-cilicia",      name:"Cietis",    region:"Cilicia",      sub:"sub-cilicia-trachea"},
+  {id:"city-adana-cilicia",       name:"Adana",     region:"Cilicia",      sub:"sub-cilicia-pedias"},
+  {id:"city-anemurium-cilicia",   name:"Anemurium", region:"Cilicia",      sub:"sub-cilicia-trachea"},
+  {id:"city-aegira-peloponnesus", name:"Aegira",    region:"Peloponnesus", sub:"sub-pelop-achaea"},
+  {id:"city-argos-peloponnesus",  name:"Argos",     region:"Peloponnesus", sub:"sub-pelop-argolis"},
+  {id:"city-sparta-peloponnesus", name:"Sparta",    region:"Peloponnesus", sub:"sub-pelop-laconia"},
+  {id:"city-athens-attica",       name:"Athens",    region:"Attica"},
+  {id:"city-ephesus-ionia",       name:"Ephesus",   region:"Ionia"}
+];
+
+function subById(id){ for(var i=0;i<SUBREGIONS.length;i++) if(SUBREGIONS[i].id===id) return SUBREGIONS[i]; return null; }
+function cityById(id){ for(var i=0;i<CITIES.length;i++) if(CITIES[i].id===id) return CITIES[i]; return null; }
+function subLabel(s){ return s ? s.name+' ('+s.region+')' : ''; }
+function cityLabel(c){
+  if(!c) return '';
+  var s = c.sub ? subById(c.sub) : null;
+  return c.name+' - '+c.region+(s?' ('+s.name+')':'');
+}
+function provsForRegion(r){ return (REGION_PROVINCES[r]||[]).slice(); }
+function provsForSub(id){
+  var s = subById(id); if(!s) return [];
+  if(s.provs && s.provs.length) return s.provs.slice();
+  return provsForRegion(s.region);
+}
+function provsForCity(id){
+  var c = cityById(id); if(!c) return [];
+  if(c.provs && c.provs.length) return c.provs.slice();
+  if(c.sub){ var sp = provsForSub(c.sub); if(sp.length) return sp; }
+  return provsForRegion(c.region);
+}
+function emptyGeo(){ return {provs:[],regions:[],subs:[],cities:[]}; }
+function normGeo(g){
+  g = g || {};
+  return {
+    provs:  Array.isArray(g.provs)?g.provs.slice():[],
+    regions:Array.isArray(g.regions)?g.regions.slice():[],
+    subs:   Array.isArray(g.subs)?g.subs.slice():[],
+    cities: Array.isArray(g.cities)?g.cities.slice():[]
+  };
+}
+/* Union of all provinces implied by a geo selection (+ optional primary province). */
+function resolveProvinces(geo, primary){
+  var set = {};
+  function add(arr){ arr.forEach(function(p){ if(p) set[p]=true; }); }
+  geo = normGeo(geo);
+  if(primary) set[primary]=true;
+  add(geo.provs);
+  geo.regions.forEach(function(r){ add(provsForRegion(r)); });
+  geo.subs.forEach(function(s){ add(provsForSub(s)); });
+  geo.cities.forEach(function(c){ add(provsForCity(c)); });
+  return Object.keys(set);
+}
+
 const STEPS = [
   [207,207,207],
   [121,160,211],
@@ -559,6 +788,7 @@ var coins = JSON.parse(localStorage.getItem('numismatica_v2') || '[]');
 var nextId = parseInt(localStorage.getItem('numismatica_nid') || '1');
 var editId = null;
 var deleteId = null;
+var detailId = null;
 var filterMode = 'all';
 var currentPeriod = 'rep';
 
@@ -639,7 +869,7 @@ var tt=document.getElementById("tt");
 var mw=document.getElementById("mapwrap");
 var geoLayer=null;
 
-fetch("https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces.geojson")
+fetch("[cdn.jsdelivr.net](https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces.geojson)")
   .then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
   .then(function(data){
     geoLayer=L.geoJSON(data,{
@@ -712,16 +942,40 @@ function postt(e){
   tt.style.left=x+"px";tt.style.top=y+"px";
 }
 
+/* ---- Selection highlight layer (on top of coin-count gradient) ---- */
+var highlightSet = {};
+function setHighlight(list){
+  highlightSet = {};
+  (list||[]).forEach(function(p){ highlightSet[p]=true; });
+  document.getElementById('legend').classList.toggle('has-hl', Object.keys(highlightSet).length>0);
+  updateMap();
+}
+function clearHighlight(){ setHighlight([]); }
+function isHighlighted(our){
+  if(!our) return false;
+  if(highlightSet[our]) return true;
+  if(our.indexOf("Italia")===0 && highlightSet["Italia"]) return true;
+  if(our==="Italia"){ for(var k in highlightSet){ if(k.indexOf("Italia")===0) return true; } }
+  return false;
+}
+
 function updateMap(){
   if(!geoLayer)return;
   var mx=getMax(geoLayer);
   document.getElementById("legmax").textContent=mx;
+  var hl=[];
   geoLayer.eachLayer(function(l){
     var n=l.feature&&l.feature.properties&&l.feature.properties.name||"";
     var our=geoToOur(n);
     var v=our?provCount(our):0;
-    l.setStyle({fillColor:val2color(v,mx),fillOpacity:.83,color:"#6a5020",weight:.8});
+    if(isHighlighted(our)){
+      l.setStyle({fillColor:val2color(v,mx),fillOpacity:.95,color:"#2a7a4a",weight:2.4});
+      hl.push(l);
+    } else {
+      l.setStyle({fillColor:val2color(v,mx),fillOpacity:.83,color:"#6a5020",weight:.8});
+    }
   });
+  hl.forEach(function(l){ l.bringToFront(); });
 }
 
 function setPeriod(p){
@@ -736,6 +990,101 @@ function setPeriod(p){
   document.getElementById('block-prov').style.display=p==='prov'?'':'none';
 }
 
+/* =====================================================================
+   MULTI-SELECT PICKERS (provinces / regions / subregions / cities)
+   ===================================================================== */
+var geoSel = emptyGeo();
+
+var PICKERS = {
+  provs:{
+    el:'pk-provs',
+    items:function(){ return PROVS.map(function(p){ return {id:p,label:p}; }); },
+    chip:function(id){ return id; }
+  },
+  regions:{
+    el:'pk-regions',
+    items:function(){ return REGIONS.map(function(r){ return {id:r,label:r,meta:(REGION_PROVINCES[r]||[]).join(', ')}; }); },
+    chip:function(id){ return id; }
+  },
+  subs:{
+    el:'pk-subs',
+    items:function(){
+      var list = SUBREGIONS;
+      if(geoSel.regions.length) list = list.filter(function(s){ return geoSel.regions.indexOf(s.region)>=0; });
+      return list.map(function(s){ return {id:s.id,label:s.name,meta:s.region}; });
+    },
+    chip:function(id){ return subLabel(subById(id)) || id; }
+  },
+  cities:{
+    el:'pk-cities',
+    items:function(){
+      var list = CITIES;
+      if(geoSel.subs.length) list = list.filter(function(c){ return c.sub && geoSel.subs.indexOf(c.sub)>=0; });
+      else if(geoSel.regions.length) list = list.filter(function(c){ return geoSel.regions.indexOf(c.region)>=0; });
+      return list.map(function(c){ return {id:c.id,label:cityLabel(c)}; });
+    },
+    chip:function(id){ return cityLabel(cityById(id)) || id; }
+  }
+};
+
+function pkRender(key){
+  var cfg=PICKERS[key], root=document.getElementById(cfg.el);
+  var chips=root.querySelector('.pk-chips'), list=root.querySelector('.pk-list'), inp=root.querySelector('.pk-in');
+  chips.innerHTML='';
+  geoSel[key].forEach(function(id){
+    var ch=document.createElement('span'); ch.className='pk-chip';
+    ch.innerHTML='<span></span><b title="Remove">&#x2715;</b>';
+    ch.firstChild.textContent=cfg.chip(id);
+    ch.lastChild.onclick=function(){ pkRemove(key,id); };
+    chips.appendChild(ch);
+  });
+  var q=(inp.value||'').toLowerCase();
+  var items=cfg.items().filter(function(it){
+    return geoSel[key].indexOf(it.id)<0 && (!q || (it.label+' '+(it.meta||'')).toLowerCase().indexOf(q)>=0);
+  });
+  list.innerHTML='';
+  if(!items.length){ list.innerHTML='<div class="pk-none">No matches</div>'; }
+  items.forEach(function(it){
+    var d=document.createElement('div'); d.className='pk-item';
+    d.textContent=it.label;
+    if(it.meta){ var s=document.createElement('small'); s.textContent=it.meta; d.appendChild(s); }
+    d.onmousedown=function(e){ e.preventDefault(); pkAdd(key,it.id); };
+    list.appendChild(d);
+  });
+}
+function pkAdd(key,id){
+  if(geoSel[key].indexOf(id)<0) geoSel[key].push(id);
+  var inp=document.getElementById(PICKERS[key].el).querySelector('.pk-in'); inp.value='';
+  pkRenderAll(); previewHighlight();
+}
+function pkRemove(key,id){
+  geoSel[key]=geoSel[key].filter(function(x){ return x!==id; });
+  pkRenderAll(); previewHighlight();
+}
+function pkRenderAll(){ for(var k in PICKERS) pkRender(k); }
+function pkReset(geo){ geoSel=normGeo(geo); pkRenderAll(); }
+
+(function(){
+  Object.keys(PICKERS).forEach(function(key){
+    var root=document.getElementById(PICKERS[key].el), inp=root.querySelector('.pk-in');
+    inp.addEventListener('focus',function(){ pkRender(key); root.classList.add('open'); });
+    inp.addEventListener('input',function(){ pkRender(key); root.classList.add('open'); });
+    inp.addEventListener('blur',function(){ setTimeout(function(){ root.classList.remove('open'); },120); });
+    inp.addEventListener('keydown',function(e){ if(e.key==='Escape'){ root.classList.remove('open'); inp.blur(); } });
+  });
+})();
+
+/* Live preview of all provinces implied by the current form selection. */
+function previewHighlight(){
+  if(!document.getElementById('overlay').classList.contains('open')) return;
+  var primary=document.getElementById('f-prov').value;
+  var provs=resolveProvinces(geoSel, primary);
+  setHighlight(provs);
+  var hint=document.getElementById('geo-hint');
+  var extra=provs.filter(function(p){ return p!==primary; });
+  hint.textContent = extra.length ? 'Map: '+extra.join(' · ') : '';
+}
+
 function openModal(id){
   editId=id||null;
   document.getElementById('modal-title').textContent=id?'EDIT COIN':'ADD COIN';
@@ -746,6 +1095,7 @@ function openModal(id){
 
   document.getElementById('f-metal').value='';
   document.getElementById('f-prov').value=PROVS[0];
+  pkReset(emptyGeo());
 
   setPeriod('rep');
 
@@ -765,15 +1115,18 @@ function openModal(id){
       document.getElementById('f-prov-auth').value = c.authProv || '';
 
       document.getElementById('f-prov').value = c.prov || PROVS[0];
+      pkReset(c.geo);
     }
   }
 
   document.getElementById('overlay').classList.add('open');
+  previewHighlight();
 }
 
 function closeModal(){
   document.getElementById('overlay').classList.remove('open');
   editId=null;
+  clearHighlight();
 }
 
 function saveCoin(){
@@ -795,6 +1148,7 @@ function saveCoin(){
     notes: document.getElementById('f-notes').value.trim(),
     authProv: document.getElementById('f-prov-auth').value.trim(),
     provImp: document.getElementById('f-prov-imp').value.trim(),
+    geo: normGeo(geoSel)
   };
   if(editId){
     var idx=coins.findIndex(function(x){return x.id===editId;});
@@ -812,6 +1166,7 @@ function askDelete(id,e){
 function closeConfirm(){document.getElementById('confirm').classList.remove('open');deleteId=null;}
 function doDelete(){
   coins=coins.filter(function(c){return c.id!==deleteId;});
+  if(detailId===deleteId) closeDetail();
   save();closeConfirm();renderList();updateMap();updateHeaderCount();
 }
 
@@ -822,6 +1177,61 @@ function setFilter(f,el){
   renderList();
 }
 
+/* =====================================================================
+   COIN DETAIL MODAL
+   ===================================================================== */
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function openDetail(id){
+  var c=coins.find(function(x){return x.id===id;});
+  if(!c) return;
+  detailId=id;
+  var g=normGeo(c.geo);
+  var periodName = c.period==='rep'?'Republican':c.period==='imp'?'Imperial':'Provincial';
+  var authority = c.period==='rep'?null : c.period==='imp'?c.imp : c.provImp;
+  var issuedBy  = c.period==='prov'?c.authProv : c.auth;
+
+  var rows=[
+    ['PERIOD', periodName],
+    ['REFERENCE', c.ref],
+    ['PROVINCE / REGION', c.prov],
+    ['ADDITIONAL PROVINCES', g.provs.join(', ')],
+    ['REGION', g.regions.join(', ')],
+    ['SUBREGION', g.subs.map(function(s){return subLabel(subById(s))||s;}).join(', ')],
+    ['CITY / MINT', g.cities.map(function(s){return cityLabel(cityById(s))||s;}).join(', ')],
+    ['MINT', c.mint],
+    c.period==='rep' ? ['MAGISTRATE / TRESVIRI', c.mag] : ['EMPEROR / AUTHORITY', authority],
+    ['ISSUED BY', issuedBy],
+    ['METAL', c.metal],
+    ['DENOMINATION', c.denom],
+    ['PERIOD / DATE', c.date],
+    ['DESCRIPTION (OBVERSE / REVERSE)', c.desc],
+    ['NOTES', c.notes]
+  ].filter(function(r){ return r[1] && String(r[1]).trim(); });
+
+  var wide={'DESCRIPTION (OBVERSE / REVERSE)':1,'NOTES':1,'CITY / MINT':1,'ADDITIONAL PROVINCES':1};
+  var html='<div class="dgrid">';
+  rows.forEach(function(r){
+    html+='<div class="drow"'+(wide[r[0]]?' style="grid-column:1/-1"':'')+'><label>'+r[0]+'</label><div>'+esc(r[1])+'</div></div>';
+  });
+  html+='</div>';
+
+  document.getElementById('detail-title').textContent = (c.ref||'COIN').toUpperCase();
+  document.getElementById('detail-body').innerHTML=html;
+  document.getElementById('detail').classList.add('open');
+  setHighlight(resolveProvinces(g, c.prov));
+}
+function closeDetail(){
+  document.getElementById('detail').classList.remove('open');
+  detailId=null;
+  if(!document.getElementById('overlay').classList.contains('open')) clearHighlight();
+}
+function editFromDetail(){
+  var id=detailId;
+  closeDetail();
+  if(id) openModal(id);
+}
+
 function renderList(){
   var q=document.getElementById('srch').value.toLowerCase();
   var filtered=coins.filter(function(c){
@@ -829,7 +1239,11 @@ function renderList(){
     if(filterMode==='imp'&&c.period!=='imp')return false;
     if(filterMode==='prov'&&c.period!=='prov')return false;
     if(!q)return true;
-    return (c.ref+c.prov+c.desc+c.mag+c.imp+c.denom+c.mint).toLowerCase().indexOf(q)>=0;
+    var g=normGeo(c.geo);
+    var geoText=g.regions.join(' ')+' '+g.provs.join(' ')+' '+
+      g.subs.map(function(s){return subLabel(subById(s));}).join(' ')+' '+
+      g.cities.map(function(s){return cityLabel(cityById(s));}).join(' ');
+    return (c.ref+c.prov+c.desc+c.mag+c.imp+c.denom+c.mint+' '+geoText).toLowerCase().indexOf(q)>=0;
   });
   var el=document.getElementById('clist');
   el.innerHTML='';
@@ -841,6 +1255,7 @@ function renderList(){
   filtered.forEach(function(c){
     var d=document.createElement('div');
     d.className='crow';
+    d.onclick=function(){ openDetail(c.id); };
     
     var who =
       c.period === 'rep' ? [c.mag, c.auth].filter(Boolean).join(' · ') :
@@ -866,6 +1281,9 @@ function renderList(){
       var p = c.prov.replace('Italia — ','');
       tags += '<span class="ctag ct-prov-name">'+p+'</span>';
     }
+    var g=normGeo(c.geo);
+    g.regions.forEach(function(r){ tags+='<span class="ctag ct-prov-name">'+esc(r)+'</span>'; });
+    g.cities.forEach(function(id){ var ct=cityById(id); if(ct) tags+='<span class="ctag ct-prov-name">'+esc(ct.name)+'</span>'; });
     var refLine=c.ref||'(no reference)';
     d.innerHTML=
       '<div style="display:flex;align-items:flex-start;gap:4px">'+
@@ -876,7 +1294,7 @@ function renderList(){
         '<div class="crow-meta">'+tags+'</div>'+
       '</div>'+
       '<div class="crow-actions">'+
-        '<button class="ca" title="Edit" onclick="openModal('+c.id+')">&#9998;</button>'+
+        '<button class="ca" title="Edit" onclick="event.stopPropagation();openModal('+c.id+')">&#9998;</button>'+
         '<button class="ca del" title="Delete" onclick="askDelete('+c.id+',event)">&#x2715;</button>'+
       '</div>'+
       '</div>';

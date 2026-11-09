@@ -800,26 +800,70 @@ function provsForCity(id){
   if(c.sub){ var sp = provsForSub(c.sub); if(sp.length) return sp; }
   return provsForRegion(c.region);
 }
-function emptyGeo(){ return {provs:[],regions:[],subs:[],cities:[]}; }
+function emptyGeo(){
+  return {
+    provs:[],
+    provExclusions:[],
+    regions:[],
+    subs:[],
+    cities:[]
+  };
+}
+
 function normGeo(g){
   g = g || {};
-  var subs=Array.isArray(g.subs)?g.subs.map(function(s){ return LEGACY_SUB_IDS[s]||s; }):[];
+
+  var subs=Array.isArray(g.subs)
+    ? g.subs.map(function(s){
+        return LEGACY_SUB_IDS[s]||s;
+      })
+    : [];
+
   return {
-    provs:  Array.isArray(g.provs)?g.provs.slice():[],
+    provs:Array.isArray(g.provs)?g.provs.slice():[],
+    provExclusions:Array.isArray(g.provExclusions)
+      ? g.provExclusions.slice()
+      : [],
     regions:Array.isArray(g.regions)?g.regions.slice():[],
-    subs:   subs,
-    cities: Array.isArray(g.cities)?g.cities.slice():[]
+    subs:subs,
+    cities:Array.isArray(g.cities)?g.cities.slice():[]
   };
 }
 function resolveProvinces(geo, primary){
   var set = {};
-  function add(arr){ arr.forEach(function(p){ if(p) set[p]=true; }); }
+  function add(arr){
+    arr.forEach(function(p){
+      if(p) set[p]=true;
+    });
+  }
+
   geo = normGeo(geo);
+
   if(primary) set[primary]=true;
+
+  // Province selezionate manualmente
   add(geo.provs);
-  geo.regions.forEach(function(r){ add(provsForRegion(r)); });
-  geo.subs.forEach(function(s){ add(provsForSub(s)); });
-  geo.cities.forEach(function(c){ add(provsForCity(c)); });
+
+  // Province ricavate dalle regioni
+  geo.regions.forEach(function(r){
+    add(provsForRegion(r));
+  });
+
+  // Province ricavate dalle sotto-regioni
+  geo.subs.forEach(function(s){
+    add(provsForSub(s));
+  });
+
+  // Province ricavate dalle città
+  geo.cities.forEach(function(c){
+    add(provsForCity(c));
+  });
+
+  // Rimuove le province escluse manualmente
+  geo.provExclusions.forEach(function(p){
+    delete set[p];
+  });
+
   return Object.keys(set);
 }
 
@@ -1114,10 +1158,21 @@ function updateProvHint(){
 function byLabel(a,b){ return a.label.localeCompare(b.label); }
 var PICKERS = {
   provs:{
-    el:'pk-provs',
-    items:function(){ return PROVS.map(function(p){ return {id:p,label:p}; }); },
-    get:function(){ return geoSel.provs; }, set:function(v){ geoSel.provs=v; },
-    label:function(id){ return id; }
+      el:'pk-provs',
+      items:function(){
+        return PROVS.map(function(p){
+          return {id:p,label:p};
+        });
+      },
+      get:function(){
+        return resolveProvinces(geoSel, '');
+      },
+      set:function(v){
+        geoSel.provs=v;
+      },
+      label:function(id){
+        return id;
+      }
   },
   regions:{
     el:'pk-regions',
@@ -1178,11 +1233,67 @@ function pkRender(key){
 }
 function pkRenderAll(){ Object.keys(PICKERS).forEach(pkRender); updateGeoHint(); }
 function pkAdd(key,id){
-  var P=PICKERS[key], v=P.get().slice(); if(v.indexOf(id)<0) v.push(id); P.set(v);
+  var P=PICKERS[key];
+
+  if(key==='provs'){
+    // Selezione manuale della provincia
+    if(geoSel.provs.indexOf(id)<0){
+      geoSel.provs.push(id);
+    }
+
+    // Rimuove un'eventuale esclusione precedente
+    geoSel.provExclusions=geoSel.provExclusions.filter(function(p){
+      return p!==id;
+    });
+
+  } else {
+    var v=P.get().slice();
+
+    if(v.indexOf(id)<0){
+      v.push(id);
+    }
+
+    P.set(v);
+  }
+
   pkAfterChange(key);
 }
+
 function pkRemove(key,id){
-  var P=PICKERS[key]; P.set(P.get().filter(function(x){ return x!==id; }));
+  var P=PICKERS[key];
+
+  if(key==='provs'){
+    // Verifica se la provincia deriva da una regione,
+    // sotto-regione oppure città
+    var derived=resolveProvinces({
+      provs:[],
+      regions:geoSel.regions,
+      subs:geoSel.subs,
+      cities:geoSel.cities
+    },'').indexOf(id)>=0;
+
+    // Elimina la selezione manuale
+    geoSel.provs=geoSel.provs.filter(function(p){
+      return p!==id;
+    });
+
+    // Se deriva da altre selezioni, la esclude esplicitamente
+    if(derived){
+      if(geoSel.provExclusions.indexOf(id)<0){
+        geoSel.provExclusions.push(id);
+      }
+    } else {
+      geoSel.provExclusions=geoSel.provExclusions.filter(function(p){
+        return p!==id;
+      });
+    }
+
+  } else {
+    P.set(P.get().filter(function(x){
+      return x!==id;
+    }));
+  }
+
   pkAfterChange(key);
 }
 function pkAfterChange(key){
@@ -1387,7 +1498,7 @@ function coinMagNames(c){
 function coinGeoNames(c){
   var g=normGeo(c.geo), gn=c.geoNames||{};
   return {
-    provs:g.provs,
+    provs:c.period==='prov' ? resolveProvinces(g,'') : g.provs,
     regions:g.regions,
     subs:g.subs.map(function(s){ var o=subById(s); return o?subLabel(o):(gn.subs&&gn.subs[g.subs.indexOf(s)])||s; }),
     cities:g.cities.map(function(x){ var o=cityById(x); return o?cityLabel(o):(gn.cities&&gn.cities[g.cities.indexOf(x)])||x; })

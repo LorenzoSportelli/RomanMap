@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roman Empire — Numismatic Collection</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#1a1a1a;--gold-dim:#555555;--gold-pale:#222222;
+  --bg:#f9f8f6;--bg2:#ffffff;--bg3:#f2f1ef;
+  --border:#d8d5cf;--border2:#b0aca4;
+  --text:#1a1a1a;--text2:#555550;--text3:#999990;
+  --red:#c0392b;--panel:300px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif}
+
+#hdr{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;position:relative;z-index:1000}
+#hdr-title{font-family:'Inter', sans-serif;;font-size:.85rem;color:var(--text);letter-spacing:.15em;font-weight:500}
+#hdr-sub{font-size:.72rem;color:var(--text3);font-style:italic}
+#hdr-sep{flex:1}
+#hdr-count{font-size:.72rem;color:var(--text2);font-family:'Inter', sans-serif;;letter-spacing:.08em}
+#hdr-count span{color:var(--text)}
+#btn-add{background:transparent;border:1px solid var(--border2);color:var(--text);font-family:'Inter', sans-serif;;font-size:.65rem;letter-spacing:.1em;padding:5px 14px;cursor:pointer;transition:all .2s}
+#btn-add:hover{background:var(--text);color:var(--bg2)}
+
+#body{display:flex;height:calc(100vh - 48px)}
+#mapwrap{flex:1;position:relative}
+#map{width:100%;height:100%}
+
+#loading{position:absolute;inset:0;background:#f9f8f6ee;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:500}
+#loading b{color:var(--text);letter-spacing:.1em;font-weight:400;font-family:'Inter', sans-serif;}
+#loading small{color:var(--text3);font-style:italic;font-size:.75rem}
+
+#tt{display:none;position:absolute;background:var(--bg2);border:1px solid var(--border2);padding:9px 13px;z-index:9999;pointer-events:none;min-width:180px;box-shadow:0 4px 20px #00000022}
+#tt strong{display:block;font-family:'Inter', sans-serif;;color:var(--text);font-size:.64rem;letter-spacing:.08em;margin-bottom:5px;font-weight:500}
+#tt .tl{font-size:.82rem;color:var(--text2)}
+#tt .tl b{color:var(--text)}
+#tt .coins{margin-top:5px;font-size:.72rem;color:var(--text3);font-style:italic;border-top:1px solid var(--border);padding-top:4px}
+#tt .coin-item{color:var(--text2);padding:1px 0}
+
+#legend{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:900;background:#f9f8f6cc;border:1px solid var(--border);padding:5px 14px;display:flex;align-items:center;gap:8px;font-size:.7rem;color:var(--text2);pointer-events:none;font-family:'Inter', sans-serif;;letter-spacing:.05em}
+#legbar{
+  width:150px;
+  height:9px;
+  border-radius:1px;
+  background:linear-gradient(
+    to right,
+    rgb(207,207,207),
+    rgb(121,160,211),
+    rgb(128,172,160),
+    rgb(171,197,132),
+    rgb(236,213,120),
+    rgb(239,201,96),
+    rgb(243,184,75),
+    rgb(242,171,61),
+    rgb(241,157,52),
+    rgb(238,143,46),
+    rgb(234,127,41),
+    rgb(229,111,38),
+    rgb(223,96,35),
+    rgb(218,79,31),
+    rgb(214,61,28),
+    rgb(211,44,25)
+  );
+}
+#legend .leg-hl{display:none;align-items:center;gap:5px;margin-left:10px;padding-left:10px;border-left:1px solid var(--border)}
+#legend .leg-hl i{display:inline-block;width:14px;height:9px;border:2px solid #2a7a4a;background:transparent}
+#legend.has-hl .leg-hl{display:flex}
+
+#panel{width:var(--panel);background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+#panel-head{padding:12px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+#panel-head h2{font-family:'Inter', sans-serif;;font-size:.65rem;color:var(--text);letter-spacing:.12em;font-weight:500;margin-bottom:8px}
+#srch{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Crimson Text',serif;font-size:.9rem;padding:4px 8px;outline:none}
+#srch:focus{border-color:var(--border2)}
+#srch::placeholder{color:var(--text3)}
+.filter-row{display:flex;gap:4px;margin-top:6px}
+.ftab{flex:1;background:transparent;border:1px solid var(--border);color:var(--text3);font-family:'Inter', sans-serif;;font-size:.58rem;letter-spacing:.08em;padding:3px 6px;cursor:pointer;transition:all .15s}
+.ftab.on{background:var(--text);border-color:var(--text);color:var(--bg2)}
+.ftab:hover:not(.on){border-color:var(--border2);color:var(--text2)}
+
+#clist{flex:1;overflow-y:auto}
+#clist::-webkit-scrollbar{width:3px}
+#clist::-webkit-scrollbar-thumb{background:var(--border)}
+.empty-msg{padding:24px 14px;text-align:center;font-style:italic;color:var(--text3);font-size:.82rem}
+
+.crow{padding:12px 16px;border-bottom:1px solid #00000008;cursor:pointer;transition:background .1s}
+.crow:hover{background:#00000005}
+.crow-ref{
+  font-family:'Inter', sans-serif;
+  font-size:.85rem;
+  font-weight:600;
+  letter-spacing:.02em;
+}
+.crow-desc{
+  font-size:.95rem;
+  color:var(--text2);
+  margin-top:3px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.crow-meta{
+  display:flex;
+  gap:8px;
+  margin-top:6px;
+  flex-wrap:wrap;
+}
+
+.ctag{
+  font-family:'Inter', sans-serif;
+  font-size:.78rem;
+  padding:4px 9px;
+  border:1px solid;
+  letter-spacing:.03em;
+  border-radius:3px;
+}
+
+.ct-rep{
+  color:#6bbcff;
+  border-color:#6bbcff33;
+  background:#e8f4ff;
+}
+
+.ct-imp{
+  color:#b28cff;
+  border-color:#b28cff33;
+  background:#f3eeff;
+}
+
+.ct-prov{
+  color:#ffb25c;
+  border-color:#ffb25c33;
+  background:#fff5e8;
+}
+
+.ct-prov-name{
+  color:#2a7a4a;
+  border:1px solid #2a7a4a33;
+  background:#eaf5ee;
+}
+
+.ct-mat{color:#706050;border-color:#70605033;background:#f5f2ee}
+.ct-reign{color:#7a5a2a;border-color:#7a5a2a33;background:#f7f1e8}
+.crow-actions{float:right;display:flex;gap:3px;opacity:0;transition:opacity .15s}
+.crow:hover .crow-actions{opacity:1}
+.ca{width:18px;height:18px;background:transparent;border:1px solid var(--border);color:var(--text3);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center}
+.ca:hover{border-color:var(--border2);color:var(--text)}
+.ca.del:hover{border-color:var(--red);color:#c0392b}
+
+#foot{padding:7px 14px;border-top:1px solid var(--border);font-family:'Inter', sans-serif;;font-size:.62rem;color:var(--text3);flex-shrink:0;display:flex;gap:16px;letter-spacing:.06em}
+#foot span{color:var(--text)}
+
+#overlay{display:none;position:fixed;inset:0;background:#00000044;z-index:2000;align-items:center;justify-content:center}
+#overlay.open{display:flex}
+#modal{background:var(--bg2);border:1px solid var(--border2);width:520px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 60px #00000022}
+#modal-head{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+#modal-head h3{font-family:'Inter', sans-serif;;font-size:.8rem;color:var(--text);letter-spacing:.12em;font-weight:500;flex:1}
+#modal-head button{background:transparent;border:none;color:var(--text3);font-size:1.2rem;cursor:pointer;line-height:1}
+#modal-head button:hover{color:var(--text)}
+#modal-body{padding:16px 18px;overflow-y:auto;flex:1}
+#modal-body::-webkit-scrollbar{width:3px}
+#modal-body::-webkit-scrollbar-thumb{background:var(--border)}
+#modal-foot{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+
+.frow{margin-bottom:13px}
+.frow label{display:block;font-family:'Inter', sans-serif;;font-size:.6rem;color:var(--text3);letter-spacing:.1em;margin-bottom:5px}
+.frow label span{color:var(--border2)}
+.frow input,.frow select,.frow textarea{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Crimson Text',serif;font-size:.95rem;padding:5px 9px;outline:none;resize:vertical}
+.frow input:focus,.frow select:focus,.frow textarea:focus{border-color:var(--border2)}
+.frow select option{background:var(--bg2);color:var(--text)}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.frow textarea{min-height:60px}
+.fsep{height:1px;background:var(--border);margin:16px 0 14px;position:relative}
+.fsep-label{position:absolute;left:50%;transform:translateX(-50%) translateY(-50%);background:var(--bg2);padding:0 10px;font-family:'Inter', sans-serif;;font-size:.58rem;color:var(--text3);letter-spacing:.1em}
+.radio-group{display:flex;gap:8px}
+.radio-opt{flex:1;border:1px solid var(--border);padding:7px 10px;cursor:pointer;text-align:center;font-family:'Inter', sans-serif;;font-size:.65rem;letter-spacing:.08em;color:var(--text3);transition:all .2s}
+.radio-opt.on{border-color:var(--text);background:var(--bg3);color:var(--text)}
+.radio-opt:hover:not(.on){border-color:var(--border2);color:var(--text2)}
+
+/* ---- Geographic multi-select picker ---- */
+.picker{position:relative}
+.pk-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px}
+.pk-chips:empty{display:none}
+.pk-chip{display:inline-flex;align-items:center;gap:5px;font-family:'Inter',sans-serif;font-size:.68rem;letter-spacing:.03em;padding:2px 6px 2px 8px;border:1px solid #2a7a4a33;background:#eaf5ee;color:#2a7a4a;border-radius:3px;max-width:100%}
+.pk-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pk-chip b{cursor:pointer;font-weight:400;color:var(--text3);font-size:.85rem;line-height:1}
+.pk-chip b:hover{color:var(--red)}
+.pk-list{display:none;position:absolute;left:0;right:0;top:100%;max-height:170px;overflow-y:auto;background:var(--bg2);border:1px solid var(--border2);z-index:50;box-shadow:0 4px 20px #00000018}
+.pk-list::-webkit-scrollbar{width:3px}
+.pk-list::-webkit-scrollbar-thumb{background:var(--border)}
+.picker.open .pk-list{display:block}
+.pk-item{padding:5px 9px;font-family:'Crimson Text',serif;font-size:.9rem;color:var(--text2);cursor:pointer;border-bottom:1px solid #00000006}
+.pk-item:hover{background:var(--bg3);color:var(--text)}
+.pk-item small{font-family:'Inter',sans-serif;font-size:.6rem;color:var(--text3);letter-spacing:.04em;margin-left:6px}
+.pk-none{padding:6px 9px;font-style:italic;font-size:.8rem;color:var(--text3)}
+.pk-hint{font-family:'Inter',sans-serif;font-size:.58rem;color:var(--text3);letter-spacing:.05em;margin-top:4px;font-style:italic}
+.pk-hint:empty{display:none}
+/* magistrate chips use the chronology tint */
+#pk-mag .pk-chip{border-color:#7a5a2a33;background:#f7f1e8;color:#7a5a2a}
+
+.btn{background:transparent;border:1px solid var(--border2);color:var(--text2);font-family:'Inter', sans-serif;;font-size:.65rem;letter-spacing:.1em;padding:7px 18px;cursor:pointer;transition:all .2s}
+.btn:hover{border-color:var(--text);color:var(--text)}
+.btn-gold{background:var(--text);border-color:var(--text);color:var(--bg2)}
+.btn-gold:hover{background:#333333;color:var(--bg2);border-color:#333333}
+
+#confirm{display:none;position:fixed;inset:0;background:#00000066;z-index:3000;align-items:center;justify-content:center}
+#confirm.open{display:flex}
+#confirm-box{background:var(--bg2);border:1px solid var(--border2);padding:24px 28px;text-align:center;max-width:340px}
+#confirm-box p{font-style:italic;color:var(--text2);margin-bottom:14px;font-size:.95rem}
+#confirm-box .btns{display:flex;gap:8px;justify-content:center}
+
+/* ---- Coin detail modal ---- */
+#detail{display:none;position:fixed;inset:0;background:#00000044;z-index:2500;align-items:center;justify-content:center}
+#detail.open{display:flex}
+#detail-box{background:var(--bg2);border:1px solid var(--border2);width:480px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 60px #00000022}
+#detail-head{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+#detail-head h3{font-family:'Inter', sans-serif;font-size:.8rem;color:var(--text);letter-spacing:.12em;font-weight:500;flex:1}
+#detail-head button{background:transparent;border:none;color:var(--text3);font-size:1.2rem;cursor:pointer;line-height:1}
+#detail-head button:hover{color:var(--text)}
+#detail-body{padding:16px 18px;overflow-y:auto;flex:1}
+#detail-body::-webkit-scrollbar{width:3px}
+#detail-body::-webkit-scrollbar-thumb{background:var(--border)}
+#detail-foot{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+.drow{margin-bottom:12px}
+.drow label{display:block;font-family:'Inter', sans-serif;font-size:.6rem;color:var(--text3);letter-spacing:.1em;margin-bottom:3px}
+.drow div{font-family:'Crimson Text',serif;font-size:.98rem;color:var(--text);white-space:pre-wrap;line-height:1.4}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.dsep{height:1px;background:var(--border);margin:6px 0 14px}
+
+.leaflet-container{background:#e8e8e0}
+.leaflet-control-zoom a{background:var(--bg2)!important;color:var(--text)!important;border-color:var(--border)!important}
+
+.leaflet-control-attribution {
+  font-size: 7px !important;
+  line-height: 1.1 !important;
+  opacity: 0.65 !important;
+  background: rgba(249,248,246,0.55) !important;
+  color: #333333 !important;
+  border: 1px solid #d8d5cf !important;
+  padding: 2px 5px !important;
+  border-radius: 3px;
+  transform-origin: bottom right;
+}
+
+#hdr{
+  height:48px;
+  background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  padding:0 20px;
+  position:relative;
+}
+
+#hdr-left{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  margin-top:8px;
+}
+
+#hdr-title{
+  font-family:'Inter', sans-serif;
+  font-size:1.05rem;
+  letter-spacing:.12em;
+  font-weight:600;
+}
+
+#hdr-right{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-top:14px;
+}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div id="hdr-left">
+    <div id="hdr-title">ROMAN EMPIRE · NUMISMATIC COLLECTION</div>
+    <div id="hdr-sub">Provinces at 117 AD</div>
+  </div>
+
+  <div id="hdr-sep"></div>
+
+  <div id="hdr-right">
+    <div id="hdr-count">Coins: <span id="hc">0</span></div>
+    <button id="btn-add" onclick="openModal()">+ ADD COIN</button>
+  </div>
+</div>
+
+<div id="body">
+  <div id="mapwrap">
+    <div id="map"></div>
+    <div id="loading"><b>Loading map…</b><small>Roman provinces at 117 AD</small></div>
+    <div id="tt"></div>
+    <div id="legend"><span>0</span><div id="legbar"></div><span id="legmax">0</span><div class="leg-hl"><i></i><span>SELECTION</span></div></div>
+  </div>
+
+  <div id="panel">
+    <div id="panel-head">
+      <h2>COLLECTION</h2>
+      <input id="srch" type="text" placeholder="Search…" oninput="renderList()">
+      <div class="filter-row">
+        <button class="ftab on" onclick="setFilter('all',this)">All</button>
+        <button class="ftab" onclick="setFilter('prov',this)">Provincial</button>
+        <button class="ftab" onclick="setFilter('imp',this)">Imperial</button>
+        <button class="ftab" onclick="setFilter('rep',this)">Republican</button>
+      </div>
+    </div>
+    <div id="clist"></div>
+    <div id="foot">Coins: <span id="fcount">0</span></div>
+  </div>
+</div>
+
+<!-- ADD COIN MODAL -->
+<div id="overlay" onclick="if(event.target===this)closeModal()">
+<div id="modal">
+  <div id="modal-head">
+    <h3 id="modal-title">ADD COIN</h3>
+    <button onclick="closeModal()">&#215;</button>
+  </div>
+  <div id="modal-body">
+
+    <div class="frow">
+      <label>PERIOD</label>
+      <div class="radio-group">
+        <div class="radio-opt on" id="r-prov" onclick="setPeriod('prov')">PROVINCIAL</div>
+        <div class="radio-opt" id="r-imp" onclick="setPeriod('imp')">IMPERIAL</div>
+        <div class="radio-opt" id="r-rep" onclick="setPeriod('rep')">REPUBLICAN</div>
+      </div>
+    </div>
+
+    <div class="frow">
+      <label>REFERENCE <span style="font-size:.55rem;letter-spacing:.05em;color:var(--text3)">(e.g. RRC 44/5 · RPC I 985 · RIC 207)</span></label>
+      <input id="f-ref" type="text" placeholder="RRC 44/5">
+    </div>
+    
+    <div class="fgrid" id="block-main-geography">
+      <div class="frow" id="field-prov">
+        <label>PROVINCE / REGION <span>*</span></label>
+        <select id="f-prov" onchange="previewHighlight()"></select>
+      </div>
+      <div class="frow" id="field-mint">
+        <label>MINT</label>
+        <input id="f-mint" type="text" placeholder="Roma, Lugdunum…">
+      </div>
+    </div>
+    
+    <!-- PROVINCIAL ONLY: chronology -->
+    <div id="block-prov-chrono" style="display:none">
+      <div class="fsep"><div class="fsep-label">REIGN &amp; MAGISTRATE</div></div>
+      <div class="fgrid">
+        <div class="frow">
+          <label>REIGN</label>
+          <select id="f-reign" onchange="onReignChange()"><option value="">— select —</option></select>
+        </div>
+        <div class="frow">
+          <label>MAGISTRATE</label>
+          <div class="picker" id="pk-mag">
+            <div class="pk-chips"></div>
+            <input class="pk-in" type="text" placeholder="Search magistrate…" autocomplete="off">
+            <div class="pk-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="pk-hint" id="prov-hint"></div>
+    </div>
+
+    <div id="block-prov-geography"> <!-- PEDCQR -->
+    <div class="fsep"><div class="fsep-label">GEOGRAPHY</div></div>
+
+    <div class="frow">
+      <label>PROVINCES / REGIONS</label>
+      <div class="picker" id="pk-provs">
+        <div class="pk-chips"></div>
+        <input class="pk-in" type="text" placeholder="Search province…" autocomplete="off">
+        <div class="pk-list"></div>
+      </div>
+    </div>
+
+    <div class="fgrid">
+      <div class="frow">
+        <label>REGION</label>
+        <div class="picker" id="pk-regions">
+          <div class="pk-chips"></div>
+          <input class="pk-in" type="text" placeholder="Search region…" autocomplete="off">
+          <div class="pk-list"></div>
+        </div>
+      </div>
+      <div class="frow">
+        <label>SUBREGION</label>
+        <div class="picker" id="pk-subs">
+          <div class="pk-chips"></div>
+          <input class="pk-in" type="text" placeholder="Search subregion…" autocomplete="off">
+          <div class="pk-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frow">
+      <label>CITY</label>
+      <div class="picker" id="pk-cities">
+        <div class="pk-chips"></div>
+        <input class="pk-in" type="text" placeholder="Search city…" autocomplete="off">
+        <div class="pk-list"></div>
+      </div>
+      <div class="pk-hint" id="geo-hint"></div>
+    </div>
+    </div> <!-- PEDCQR -->
+    
+    <div class="fsep"><div class="fsep-label">ISSUE</div></div>
+
+    <div id="block-rep" style="display:none">
+      <div class="fgrid">
+        <div class="frow">
+          <label>MAGISTRATE / TRESVIRI</label>
+          <input id="f-mag" type="text" placeholder="L. Aemilius Lepidus, M. Furius Philus…">
+        </div>
+        <div class="frow">
+          <label>ISSUED BY <span style="font-size:.5rem">(if different)</span></label>
+          <input id="f-auth" type="text" placeholder="General, authority…">
+        </div>
+      </div>
+    </div>
+
+    <div id="block-imp" style="display:none">
+      <div class="fgrid">
+        <div class="frow">
+          <label>EMPEROR / AUTHORITY</label>
+          <input id="f-imp" type="text" placeholder="Augustus, Trajan…">
+        </div>
+        <div class="frow">
+          <label>ISSUED BY <span style="font-size:.5rem">(if different)</span></label>
+          <input id="f-imp-auth" type="text" placeholder="General, governor…">
+        </div>
+      </div>
+    </div>
+
+    <div id="block-prov">
+      <div class="fgrid">
+        <div class="frow">
+          <label>EMPEROR / AUTHORITY</label>
+          <input id="f-prov-imp" type="text" placeholder="Trajan, Hadrian, Antoninus Pius…">
+        </div>
+        <div class="frow">
+          <label>ISSUED BY <span style="font-size:.5rem">(if different)</span></label>
+          <input id="f-prov-auth" type="text" placeholder="City, governor, koinon, local magistrate…">
+        </div>
+      </div>
+    </div>
+
+    <div class="fsep"><div class="fsep-label">CHARACTERISTICS</div></div>
+
+    <div class="fgrid">
+      <div class="frow">
+        <label>METAL</label>
+        <select id="f-metal">
+          <option value="">— select —</option>
+          <option>Gold</option>
+          <option>Silver</option>
+          <option>Billon</option>
+          <option>Orichalcum</option>
+          <option>Bronze</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="frow">
+        <label>DENOMINATION</label>
+        <input id="f-denom" type="text" placeholder="Denarius, Sestertius, As…">
+      </div>
+      <div class="frow" style="grid-column:1/-1">
+        <label>PERIOD / DATE</label>
+        <input id="f-date" type="text" placeholder="e.g. 211–208 BC; AD 138–141">
+      </div>
+    </div>
+
+    <div class="frow">
+      <label>DESCRIPTION (obverse / reverse)</label>
+      <textarea id="f-desc" placeholder="Helmeted head of Roma / Dioscuri on horseback…"></textarea>
+    </div>
+    <div class="frow">
+      <label>NOTES</label>
+      <textarea id="f-notes" placeholder="Condition, provenance, purchase…" style="min-height:48px"></textarea>
+    </div>
+
+  </div>
+  <div id="modal-foot">
+    <button class="btn" onclick="closeModal()">CANCEL</button>
+    <button class="btn btn-gold" onclick="saveCoin()">SAVE COIN</button>
+  </div>
+</div>
+</div>
+
+<!-- COIN DETAIL MODAL -->
+<div id="detail" onclick="if(event.target===this)closeDetail()">
+<div id="detail-box">
+  <div id="detail-head">
+    <h3 id="detail-title">COIN</h3>
+    <button onclick="closeDetail()">&#215;</button>
+  </div>
+  <div id="detail-body"></div>
+  <div id="detail-foot">
+    <button class="btn" onclick="closeDetail()">CLOSE</button>
+    <button class="btn btn-gold" onclick="editFromDetail()">EDIT</button>
+  </div>
+</div>
+</div>
+
+<!-- DELETE CONFIRMATION -->
+<div id="confirm">
+<div id="confirm-box">
+  <p class="confirm-text">REMOVE THIS COIN FROM THE COLLECTION?</p>
+  <div class="btns">
+    <button class="btn" onclick="closeConfirm()">CANCEL</button>
+    <button class="btn" style="border-color:var(--red);color:#c0392b" onclick="doDelete()">DELETE</button>
+  </div>
+</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+var PROVS = [
+  "Achaia","Aegyptus","Africa Proconsularis","Alpes Cottiae","Alpes Graiae et Poeninae","Alpes Maritimae",
+  "Aquitania","Arabia","Armenia Mesopotamia","Asia","Baetica","Belgica","Bithynia et Pontus","Britannia",
+  "Cilicia","Creta et Cyrene","Dacia","Dalmatia","Galatia et Cappadocia","Germania Inferior","Germania Superior",
+  "Italia","Iudaea","Lugdunensis","Lusitania","Lycia et Pamphylia","Macedonia","Mauretania Caesariensis",
+  "Mauretania Tingitana","Moesia Inferior","Moesia Superior","Narbonensis","Noricum","Numidia",
+  "Pannonia Inferior","Pannonia Superior","Raetia","Sardinia et Corsica","Sicilia","Syria","Tarraconensis","Thracia",
+  "Italia — Regio I — Latium et Campania",
+  "Italia — Regio II — Apulia et Calabria",
+  "Italia — Regio III — Lucania et Bruttii",
+  "Italia — Regio IV — Samnium",
+  "Italia — Regio V — Picenum",
+  "Italia — Regio VI — Umbria et Ager Gallicus",
+  "Italia — Regio VII — Etruria",
+  "Italia — Regio VIII — Aemilia",
+  "Italia — Regio IX — Liguria",
+  "Italia — Regio X — Venetia et Histria",
+  "Italia — Regio XI — Transpadana"
+];
+
+var GEO_MAP = {
+  "Achaia":"Achaia","Aegyptus":"Aegyptus","Africa Proconsularis":"Africa Proconsularis",
+  "Alpes Cottiae":"Alpes Cottiae","Alpes Graiae et Poeninae":"Alpes Graiae et Poeninae","Alpes Maritimae":"Alpes Maritimae",
+  "Aquitania":"Aquitania","Arabia":"Arabia","Armenia":"Armenia Mesopotamia","Mesopotamia":"Armenia Mesopotamia",
+  "Asia":"Asia","Baetica":"Baetica","Belgica":"Belgica","Bithynia et Pontus":"Bithynia et Pontus","Britannia":"Britannia",
+  "Cilicia":"Cilicia","Creta et Cyrenaica":"Creta et Cyrene","Cyrenaica":"Creta et Cyrene","Dacia":"Dacia","Dalmatia":"Dalmatia",
+  "Galatia":"Galatia et Cappadocia","Cappadocia":"Galatia et Cappadocia","Germania Inferior":"Germania Inferior",
+  "Germania Superior":"Germania Superior","Iudaea":"Iudaea","Lugdunensis":"Lugdunensis","Lusitania":"Lusitania",
+  "Lycia et Pamphylia":"Lycia et Pamphylia","Macedonia":"Macedonia","Mauretania Caesariensis":"Mauretania Caesariensis",
+  "Mauretania Tingitana":"Mauretania Tingitana","Moesia Inferior":"Moesia Inferior","Moesia Superior":"Moesia Superior",
+  "Narbonensis":"Narbonensis","Noricum":"Noricum","Numidia":"Numidia","Pannonia Inferior":"Pannonia Inferior",
+  "Pannonia Superior":"Pannonia Superior","Raetia":"Raetia","Sardinia et Corsica":"Sardinia et Corsica","Sicilia":"Sicilia",
+  "Syria":"Syria","Tarraconensis":"Tarraconensis","Thracia":"Thracia","Italia":"Italia",
+  "I":"Italia — Regio I — Latium et Campania","II":"Italia — Regio II — Apulia et Calabria",
+  "III":"Italia — Regio III — Lucania et Bruttii","IV":"Italia — Regio IV — Samnium","V":"Italia — Regio V — Picenum",
+  "VI":"Italia — Regio VI — Umbria et Ager Gallicus","VII":"Italia — Regio VII — Etruria","VIII":"Italia — Regio VIII — Aemilia",
+  "IX":"Italia — Regio IX — Liguria","X":"Italia — Regio X — Venetia et Histria","XI":"Italia — Regio XI — Transpadana"
+};
+
+/* =====================================================================
+   GEOGRAPHICAL DATA
+   REGIONS / SUBREGIONS / CITIES are populated at runtime from the CSV
+   files in this folder (città.csv, magistrati.csv). Nothing is transcribed
+   here. REGION_PROVINCES maps a historical region to the 117 AD province(s)
+   drawn on the map; regions found in the CSV but absent here map to nothing.
+   ===================================================================== */
+var REGIONS = [];
+var SUBREGIONS = [];
+var CITIES = [];
+
+var REGION_PROVINCES = {
+  "Aegina":["Achaia"],"Aeolis":["Asia"],"Africa":["Africa Proconsularis"],"Arabia":["Arabia"],
+  "Armenia":["Armenia Mesopotamia"],"Mesopotamia":["Armenia Mesopotamia"],"Attica":["Achaia"],
+  "Bithynia":["Bithynia et Pontus"],"Boeotia":["Achaia"],"Bosporus":[],"Cappadocia":["Galatia et Cappadocia"],
+  "Caria":["Asia"],"Cilicia":["Cilicia"],"Commagene":["Syria"],"Corinthia":["Achaia"],"Crete":["Creta et Cyrene"],
+  "Cyclades":["Achaia"],"Cyprus":[],"Cyrenaica":["Creta et Cyrene"],"Dacia":["Dacia"],"Egypt":["Aegyptus"],
+  "Epirus":[],"Euboea":["Achaia"],"Galatia":["Galatia et Cappadocia"],"Galilaea":["Iudaea"],
+  "Gaul":["Aquitania","Lugdunensis","Belgica","Narbonensis"],"Hispania":["Baetica","Lusitania","Tarraconensis"],
+  "Illyricum":["Dalmatia","Pannonia Superior","Pannonia Inferior"],"Ionia":["Asia"],"Italy":["Italia"],
+  "Judaea":["Iudaea"],"Lesbus":["Asia"],"Locris":["Achaia"],"Lycaonia":["Galatia et Cappadocia","Cilicia"],
+  "Lycia":["Lycia et Pamphylia"],"Lydia":["Asia"],"Macedonia":["Macedonia"],
+  "Mauretania":["Mauretania Caesariensis","Mauretania Tingitana"],"Megaris":["Achaia"],
+  "Moesia":["Moesia Superior","Moesia Inferior"],"Mysia":["Asia"],"Pamphylia":["Lycia et Pamphylia"],
+  "Paphlagonia":["Bithynia et Pontus","Galatia et Cappadocia"],"Peloponnesus":["Achaia"],"Phocis":["Achaia"],
+  "Phoenicia":["Syria"],"Phrygia":["Asia","Galatia et Cappadocia"],"Pisidia":["Galatia et Cappadocia"],
+  "Pontus":["Bithynia et Pontus","Galatia et Cappadocia"],"Samaria":["Iudaea"],"Sardinia":["Sardinia et Corsica"],
+  "Sarmata":[],"Sarmatia":[],"Sicily":["Sicilia"],"Syria":["Syria"],"Thessaly":["Macedonia"],"Thrace":["Thracia"],
+  "Troas":["Asia"],"Uncertain":[]
+};
+
+/* ids used by coins saved with the previous hard-coded subregion list */
+var LEGACY_SUB_IDS = {
+  "sub-cilicia-trachea":"sub-cilicia-cilicia-trachea",
+  "sub-cilicia-pedias":"sub-cilicia-cilicia-pedias",
+  "sub-pelop-achaea":"sub-peloponnesus-achaea",
+  "sub-pelop-argolis":"sub-peloponnesus-argolis",
+  "sub-pelop-laconia":"sub-peloponnesus-laconia"
+};
+
+/* =====================================================================
+   PROVINCIAL DATABASE (built from the CSV files)
+   PDB.tuples = every (reign, magistrate, city, region, subregion) combination
+   supported by the data; the intersection filter works on this set only.
+   The "More" column (RPC links) is kept on each city as `rpc` for future use.
+   ===================================================================== */
+var PDB = {
+  ready:false, error:null,
+  cities:[], cityById:{}, cityByKey:{}, cityByName:{},
+  subs:[], subById:{},
+  regions:[], reigns:[],
+  mags:[], magById:{},
+  tuples:[]
+};
+
+var REIGN_ORDER = ["Roman Republic","Augustus","Tiberius","Caligula","Claudius","Nero","Galba","Otho","Vitellius",
+  "Vespasian","Titus","Domitian","Nerva","Trajan","Hadrian","Antoninus Pius","Marcus Aurelius","Lucius Verus","Commodus",
+  "Pertinax","Didius Julianus","Septimius Severus","Caracalla","Geta","Macrinus","Elagabalus","Severus Alexander",
+  "Maximinus","Gordian I","Gordian II","Balbinus","Pupienus","Gordian III","Philip I","Philip II","Trajan Decius",
+  "Trebonianus Gallus","Volusian","Aemilian","Valerian","Valerian and Gallienus","Gallienus","Gallienus (sole reign)",
+  "Claudius Gothicus","Quintillus","Aurelian","Tacitus","Florian","Probus","Carus","Carinus","Numerian","Diocletian"];
+
+function slug(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+function norm(s){ return String(s||'').trim().replace(/\s+/g,' ').toLowerCase(); }
+
+function parseCSV(text){
+  if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
+  var firstLine=text.split(/\r?\n/)[0]||'';
+  var sep=[',',';','\t'].map(function(s){return [s,firstLine.split(s).length];}).sort(function(a,b){return b[1]-a[1];})[0][0];
+  var rows=[],row=[],field='',q=false;
+  for(var i=0;i<text.length;i++){
+    var ch=text[i];
+    if(q){
+      if(ch==='"'){ if(text[i+1]==='"'){field+='"';i++;} else q=false; }
+      else field+=ch;
+    } else {
+      if(ch==='"') q=true;
+      else if(ch===sep){ row.push(field); field=''; }
+      else if(ch==='\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+      else if(ch==='\r'){ }
+      else field+=ch;
+    }
+  }
+  if(field.length||row.length){ row.push(field); rows.push(row); }
+  if(!rows.length) return [];
+  var header=rows.shift().map(function(h){ return norm(h); });
+  return rows.filter(function(r){ return r.some(function(x){ return x.trim(); }); }).map(function(r){
+    var o={}; header.forEach(function(h,i){ o[h]=(r[i]||'').trim(); }); return o;
+  });
+}
+function pickCol(row, candidates){
+  for(var i=0;i<candidates.length;i++) if(candidates[i] in row) return candidates[i];
+  return null;
+}
+/* split a multi-value cell on commas / semicolons that are outside parentheses */
+function splitMulti(s){
+  var out=[],depth=0,cur='';
+  for(var i=0;i<(s||'').length;i++){
+    var ch=s[i];
+    if(ch==='(') depth++;
+    if(ch===')') depth=Math.max(0,depth-1);
+    if((ch===','||ch===';')&&depth===0){ out.push(cur); cur=''; }
+    else cur+=ch;
+  }
+  out.push(cur);
+  return out.map(function(x){ return x.trim().replace(/\s+/g,' '); }).filter(Boolean);
+}
+
+function pdbAddCity(name, region, sub, rpc){
+  var key=norm(name)+'|'+norm(region);
+  if(PDB.cityByKey[key]) return PDB.cityByKey[key];
+  var subId='';
+  if(sub){
+    subId='sub-'+slug(region)+'-'+slug(sub);
+    if(!PDB.subById[subId]){ var s={id:subId,name:sub,region:region}; PDB.subs.push(s); PDB.subById[subId]=s; }
+  }
+  var base='city-'+slug(name)+'-'+slug(region), id=base, n=2;
+  while(PDB.cityById[id]) id=base+'-'+(n++);
+  var c={id:id,name:name,region:region,sub:subId,key:key,rpc:rpc||''};
+  PDB.cities.push(c); PDB.cityById[id]=c; PDB.cityByKey[key]=c;
+  (PDB.cityByName[norm(name)]=PDB.cityByName[norm(name)]||[]).push(c);
+  return c;
+}
+/* "Olbia (Sarmatia)" → city record; region from parentheses disambiguates homonyms */
+function resolveCityRef(ref){
+  var m=/^(.*?)\s*\(([^()]*)\)\s*$/.exec(ref);
+  var name=m?m[1].trim():ref.trim(), region=m?m[2].trim():'';
+  if(!name) return null;
+  if(region){
+    var c=PDB.cityByKey[norm(name)+'|'+norm(region)];
+    return c || pdbAddCity(name, region, '', '');
+  }
+  var list=PDB.cityByName[norm(name)]||[];
+  return list.length===1 ? list[0] : null;
+}
+
+function buildProvDB(magRows, cityRows){
+  if(cityRows.length){
+    var r0=cityRows[0];
+    var cCity=pickCol(r0,['city','città','citta']), cReg=pickCol(r0,['region','regione']),
+        cSub=pickCol(r0,['subregion','sub-region','sub region','subregione']), cMore=pickCol(r0,['more','link','rpc']);
+    if(!cCity||!cReg) throw new Error('cities CSV: columns City/Region not found');
+    cityRows.forEach(function(row){
+      if(!row[cCity]) return;
+      pdbAddCity(row[cCity], row[cReg], cSub?row[cSub]:'', cMore?row[cMore]:'');
+    });
+  }
+  if(magRows.length){
+    var m0=magRows[0];
+    var cMag=pickCol(m0,['magistrate','magistrato']), cReigns=pickCol(m0,['reigns','reign','regni']),
+        cCities=pickCol(m0,['cities','city','città']), cTitle=pickCol(m0,['title','titolo']);
+    if(!cMag||!cReigns||!cCities) throw new Error('magistrates CSV: columns Magistrate/Reigns/Cities not found');
+    var ordinal={};
+    magRows.forEach(function(row){
+      var name=(row[cMag]||'').replace(/\s+/g,' ').trim(); if(!name) return;
+      var k=slug(name)||'anon'; ordinal[k]=(ordinal[k]||0)+1;
+      var id='mag-'+k+'#'+ordinal[k];
+      var reigns=splitMulti(row[cReigns]);
+      var cities=[]; splitMulti(row[cCities]).forEach(function(ref){ var c=resolveCityRef(ref); if(c&&cities.indexOf(c.id)<0) cities.push(c.id); });
+      var mag={id:id,name:name,title:cTitle?(row[cTitle]||''):'',reigns:reigns,cities:cities};
+      PDB.mags.push(mag); PDB.magById[id]=mag;
+    });
+  }
+  var regSet={}, reignSet={};
+  PDB.cities.forEach(function(c){ if(c.region) regSet[c.region]=true; });
+  PDB.mags.forEach(function(m){ m.reigns.forEach(function(r){ reignSet[r]=true; }); });
+  PDB.regions=Object.keys(regSet).sort();
+  PDB.reigns=Object.keys(reignSet).sort(function(a,b){
+    var ia=REIGN_ORDER.indexOf(a), ib=REIGN_ORDER.indexOf(b);
+    if(a==='Uncertain') return 1; if(b==='Uncertain') return -1;
+    if(ia>=0&&ib>=0) return ia-ib; if(ia>=0) return -1; if(ib>=0) return 1;
+    return a.localeCompare(b);
+  });
+  /* tuples */
+  var withMag={};
+  PDB.mags.forEach(function(m){
+    var reigns=m.reigns.length?m.reigns:[null];
+    var cities=m.cities.length?m.cities:[null];
+    reigns.forEach(function(r){ cities.forEach(function(cid){
+      var c=cid?PDB.cityById[cid]:null; if(cid) withMag[cid]=true;
+      PDB.tuples.push({r:r,m:m.id,c:cid,g:c?c.region:null,s:c?(c.sub||null):null});
+    }); });
+  });
+  PDB.cities.forEach(function(c){ if(!withMag[c.id]) PDB.tuples.push({r:null,m:null,c:c.id,g:c.region,s:c.sub||null}); });
+  PDB.ready=true;
+  applyProvDB();
+}
+function applyProvDB(){
+  CITIES=PDB.cities; SUBREGIONS=PDB.subs;
+  var set={}; Object.keys(REGION_PROVINCES).forEach(function(r){ set[r]=true; }); PDB.regions.forEach(function(r){ set[r]=true; });
+  REGIONS=Object.keys(set).sort();
+  setProvHint('');
+  if(document.getElementById('overlay').classList.contains('open')){ provEnforce(); pkRenderAll(); previewHighlight(); }
+  renderList();
+}
+function setProvHint(t){ document.getElementById('prov-hint').textContent=t; }
+
+function fetchFirst(paths){
+  return paths.reduce(function(p,path){
+    return p.catch(function(){ return fetch(path).then(function(r){ if(!r.ok) throw new Error(path+' HTTP '+r.status); return r.text(); }); });
+  }, Promise.reject(new Error('no path')));
+}
+setProvHint('Loading CSV data…');
+Promise.all([
+  fetchFirst(['magistrati.csv','magistrates.csv']),
+  fetchFirst(['città.csv','citta.csv','cities.csv'])
+]).then(function(res){ buildProvDB(parseCSV(res[0]), parseCSV(res[1])); })
+  .catch(function(e){ PDB.error=e; setProvHint('CSV not loaded ('+e.message+'). Open the page through a local web server.'); });
+
+/* ---- lookups (shared by all periods) ---- */
+function subById(id){ if(!id) return null; return PDB.subById[id]||PDB.subById[LEGACY_SUB_IDS[id]]||null; }
+function cityById(id){ if(!id) return null; return PDB.cityById[id]||null; }
+function subLabel(s){ return s ? s.name+' ('+s.region+')' : ''; }
+function cityLabel(c){
+  if(!c) return '';
+  var s = c.sub ? subById(c.sub) : null;
+  return c.name+' - '+c.region+(s?' ('+s.name+')':'');
+}
+function magLabel(m){ return m ? m.name+(m.title?' ('+m.title+')':'') : ''; }
+function provsForRegion(r){ return (REGION_PROVINCES[r]||[]).slice(); }
+function provsForSub(id){
+  var s = subById(id); if(!s) return [];
+  if(s.provs && s.provs.length) return s.provs.slice();
+  return provsForRegion(s.region);
+}
+function provsForCity(id){
+  var c = cityById(id); if(!c) return [];
+  if(c.provs && c.provs.length) return c.provs.slice();
+  if(c.sub){ var sp = provsForSub(c.sub); if(sp.length) return sp; }
+  return provsForRegion(c.region);
+}
+function emptyGeo(){ return {provs:[],regions:[],subs:[],cities:[]}; }
+function normGeo(g){
+  g = g || {};
+  var subs=Array.isArray(g.subs)?g.subs.map(function(s){ return LEGACY_SUB_IDS[s]||s; }):[];
+  return {
+    provs:  Array.isArray(g.provs)?g.provs.slice():[],
+    regions:Array.isArray(g.regions)?g.regions.slice():[],
+    subs:   subs,
+    cities: Array.isArray(g.cities)?g.cities.slice():[]
+  };
+}
+function resolveProvinces(geo, primary){
+  var set = {};
+  function add(arr){ arr.forEach(function(p){ if(p) set[p]=true; }); }
+  geo = normGeo(geo);
+  if(primary) set[primary]=true;
+  add(geo.provs);
+  geo.regions.forEach(function(r){ add(provsForRegion(r)); });
+  geo.subs.forEach(function(s){ add(provsForSub(s)); });
+  geo.cities.forEach(function(c){ add(provsForCity(c)); });
+  return Object.keys(set);
+}
+
+const STEPS = [
+  [207,207,207],[121,160,211],[128,172,160],[171,197,132],[236,213,120],[239,201,96],[243,184,75],[242,171,61],
+  [241,157,52],[238,143,46],[234,127,41],[229,111,38],[223,96,35],[218,79,31],[214,61,28],[211,44,25]
+];
+
+var coins = JSON.parse(localStorage.getItem('numismatica_v2') || '[]');
+var nextId = parseInt(localStorage.getItem('numismatica_nid') || '1');
+var editId = null;
+var deleteId = null;
+var detailId = null;
+var filterMode = 'all';
+var currentPeriod = 'prov';
+
+function save(){
+  localStorage.setItem('numismatica_v2', JSON.stringify(coins));
+  localStorage.setItem('numismatica_nid', String(nextId));
+}
+
+(function(){
+  var sel = document.getElementById('f-prov');
+  PROVS.forEach(function(p){
+    var o = document.createElement('option');
+    o.value = p; o.textContent = p; sel.appendChild(o);
+  });
+})();
+
+function val2color(v, mx) {
+  if (!v || !mx) return "rgb(" + STEPS[0].join(",") + ")";
+  var idx = Math.ceil((v / mx) * (STEPS.length - 1));
+  idx = Math.max(1, Math.min(idx, STEPS.length - 1));
+  return "rgb(" + STEPS[idx].join(",") + ")";
+}
+
+function geoToOur(geoName){
+  if(!geoName)return null;
+  if(GEO_MAP[geoName])return GEO_MAP[geoName];
+  var low=geoName.toLowerCase();
+  for(var k in GEO_MAP){if(k.toLowerCase()===low)return GEO_MAP[k];}
+  for(var k in GEO_MAP){if(low.indexOf(k.toLowerCase())>=0)return GEO_MAP[k];}
+  return null;
+}
+
+function coinInMapProvince(c, ourName){
+  var provinces = c.period === 'prov'
+    ? resolveProvinces(c.geo, '')
+    : (c.prov ? [c.prov] : []);
+
+  if(provinces.indexOf('Italia') >= 0){
+    return ourName === 'Italia' || (ourName && ourName.indexOf('Italia') === 0);
+  }
+
+  if(ourName === 'Italia'){
+    return provinces.some(function(p){
+      return p === 'Italia' || p.indexOf('Italia') === 0;
+    });
+  }
+
+  return provinces.indexOf(ourName) >= 0;
+}
+
+function provCount(ourName){
+  return coins.filter(function(c){
+    return coinInMapProvince(c, ourName);
+  }).length;
+}
+
+function getMax(gl){
+  var m=0;
+  gl.eachLayer(function(l){
+    var n=l.feature&&l.feature.properties&&l.feature.properties.name||"";
+    var our=geoToOur(n);
+    if(our)m=Math.max(m,provCount(our));
+  });
+  return m;
+}
+
+var map = L.map("map", {
+  zoom: 4.85,
+  minZoom: 4.85,
+  maxZoom: 8,
+  zoomSnap: 0.1,
+  zoomDelta: 0.5
+});
+
+var tt=document.getElementById("tt");
+var mw=document.getElementById("mapwrap");
+var geoLayer=null;
+
+fetch("https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces.geojson")
+  .then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
+  .then(function(data){
+    geoLayer=L.geoJSON(data,{
+      style:function(){return{fillColor:"#c8c8b3",fillOpacity:.83,color:"#6a5020",weight:.8};},
+      onEachFeature:function(feat,lyr){
+        var geoName=feat.properties&&feat.properties.name||"";
+        var ourName=geoToOur(geoName);
+        lyr.on({
+          mouseover:function(e){
+            lyr.setStyle({weight:2,color:"#e8c020",fillOpacity:.95});
+            lyr.bringToFront();
+            var pc = ourName ? coins.filter(function(c){
+              return coinInMapProvince(c, ourName);
+            }) : [];
+            var html="<strong>"+(ourName||geoName)+"</strong>";
+            html+="<div class='tl'>Coins: <b>"+pc.length+"</b></div>";
+            if(pc.length){
+              html+="<div class='coins'>";
+              pc.slice(0,4).forEach(function(c){
+                var label=c.ref||(c.period==='rep'?c.mag:c.period==='imp'?c.imp:(c.provImp||c.reign))||c.denom||'—';
+                html+="<div class='coin-item'>"+esc(label)+(c.denom&&c.ref?" · "+esc(c.denom):"")+"</div>";
+              });
+              if(pc.length>4)html+="<div class='coin-item'>…and "+(pc.length-4)+" more</div>";
+              html+="</div>";
+            }
+            tt.innerHTML=html;
+            tt.style.display="block";
+            postt(e.originalEvent);
+          },
+          mousemove:function(e){postt(e.originalEvent);},
+          mouseout:function(){tt.style.display="none";updateMap();}
+        });
+      }
+    }).addTo(map);
+
+    var b = geoLayer.getBounds();
+    map.fitBounds(b, { padding: [20, 20] });
+    map.setMaxBounds(b);
+    map.options.maxBoundsViscosity = 1.0;
+
+    document.getElementById("loading").style.display="none";
+    updateMap();
+  })
+  .catch(function(e){
+    document.getElementById("loading").innerHTML="<b style='color:#c0392b'>Error: "+e.message+"</b>";
+  });
+
+function postt(e){
+  var r=mw.getBoundingClientRect();
+  var x=e.clientX-r.left+14,y=e.clientY-r.top-8;
+  if(x+200>mw.offsetWidth)x=e.clientX-r.left-205;
+  if(y+110>mw.offsetHeight)y=e.clientY-r.top-110;
+  tt.style.left=x+"px";tt.style.top=y+"px";
+}
+
+/* ---- Selection highlight layer ---- */
+var highlightSet = {};
+function setHighlight(list){
+  highlightSet = {};
+  (list||[]).forEach(function(p){ highlightSet[p]=true; });
+  document.getElementById('legend').classList.toggle('has-hl', Object.keys(highlightSet).length>0);
+  updateMap();
+}
+function clearHighlight(){ setHighlight([]); }
+function isHighlighted(our){
+  if(!our) return false;
+  if(highlightSet[our]) return true;
+  if(our.indexOf("Italia")===0 && highlightSet["Italia"]) return true;
+  if(our==="Italia"){ for(var k in highlightSet){ if(k.indexOf("Italia")===0) return true; } }
+  return false;
+}
+
+function updateMap(){
+  if(!geoLayer)return;
+  var mx=getMax(geoLayer);
+  document.getElementById("legmax").textContent=mx;
+  var hl=[];
+  geoLayer.eachLayer(function(l){
+    var n=l.feature&&l.feature.properties&&l.feature.properties.name||"";
+    var our=geoToOur(n);
+    var v=our?provCount(our):0;
+    if(isHighlighted(our)){
+      l.setStyle({fillColor:val2color(v,mx),fillOpacity:.95,color:"#2a7a4a",weight:2.4});
+      hl.push(l);
+    } else {
+      l.setStyle({fillColor:val2color(v,mx),fillOpacity:.83,color:"#6a5020",weight:.8});
+    }
+  });
+  hl.forEach(function(l){ l.bringToFront(); });
+}
+
+/* =====================================================================
+   PERIOD (order: Provincial · Imperial · Republican)
+   ===================================================================== */
+function isProvMode(){ return currentPeriod==='prov' && PDB.ready; }
+function modalOpen(){ return document.getElementById('overlay').classList.contains('open'); }
+
+function setPeriod(p){
+  currentPeriod=p;
+
+  document.getElementById('r-prov').className='radio-opt'+(p==='prov'?' on':'');
+  document.getElementById('r-imp').className='radio-opt'+(p==='imp'?' on':'');
+  document.getElementById('r-rep').className='radio-opt'+(p==='rep'?' on':'');
+
+  var isProv = p === 'prov';
+
+  document.getElementById('block-prov').style.display=isProv?'':'none';
+  document.getElementById('block-imp').style.display=p==='imp'?'':'none';
+  document.getElementById('block-rep').style.display=p==='rep'?'':'none';
+  document.getElementById('block-prov-chrono').style.display=isProv?'':'none';
+
+  document.getElementById('block-main-geography').style.display=isProv?'none':'';
+  document.getElementById('block-prov-geography').style.display=isProv?'':'none';
+
+  if(modalOpen()){
+    provEnforce();
+    pkRenderAll();
+    previewHighlight();
+  }
+}
+
+/* =====================================================================
+   PROVINCIAL INTERSECTION FILTER
+   Selection = {r:[reign], m:[magId], c:[cityId], g:[region], s:[subId]}.
+   Options for one dimension = values of that dimension over the tuples
+   compatible with the selections of ALL the other dimensions.
+   ===================================================================== */
+var geoSel = emptyGeo();
+var magSel = [];
+var DIMS = ['r','m','c','g','s'];
+
+function provSelection(){
+  var r=document.getElementById('f-reign').value;
+  return { r: r?[r]:[], m: magSel.slice(), c: geoSel.cities.slice(), g: geoSel.regions.slice(), s: geoSel.subs.slice() };
+}
+function tupleOk(t, sel, skip){
+  for(var i=0;i<DIMS.length;i++){
+    var k=DIMS[i]; if(k===skip) continue;
+    if(sel[k].length && sel[k].indexOf(t[k])<0) return false;
+  }
+  return true;
+}
+function facet(k, sel){
+  var seen={}, out=[];
+  for(var i=0;i<PDB.tuples.length;i++){
+    var t=PDB.tuples[i];
+    if(t[k]==null || seen[t[k]]) continue;
+    if(tupleOk(t,sel,k)){ seen[t[k]]=true; out.push(t[k]); }
+  }
+  return out;
+}
+function writeDim(k, vals){
+  if(k==='r') document.getElementById('f-reign').value=vals[0]||'';
+  else if(k==='m') magSel=vals;
+  else if(k==='c') geoSel.cities=vals;
+  else if(k==='g') geoSel.regions=vals;
+  else if(k==='s') geoSel.subs=vals;
+}
+/* Drop selections that are no longer supported by the data. Removing a value
+   can only widen the other facets, so the loop converges; guard anyway. */
+function provEnforce(){
+  if(!isProvMode()){ rebuildReignSelect(); return; }
+  var changed=true, guard=0;
+  while(changed && guard++<10){
+    changed=false;
+    var sel=provSelection();
+    for(var i=0;i<DIMS.length;i++){
+      var k=DIMS[i]; if(!sel[k].length) continue;
+      var okSet={}; facet(k,sel).forEach(function(v){ okSet[v]=true; });
+      var kept=sel[k].filter(function(v){ return okSet[v]; });
+      if(kept.length!==sel[k].length){ writeDim(k,kept); sel=provSelection(); changed=true; }
+    }
+  }
+  rebuildReignSelect();
+  updateProvHint();
+}
+function reignSort(a,b){ return PDB.reigns.indexOf(a)-PDB.reigns.indexOf(b); }
+function rebuildReignSelect(){
+  var sel=document.getElementById('f-reign'), cur=sel.value;
+  var list = PDB.ready ? (isProvMode() ? facet('r',provSelection()).sort(reignSort) : PDB.reigns.slice()) : [];
+  if(cur && list.indexOf(cur)<0) list.push(cur), list.sort(reignSort);
+  sel.innerHTML='';
+  var o0=document.createElement('option'); o0.value=''; o0.textContent='— select —'; sel.appendChild(o0);
+  list.forEach(function(r){ var o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
+  sel.value=cur && list.indexOf(cur)>=0 ? cur : '';
+}
+function onReignChange(){ provEnforce(); pkRenderAll(); previewHighlight(); }
+function updateProvHint(){
+  if(PDB.error) return;
+  if(!isProvMode()){ setProvHint(''); return; }
+  var sel=provSelection();
+  var any=DIMS.some(function(k){ return sel[k].length; });
+  if(!any){ setProvHint(PDB.reigns.length+' reigns · '+PDB.mags.length+' magistrates · '+PDB.cities.length+' cities'); return; }
+  setProvHint('Compatible: '+facet('r',sel).length+' reigns · '+facet('m',sel).length+' magistrates · '+facet('c',sel).length+' cities');
+}
+
+/* =====================================================================
+   MULTI-SELECT PICKERS (provinces / regions / subregions / cities / magistrates)
+   ===================================================================== */
+function byLabel(a,b){ return a.label.localeCompare(b.label); }
+var PICKERS = {
+  provs:{
+    el:'pk-provs',
+    items:function(){ return PROVS.map(function(p){ return {id:p,label:p}; }); },
+    get:function(){ return geoSel.provs; }, set:function(v){ geoSel.provs=v; },
+    label:function(id){ return id; }
+  },
+  regions:{
+    el:'pk-regions',
+    items:function(){
+      var list = isProvMode() ? facet('g',provSelection()) : REGIONS;
+      return list.map(function(r){ return {id:r,label:r}; }).sort(byLabel);
+    },
+    get:function(){ return geoSel.regions; }, set:function(v){ geoSel.regions=v; },
+    label:function(id){ return id; }
+  },
+  subs:{
+    el:'pk-subs',
+    items:function(){
+      var list = isProvMode() ? facet('s',provSelection()).map(subById) : SUBREGIONS;
+      return list.filter(Boolean).map(function(s){ return {id:s.id,label:s.name,small:s.region}; }).sort(byLabel);
+    },
+    get:function(){ return geoSel.subs; }, set:function(v){ geoSel.subs=v; },
+    label:function(id){ return subLabel(subById(id))||id; }
+  },
+  cities:{
+    el:'pk-cities',
+    items:function(){
+      var list = isProvMode() ? facet('c',provSelection()).map(cityById) : CITIES;
+      return list.filter(Boolean).map(function(c){
+        var s=c.sub?subById(c.sub):null;
+        return {id:c.id,label:c.name,small:c.region+(s?' · '+s.name:'')};
+      }).sort(byLabel);
+    },
+    get:function(){ return geoSel.cities; }, set:function(v){ geoSel.cities=v; },
+    label:function(id){ return cityLabel(cityById(id))||id; }
+  },
+  mag:{
+    el:'pk-mag',
+    items:function(){
+      if(!PDB.ready) return [];
+      var list = isProvMode() ? facet('m',provSelection()) : PDB.mags.map(function(m){ return m.id; });
+      return list.map(function(id){ var m=PDB.magById[id]; return {id:id,label:m.name,small:m.title}; }).sort(byLabel);
+    },
+    get:function(){ return magSel; }, set:function(v){ magSel=v; },
+    label:function(id){ return magLabel(PDB.magById[id])||id; }
+  }
+};
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+function pkRender(key){
+  var P=PICKERS[key], root=document.getElementById(P.el); if(!root) return;
+  var chips=root.querySelector('.pk-chips'), list=root.querySelector('.pk-list'), inp=root.querySelector('.pk-in');
+  var sel=P.get();
+  chips.innerHTML=sel.map(function(id){
+    return '<span class="pk-chip"><span title="'+esc(P.label(id))+'">'+esc(P.label(id))+'</span><b data-id="'+esc(id)+'">&#215;</b></span>';
+  }).join('');
+  var q=norm(inp.value);
+  var items=P.items().filter(function(it){ return sel.indexOf(it.id)<0 && (!q || norm(it.label+' '+(it.small||'')).indexOf(q)>=0); });
+  if(!items.length){ list.innerHTML='<div class="pk-none">'+(P.items().length?'No match':'No options available')+'</div>'; return; }
+  list.innerHTML=items.slice(0,300).map(function(it){
+    return '<div class="pk-item" data-id="'+esc(it.id)+'">'+esc(it.label)+(it.small?'<small>'+esc(it.small)+'</small>':'')+'</div>';
+  }).join('')+(items.length>300?'<div class="pk-none">…'+(items.length-300)+' more — refine the search</div>':'');
+}
+function pkRenderAll(){ Object.keys(PICKERS).forEach(pkRender); updateGeoHint(); }
+function pkAdd(key,id){
+  var P=PICKERS[key], v=P.get().slice(); if(v.indexOf(id)<0) v.push(id); P.set(v);
+  pkAfterChange(key);
+}
+function pkRemove(key,id){
+  var P=PICKERS[key]; P.set(P.get().filter(function(x){ return x!==id; }));
+  pkAfterChange(key);
+}
+function pkAfterChange(key){
+  var root=document.getElementById(PICKERS[key].el); root.querySelector('.pk-in').value='';
+  provEnforce(); pkRenderAll(); previewHighlight();
+}
+function pkCloseAll(){ document.querySelectorAll('.picker.open').forEach(function(p){ p.classList.remove('open'); }); }
+function updateGeoHint(){
+  var hint = document.getElementById('geo-hint');
+
+  if(currentPeriod !== 'prov'){
+    hint.textContent = '';
+    return;
+  }
+
+  var provs = resolveProvinces(geoSel, '');
+  hint.textContent = provs.length ? 'Map highlight: '+provs.join(' · ') : '';
+}
+(function initPickers(){
+  Object.keys(PICKERS).forEach(function(key){
+    var P=PICKERS[key], root=document.getElementById(P.el); if(!root) return;
+    var inp=root.querySelector('.pk-in');
+    inp.addEventListener('focus',function(){ pkCloseAll(); root.classList.add('open'); pkRender(key); });
+    inp.addEventListener('input',function(){ root.classList.add('open'); pkRender(key); });
+    inp.addEventListener('keydown',function(e){
+      if(e.key==='Enter'){ e.preventDefault(); var first=root.querySelector('.pk-item'); if(first) pkAdd(key,first.getAttribute('data-id')); }
+      if(e.key==='Escape') root.classList.remove('open');
+      if(e.key==='Backspace' && !inp.value){ var v=P.get(); if(v.length) pkRemove(key,v[v.length-1]); }
+    });
+    root.querySelector('.pk-list').addEventListener('mousedown',function(e){
+      var it=e.target.closest('.pk-item'); if(!it) return; e.preventDefault();
+      pkAdd(key,it.getAttribute('data-id')); root.classList.add('open'); inp.focus();
+    });
+    root.querySelector('.pk-chips').addEventListener('click',function(e){
+      if(e.target.tagName==='B') pkRemove(key,e.target.getAttribute('data-id'));
+    });
+  });
+  document.addEventListener('mousedown',function(e){ if(!e.target.closest('.picker')) pkCloseAll(); });
+})();
+
+/* =====================================================================
+   ADD / EDIT MODAL
+   ===================================================================== */
+function $v(id){ return document.getElementById(id).value.trim(); }
+function $set(id,v){ document.getElementById(id).value=v==null?'':v; }
+
+function previewHighlight(){
+  var provinces;
+
+  if(currentPeriod === 'prov'){
+    provinces = resolveProvinces(geoSel, '');
+  } else {
+    provinces = resolveProvinces(emptyGeo(), document.getElementById('f-prov').value);
+  }
+
+  setHighlight(provinces);
+  updateGeoHint();
+}
+function resetForm(){
+  ['f-ref','f-mint','f-mag','f-auth','f-imp','f-imp-auth','f-prov-imp','f-prov-auth','f-denom','f-date','f-desc','f-notes'].forEach(function(id){ $set(id,''); });
+  $set('f-metal',''); document.getElementById('f-prov').selectedIndex=0;
+  geoSel=emptyGeo(); magSel=[]; $set('f-reign','');
+  document.querySelectorAll('.pk-in').forEach(function(i){ i.value=''; });
+}
+function openModal(id){
+  editId = id==null ? null : id;
+  resetForm();
+  document.getElementById('modal-title').textContent = editId==null ? 'ADD COIN' : 'EDIT COIN';
+  if(editId!=null){
+    var c=coins.find(function(x){ return x.id===editId; });
+    if(c){
+      $set('f-ref',c.ref); $set('f-prov',c.prov||''); $set('f-mint',c.mint);
+      $set('f-mag',c.mag); $set('f-auth',c.auth);
+      $set('f-imp',c.imp); $set('f-imp-auth',c.impAuth!=null?c.impAuth:(c.period==='imp'?c.auth:''));
+      $set('f-prov-imp',c.provImp!=null?c.provImp:(c.period==='prov'?c.imp:'')); $set('f-prov-auth',c.provAuth!=null?c.provAuth:(c.period==='prov'?c.auth:''));
+      $set('f-metal',c.metal); $set('f-denom',c.denom); $set('f-date',c.date); $set('f-desc',c.desc); $set('f-notes',c.notes);
+      geoSel=normGeo(c.geo);
+      
+      if(c.period==='prov' && c.prov && geoSel.provs.indexOf(c.prov)<0){
+        geoSel.provs.unshift(c.prov);
+      }
+      
+      magSel=Array.isArray(c.mags)?c.mags.slice():[];
+      currentPeriod=c.period||'rep';
+      rebuildReignSelect(); $set('f-reign',c.reign||'');
+      if(c.reign && document.getElementById('f-reign').value!==c.reign){
+        var o=document.createElement('option'); o.value=c.reign; o.textContent=c.reign; document.getElementById('f-reign').appendChild(o); $set('f-reign',c.reign);
+      }
+    }
+  } else {
+    currentPeriod='prov';
+  }
+  document.getElementById('overlay').classList.add('open');
+  setPeriod(currentPeriod);   /* also runs provEnforce + pkRenderAll + previewHighlight */
+  document.getElementById('modal-body').scrollTop=0;
+}
+function closeModal(){
+  document.getElementById('overlay').classList.remove('open');
+  pkCloseAll(); editId=null; clearHighlight();
+}
+function saveCoin(){
+  var isProv = currentPeriod === 'prov';
+
+  var prov = isProv ? '' : $v('f-prov');
+
+  if(!isProv && !prov){
+    alert('Please select a province / region.');
+    return;
+  }
+
+  if(isProv) provEnforce();
+
+  var c={
+    id: editId!=null ? editId : nextId++,
+    period: currentPeriod,
+
+    ref:$v('f-ref'),
+    prov:prov,
+    mint:isProv?'':$v('f-mint'),
+
+    mag: currentPeriod==='rep'?$v('f-mag'):'',
+    auth: currentPeriod==='rep'?$v('f-auth'):'',
+
+    imp: currentPeriod==='imp'?$v('f-imp'):(isProv?$v('f-prov-imp'):''),
+    impAuth: currentPeriod==='imp'?$v('f-imp-auth'):'',
+
+    provImp: isProv?$v('f-prov-imp'):'',
+    provAuth: isProv?$v('f-prov-auth'):'',
+
+    reign: isProv?$v('f-reign'):'',
+    mags: isProv?magSel.slice():[],
+    magNames: isProv?magSel.map(function(id){
+      return magLabel(PDB.magById[id]);
+    }):[],
+
+    metal:$v('f-metal'),
+    denom:$v('f-denom'),
+    date:$v('f-date'),
+    desc:$v('f-desc'),
+    notes:$v('f-notes'),
+
+    geo: isProv ? normGeo(geoSel) : emptyGeo(),
+
+    geoNames: isProv ? {
+      provs: geoSel.provs.slice(),
+      regions: geoSel.regions.slice(),
+      subs: geoSel.subs.map(function(s){
+        var o=subById(s);
+        return o?o.name:s;
+      }),
+      cities: geoSel.cities.map(function(x){
+        var o=cityById(x);
+        return o?o.name:x;
+      })
+    } : {
+      provs:[],
+      regions:[],
+      subs:[],
+      cities:[]
+    }
+  };
+
+  if(editId!=null){
+    var i=coins.findIndex(function(x){ return x.id===editId; });
+
+    if(i>=0){
+      c.created=coins[i].created;
+      coins[i]=c;
+    } else {
+      coins.push(c);
+    }
+  } else {
+    c.created=Date.now();
+    coins.push(c);
+  }
+
+  save();
+  closeModal();
+  renderList();
+  updateMap();
+}
+
+/* =====================================================================
+   LIST / SEARCH / FILTER
+   ===================================================================== */
+function setFilter(m,btn){
+  filterMode=m;
+  document.querySelectorAll('.ftab').forEach(function(b){ b.classList.remove('on'); });
+  if(btn) btn.classList.add('on');
+  renderList();
+}
+function periodName(p){ return p==='rep'?'Republican':p==='imp'?'Imperial':'Provincial'; }
+function coinAuthority(c){
+  if(c.period==='rep') return c.mag||'';
+  if(c.period==='imp') return c.imp||'';
+  return c.provImp||c.imp||'';
+}
+function coinMagNames(c){
+  if(Array.isArray(c.mags)&&c.mags.length&&PDB.ready) return c.mags.map(function(id){ return magLabel(PDB.magById[id])||id; });
+  return Array.isArray(c.magNames)?c.magNames:[];
+}
+function coinGeoNames(c){
+  var g=normGeo(c.geo), gn=c.geoNames||{};
+  return {
+    provs:g.provs,
+    regions:g.regions,
+    subs:g.subs.map(function(s){ var o=subById(s); return o?subLabel(o):(gn.subs&&gn.subs[g.subs.indexOf(s)])||s; }),
+    cities:g.cities.map(function(x){ var o=cityById(x); return o?cityLabel(o):(gn.cities&&gn.cities[g.cities.indexOf(x)])||x; })
+  };
+}
+function searchText(c){
+  var gn=coinGeoNames(c);
+  return norm([c.ref,c.prov,c.mint,c.mag,c.auth,c.imp,c.impAuth,c.provImp,c.provAuth,c.reign,c.metal,c.denom,c.date,c.desc,c.notes,
+    periodName(c.period), coinMagNames(c).join(' '), gn.provs.join(' '), gn.regions.join(' '), gn.subs.join(' '), gn.cities.join(' ')].join(' | '));
+}
+function renderList(){
+  var q=norm(document.getElementById('srch').value);
+  var list=coins.filter(function(c){
+    if(filterMode!=='all' && c.period!==filterMode) return false;
+    return !q || searchText(c).indexOf(q)>=0;
+  }).slice().sort(function(a,b){ return (b.created||0)-(a.created||0) || b.id-a.id; });
+  var el=document.getElementById('clist');
+  if(!list.length){ el.innerHTML='<div class="empty-msg">'+(coins.length?'No coins match.':'No coins yet — add the first one.')+'</div>'; }
+  else el.innerHTML=list.map(function(c){
+    var tags='<span class="ctag ct-'+c.period+'">'+periodName(c.period).toUpperCase()+'</span>';
+    if(c.prov) tags+='<span class="ctag ct-prov-name">'+esc(c.prov)+'</span>';
+    if(c.period==='prov'&&c.reign) tags+='<span class="ctag ct-reign">'+esc(c.reign)+'</span>';
+    if(c.metal) tags+='<span class="ctag ct-mat">'+esc(c.metal)+'</span>';
+    var title=c.ref||coinAuthority(c)||c.denom||'—';
+    var sub=[coinAuthority(c), c.denom, c.date, c.mint].filter(Boolean).join(' · ');
+    return '<div class="crow" onclick="openDetail('+c.id+')">'+
+      '<div class="crow-actions"><button class="ca" title="Edit" onclick="event.stopPropagation();openModal('+c.id+')">&#9998;</button>'+
+      '<button class="ca del" title="Delete" onclick="event.stopPropagation();askDelete('+c.id+')">&#215;</button></div>'+
+      '<div class="crow-ref">'+esc(title)+'</div>'+
+      '<div class="crow-desc">'+esc(sub||c.desc||'')+'</div>'+
+      '<div class="crow-meta">'+tags+'</div></div>';
+  }).join('');
+  document.getElementById('hc').textContent=coins.length;
+  document.getElementById('fcount').textContent=list.length;
+}
+
+/* =====================================================================
+   DETAIL
+   ===================================================================== */
+function drow(label,val){ return val ? '<div class="drow"><label>'+label+'</label><div>'+esc(val)+'</div></div>' : ''; }
+function openDetail(id){
+  var c=coins.find(function(x){ return x.id===id; }); if(!c) return;
+  detailId=id;
+  document.getElementById('detail-title').textContent=(c.ref||periodName(c.period)).toUpperCase();
+  var gn=coinGeoNames(c);
+  var h='<div class="dgrid">'+
+    drow('PERIOD',periodName(c.period))+
+    drow('REFERENCE',c.ref)+
+    (c.period!=='prov' ? drow('PROVINCE / REGION',c.prov)+drow('MINT',c.mint) : '')+
+    '</div>';
+  if(c.period==='prov'){
+    h+='<div class="dsep"></div><div class="dgrid">'+drow('REIGN',c.reign)+drow('MAGISTRATE',coinMagNames(c).join('\n'))+
+       drow('EMPEROR / AUTHORITY',c.provImp||c.imp)+drow('ISSUED BY',c.provAuth)+'</div>';
+  } else if(c.period==='imp'){
+    h+='<div class="dsep"></div><div class="dgrid">'+drow('EMPEROR / AUTHORITY',c.imp)+drow('ISSUED BY',c.impAuth!=null?c.impAuth:c.auth)+'</div>';
+  } else {
+    h+='<div class="dsep"></div><div class="dgrid">'+drow('MAGISTRATE / TRESVIRI',c.mag)+drow('ISSUED BY',c.auth)+'</div>';
+  }
+  var geoAny=c.period==='prov' &&
+    (gn.provs.length||gn.regions.length||gn.subs.length||gn.cities.length);
+  if(geoAny){
+    h+='<div class="dsep"></div><div class="dgrid">'+
+      drow('PROVINCES / REGIONS',gn.provs.join('\n'))+
+      drow('REGION',gn.regions.join('\n'))+
+      drow('SUBREGION',gn.subs.join('\n'))+
+      drow('CITY',gn.cities.join('\n'))+
+      '</div>';
+  }
+  h+='<div class="dsep"></div><div class="dgrid">'+drow('METAL',c.metal)+drow('DENOMINATION',c.denom)+'</div>'+drow('PERIOD / DATE',c.date)+
+     drow('DESCRIPTION',c.desc)+drow('NOTES',c.notes);
+  document.getElementById('detail-body').innerHTML=h;
+  document.getElementById('detail').classList.add('open');
+  setHighlight(resolveProvinces(c.geo,c.prov));
+}
+function closeDetail(){ document.getElementById('detail').classList.remove('open'); detailId=null; clearHighlight(); }
+function editFromDetail(){ var id=detailId; closeDetail(); openModal(id); }
+
+/* =====================================================================
+   DELETE
+   ===================================================================== */
+function askDelete(id){ deleteId=id; document.getElementById('confirm').classList.add('open'); }
+function closeConfirm(){ deleteId=null; document.getElementById('confirm').classList.remove('open'); }
+function doDelete(){
+  if(deleteId!=null){
+    coins=coins.filter(function(c){ return c.id!==deleteId; });
+    if(detailId===deleteId) closeDetail();
+    save(); renderList(); updateMap();
+  }
+  closeConfirm();
+}
+
+/* =====================================================================
+   BOOT — legacy data normalisation (nothing is dropped)
+   ===================================================================== */
+(function(){
+  var dirty=false;
+  coins.forEach(function(c){
+    if(!c.period){ c.period='rep'; dirty=true; }
+    if(!c.geo){ c.geo=emptyGeo(); dirty=true; }
+    if(typeof c.id!=='number'){ c.id=parseInt(c.id,10)||nextId++; dirty=true; }
+    if(c.id>=nextId){ nextId=c.id+1; dirty=true; }
+  });
+  if(dirty) save();
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='Escape') return;
+    if(document.getElementById('confirm').classList.contains('open')) closeConfirm();
+    else if(document.getElementById('detail').classList.contains('open')) closeDetail();
+    else if(modalOpen()) closeModal();
+  });
+  renderList();
+})();
+</script>
+</body>
+</html>

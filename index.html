@@ -842,9 +842,9 @@ function renderList(){
     d.className='crow';
     
     var who =
-      c.period === 'rep' ? c.mag :
-      c.period === 'imp' ? (c.imp || c.auth || '') :
-      c.period === 'prov' ? [c.provImp, c.authProv].filter(Boolean).join(' · ') :
+      c.period === 'rep' ? [c.mag, c.auth].filter(Boolean).join(' • ') :
+      c.period === 'imp' ? [c.imp, c.auth].filter(Boolean).join(' • ') :
+      c.period === 'prov' ? [c.provImp, c.authProv].filter(Boolean).join(' • ') :
       '';
     
     var periodClass =

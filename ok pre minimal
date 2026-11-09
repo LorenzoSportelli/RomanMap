@@ -410,7 +410,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 <!-- DELETE CONFIRMATION -->
 <div id="confirm">
 <div id="confirm-box">
-  <p>Remove this coin from the collection?</p>
+  <p class="confirm-text">REMOVE THIS COIN FROM THE COLLECTION?</p>
+  </p>
   <div class="btns">
     <button class="btn" onclick="closeConfirm()">CANCEL</button>
     <button class="btn" style="border-color:var(--red);color:#c0392b" onclick="doDelete()">DELETE</button>
@@ -842,8 +843,8 @@ function renderList(){
     d.className='crow';
     
     var who =
-      c.period === 'rep' ? c.mag :
-      c.period === 'imp' ? (c.imp || c.auth || '') :
+      c.period === 'rep' ? [c.mag, c.auth].filter(Boolean).join(' · ') :
+      c.period === 'imp' ? [c.imp, c.auth].filter(Boolean).join(' · ') :
       c.period === 'prov' ? [c.provImp, c.authProv].filter(Boolean).join(' · ') :
       '';
     

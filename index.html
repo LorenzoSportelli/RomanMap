@@ -310,25 +310,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   margin-top:14px;
 }
 
-/* DRAGGABLE MODALS */
-#modal,
-#detail-box{
+/* DRAGGABLE MODALS — HEADER ONLY */
+#modal-head,
+#detail-head{
+  cursor:grab;
   user-select:none;
   -webkit-user-select:none;
-  touch-action:none;
 }
 
-#modal button,
-#modal input,
-#modal select,
-#modal textarea,
-#detail-box button,
-#detail-box input,
-#detail-box select,
-#detail-box textarea{
-  user-select:auto;
-  -webkit-user-select:auto;
-  touch-action:auto;
+#modal-head:active,
+#detail-head:active{
+  cursor:grabbing;
 }
   
 </style>
@@ -1641,11 +1633,11 @@ function doDelete(){
 }
 
 /* =====================================================================
-   DRAGGABLE MODALS — DRAG FROM ANYWHERE
+   DRAGGABLE MODALS — HEADER ONLY
    ===================================================================== */
 
-function makeDraggable(windowElement) {
-  if (!windowElement) return;
+function makeDraggable(windowElement, handleElement) {
+  if (!windowElement || !handleElement) return;
 
   let dragging = false;
   let startX = 0;
@@ -1654,15 +1646,13 @@ function makeDraggable(windowElement) {
   let initialTop = 0;
   let activePointer = null;
 
-  windowElement.addEventListener('pointerdown', function(e) {
+  handleElement.addEventListener('pointerdown', function(e) {
 
     // Solo tasto sinistro del mouse o tocco principale
     if (e.button !== 0 || !e.isPrimary) return;
 
-    // Non trascinare cliccando sui controlli interattivi
-    if (e.target.closest(
-      'button, input, select, textarea, a, label'
-    )) return;
+    // Il pulsante di chiusura deve continuare a funzionare normalmente
+    if (e.target.closest('button')) return;
 
     const rect = windowElement.getBoundingClientRect();
 
@@ -1675,24 +1665,22 @@ function makeDraggable(windowElement) {
     initialLeft = rect.left;
     initialTop = rect.top;
 
-    // Passa dal centraggio alle coordinate effettive
+    // Converte il centraggio iniziale in coordinate assolute
     windowElement.style.transform = 'none';
     windowElement.style.left = initialLeft + 'px';
     windowElement.style.top = initialTop + 'px';
 
-    windowElement.setPointerCapture(e.pointerId);
+    handleElement.setPointerCapture(e.pointerId);
 
     e.preventDefault();
   });
 
-  windowElement.addEventListener('pointermove', function(e) {
-
+  handleElement.addEventListener('pointermove', function(e) {
     if (!dragging || e.pointerId !== activePointer) return;
 
     const deltaX = e.clientX - startX;
     const deltaY = e.clientY - startY;
 
-    // Mantiene una parte della finestra raggiungibile
     const maxLeft = window.innerWidth - 60;
     const maxTop = window.innerHeight - 40;
 
@@ -1717,15 +1705,21 @@ function makeDraggable(windowElement) {
     activePointer = null;
   }
 
-  windowElement.addEventListener('pointerup', stopDragging);
-  windowElement.addEventListener('pointercancel', stopDragging);
+  handleElement.addEventListener('pointerup', stopDragging);
+  handleElement.addEventListener('pointercancel', stopDragging);
 }
 
 // ADD / EDIT COIN
-makeDraggable(document.getElementById('modal'));
+makeDraggable(
+  document.getElementById('modal'),
+  document.getElementById('modal-head')
+);
 
 // COIN DETAIL
-makeDraggable(document.getElementById('detail-box'));
+makeDraggable(
+  document.getElementById('detail-box'),
+  document.getElementById('detail-head')
+);
   
 /* =====================================================================
    BOOT — legacy data normalisation (nothing is dropped)

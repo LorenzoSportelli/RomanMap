@@ -857,71 +857,86 @@ var IMP_GEO_TREE = {
 
 // City mapping to Subregion (Gen 3) per filtering - COMPLETE
 var IMP_CITY_TO_SUB = {
-  // --- GENERICHE (non filtrate per geografia) ---
-  // "Comitatensian", "Eastern Mint", "Southern Gallic Mint", "Uncertain value"
-
-  // --- ITALY ---
   "Rome": "Italy", "Ostia": "Italy", "Ravenna": "Italy", "Ravenna comitatensian mint": "Italy",
   "Mediolanum": "Italy", "Aquileia": "Italy", "Ticinum": "Italy",
-
-  // --- THRACE / MOESIA / MACEDON / PANNONIA ---
   "Constantinople": "Thrace", "Serdica": "Thrace", "Thessalonica": "Macedon",
   "Sirmium": "Pannonia", "Siscia": "Pannonia", "Viminacium": "Moesia Superior", "Carnuntum": "Pannonia",
-
-  // --- AFRICA / EGYPT ---
   "Alexandria": "Egypt", "Cyrene": "Cyrenaica", "Carthage": "Africa",
-
-  // --- SYRIA / ASIA MINOR ---
   "Antioch, Syria": "Syria", "Emisa": "Syria", "Laodicea ad Mare": "Syria",
   "Tripolis": "Phoenicia", "Caesarea in Cappadocia": "Cappadocia",
   "Antioch of Pisidia": "Pisidia", "Ephesus": "Asia", "Pergamum": "Mysia",
   "Samos": "Ionia", "Cyzicus": "Mysia", "Nicomedia": "Bithynia", "Heraclea": "Bithynia",
-
-  // --- GALLIA / GERMANIA / BRITANNIA ---
   "Lugdunum": "Gallia", "Arelate": "Gallia", "Arelate comitatensian mint": "Gallia",
   "Narbo": "Gallia", "Vienne": "Gallia", "Ambianum": "Gallia",
   "Rotomagus": "Gallia", "Nemausus": "Gallia", "Nicaea (Gallia)": "Gallia",
   "Trier": "Gallia", "Cologne": "Germania", "Mainz": "Germania",
   "Londinium": "Britannia", "Camulodunum": "Britannia",
-
-  // --- HISPANIA ---
   "Tarraco": "Hispania", "Emerita": "Hispania", "Colonia Patricia": "Hispania",
   "Barcino": "Hispania", "Caesaraugusta": "Hispania"
+};
+
+// City mapping to Subsubregion (Gen 4) - CASCADE for auto-selection
+// Popola qui le città che ricadono in una subsub specifica.
+// Se una città non è presente, la cascata si ferma a sub + region.
+var IMP_CITY_TO_SUBSUB = {
+  "Rome": "Latium",
+  "Ostia": "Latium",
+  "Mediolanum": "Gallia Cisalpina",
+  "Aquileia": "Gallia Cisalpina",
+  "Ticinum": "Gallia Cisalpina",
+  "Lugdunum": "Gallia Transalpina",
+  "Arelate": "Gallia Transalpina",
+  "Arelate comitatensian mint": "Gallia Transalpina",
+  "Narbo": "Gallia Transalpina",
+  "Vienne": "Gallia Transalpina",
+  "Nemausus": "Gallia Transalpina",
+  "Nicaea (Gallia)": "Gallia Transalpina",
+  "Tarraco": "Hispania Citerior",
+  "Barcino": "Hispania Citerior",
+  "Caesaraugusta": "Hispania Citerior",
+  "Emerita": "Hispania Ulterior",
+  "Colonia Patricia": "Hispania Ulterior",
+  "Thessalonica": "Bisaltian District",
+  "Antioch, Syria": "Seleucis and Pieria",
+  "Emisa": "Phoenicia",
+  "Laodicea ad Mare": "Seleucis and Pieria",
+  "Tripolis": "Phoenicia",
+  "Carthage": "Zeugitana"
 };
 
 // MAPPATURA COMPLETA (Città/Subsub/Sub/Regioni -> Province Romane)
 var IMP_MAP_TO_PROVS = {
   // REGIONI
-  "Europe": ["Britannia", "Dalmatia", "Lugdunensis", "Belgica", "Aquitania", "Narbonensis", "Germania Superior", "Germania Inferior", "Tarraconensis", "Baetica", "Lusitania", "Italia", "Macedonia", "Pannonia Superior", "Pannonia Inferior", "Achaia", "Thracia", "Moesia Superior", "Moesia Inferior"],
+  "Europe": ["Britannia","Dalmatia","Lugdunensis","Belgica","Aquitania","Narbonensis","Germania Superior","Germania Inferior","Tarraconensis","Baetica","Lusitania","Italia","Macedonia","Pannonia Superior","Pannonia Inferior","Achaia","Thracia","Moesia Superior","Moesia Inferior"],
   "Italy": ["Italia"],
-  "Asia": ["Asia", "Bithynia et Pontus", "Galatia et Cappadocia", "Syria", "Iudaea"],
-  "Africa": ["Africa Proconsularis", "Creta et Cyrene", "Aegyptus"],
-  
-  // SUBREGIONI
+  "Asia": ["Asia","Bithynia et Pontus","Galatia et Cappadocia","Syria","Iudaea"],
+  "Africa": ["Africa Proconsularis","Creta et Cyrene","Aegyptus"],
+
+  // SUBREGIONI (chiavi di IDB.tree[*])
   "Britannia": ["Britannia"],
   "Dalmatia": ["Dalmatia"],
-  "Gallia": ["Lugdunensis", "Belgica", "Aquitania", "Narbonensis"],
-  "Germania": ["Germania Superior", "Germania Inferior"],
-  "Hispania": ["Tarraconensis", "Baetica", "Lusitania"],
+  "Gallia": ["Lugdunensis","Belgica","Aquitania","Narbonensis"],
+  "Germania": ["Germania Superior","Germania Inferior"],
+  "Hispania": ["Tarraconensis","Baetica","Lusitania"],
   "Macedon": ["Macedonia"],
-  "Pannonia": ["Pannonia Superior", "Pannonia Inferior"],
+  "Pannonia": ["Pannonia Superior","Pannonia Inferior"],
   "Peloponnesus": ["Achaia"],
-  "Thrace": ["Thracia", "Moesia Superior", "Moesia Inferior"],
+  "Thrace": ["Thracia","Moesia Superior","Moesia Inferior"],
   "Bithynia": ["Bithynia et Pontus"],
   "Cappadocia": ["Galatia et Cappadocia"],
   "Ionia": ["Asia"],
   "Mysia": ["Asia"],
   "Pisidia": ["Galatia et Cappadocia"],
-  "Syria": ["Syria", "Iudaea"],
+  "Syria": ["Syria","Iudaea"],
   "Africa": ["Africa Proconsularis"],
   "Cyrenaica": ["Creta et Cyrene"],
   "Egypt": ["Aegyptus"],
 
-  // SUBSUBREGIONI
+  // SUBSUBREGIONI (foglie di IDB.tree)
   "Gallia Cisalpina": ["Italia"],
-  "Gallia Transalpina": ["Narbonensis", "Lugdunensis"],
+  "Gallia Transalpina": ["Narbonensis","Lugdunensis"],
   "Hispania Citerior": ["Tarraconensis"],
-  "Hispania Ulterior": ["Baetica", "Lusitania"],
+  "Hispania Ulterior": ["Baetica","Lusitania"],
   "Italy": ["Italia"],
   "Latium": ["Italia"],
   "Campania": ["Italia"],
@@ -937,7 +952,7 @@ var IMP_MAP_TO_PROVS = {
   "Phoenicia": ["Syria"],
   "Seleucis and Pieria": ["Syria"],
   "Zeugitana": ["Africa Proconsularis"],
-  
+
   // CITTA'
   "Rome": ["Italia"], "Ostia": ["Italia"], "Ravenna": ["Italia"], "Ravenna comitatensian mint": ["Italia"],
   "Mediolanum": ["Italia"], "Aquileia": ["Italia"], "Ticinum": ["Italia"],
@@ -964,6 +979,7 @@ var IDB = {
   cities: IMP_CITIES,
   tree: IMP_GEO_TREE,
   cityToSub: IMP_CITY_TO_SUB,
+  cityToSubsub: IMP_CITY_TO_SUBSUB,
   tuples: []
 };
 
@@ -1109,7 +1125,6 @@ function coinInMapProvince(c, ourName){
     if (c.mint && IMP_MAP_TO_PROVS[c.mint]) {
       provinces = IMP_MAP_TO_PROVS[c.mint];
     } else {
-      // Fallback su subsubregioni, subregioni, regioni
       var raw = [];
       (c.impSubsubs || []).forEach(function(ss){ if(IMP_MAP_TO_PROVS[ss]) raw = raw.concat(IMP_MAP_TO_PROVS[ss]); });
       (c.impSubs || []).forEach(function(s){ if(IMP_MAP_TO_PROVS[s]) raw = raw.concat(IMP_MAP_TO_PROVS[s]); });
@@ -1262,10 +1277,9 @@ fetch('mints.json')
   .catch(err => console.error("Errore caricamento mints.json:", err));
 
 function getMintType(name) {
-  // Se l'ID inizia con 'imp-', è una zecca imperiale
   const m = allMintsData.find(x => x.name === name);
   if (m && m.id.startsWith('imp-')) return 'imp';
-  return 'prov'; // Altrimenti la consideriamo provinciale
+  return 'prov';
 }
 
 function renderMints() {
@@ -1289,7 +1303,6 @@ function renderMints() {
     
     if (currentMintMode === 'mine' && !isOwned) return;
 
-    // Applica il filtro delle monete
     let mintType = getMintType(m.name);
     if (currentCoinFilter !== 'all' && mintType !== currentCoinFilter) return;
 
@@ -1345,7 +1358,7 @@ function setCoinFilter(mode) {
   else if (mode === 'rep') { bRep.style.borderColor = 'var(--text)'; bRep.style.color = 'var(--text)'; bRep.style.background = 'var(--bg3)'; }
 
   renderMints();
-  updateMap(); // AGGIORNATO: Ricarica i colori della mappa in base al filtro
+  updateMap();
 }
 
 /* =====================================================================
@@ -1521,8 +1534,20 @@ function impGeoAdd(key, id) {
     }
   } else if (key === 'cities') {
     if (impGeoSel.cities.indexOf(id) < 0) impGeoSel.cities.push(id);
+    // Cascata inversa completa: città -> subsub (se nota) -> sub -> region
+    var subsub = IDB.cityToSubsub[id];
+    if (subsub) {
+      if (impGeoSel.subsubs.indexOf(subsub) < 0) impGeoSel.subsubs.push(subsub);
+    }
     var s = IDB.cityToSub[id];
-    if (s) impGeoAdd('subs', s);
+    if (s) {
+      if (impGeoSel.subs.indexOf(s) < 0) impGeoSel.subs.push(s);
+      for (var r in IDB.tree) {
+        if (IDB.tree[r][s] && impGeoSel.regions.indexOf(r) < 0) {
+          impGeoSel.regions.push(r); break;
+        }
+      }
+    }
   }
 }
 
@@ -1873,7 +1898,6 @@ function saveCoin(){
   if(isProv) provEnforce();
   if(isImp) impEnforce();
 
-  // Mint unificato con City per le provinciali
   var provMint = '';
   if (isProv && geoSel.cities.length) {
     var cityObj = cityById(geoSel.cities[0]);
@@ -2087,10 +2111,21 @@ function openDetail(id){
   if(c.period==='rep' || c.period==='prov') {
     setHighlight(resolveProvinces(c.geo,c.prov));
   } else if (c.period==='imp') {
-    var provs = c.mint ? (IMP_CITY_TO_PROVS[c.mint] || []) : [];
+    var provs = [];
+    if (c.mint && IMP_MAP_TO_PROVS[c.mint]) provs = IMP_MAP_TO_PROVS[c.mint];
     if (provs.length === 0) {
       provs = (c.impSubsubs || []).reduce(function(acc, ss) {
-        return acc.concat(IMP_GEO_TO_PROVS[ss] || []);
+        return acc.concat(IMP_MAP_TO_PROVS[ss] || []);
+      }, []);
+    }
+    if (provs.length === 0) {
+      provs = (c.impSubs || []).reduce(function(acc, s) {
+        return acc.concat(IMP_MAP_TO_PROVS[s] || []);
+      }, []);
+    }
+    if (provs.length === 0) {
+      provs = (c.impRegions || []).reduce(function(acc, r) {
+        return acc.concat(IMP_MAP_TO_PROVS[r] || []);
       }, []);
     }
     setHighlight(provs);

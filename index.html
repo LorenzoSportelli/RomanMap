@@ -855,7 +855,6 @@ var IMP_GEO_TREE = {
   }
 };
 
-// City mapping to Subregion (Gen 3) per filtering - COMPLETE
 var IMP_CITY_TO_SUB = {
   "Rome": "Italy", "Ostia": "Italy", "Ravenna": "Italy", "Ravenna comitatensian mint": "Italy",
   "Mediolanum": "Italy", "Aquileia": "Italy", "Ticinum": "Italy",
@@ -875,36 +874,19 @@ var IMP_CITY_TO_SUB = {
   "Barcino": "Hispania", "Caesaraugusta": "Hispania"
 };
 
-// City mapping to Subsubregion (Gen 4) - CASCADE for auto-selection
-// Popola qui le città che ricadono in una subsub specifica.
-// Se una città non è presente, la cascata si ferma a sub + region.
+// Mappa Città -> Subsubregion per cascata automatica completa
 var IMP_CITY_TO_SUBSUB = {
-  "Rome": "Latium",
-  "Ostia": "Latium",
-  "Mediolanum": "Gallia Cisalpina",
-  "Aquileia": "Gallia Cisalpina",
-  "Ticinum": "Gallia Cisalpina",
-  "Lugdunum": "Gallia Transalpina",
-  "Arelate": "Gallia Transalpina",
-  "Arelate comitatensian mint": "Gallia Transalpina",
-  "Narbo": "Gallia Transalpina",
-  "Vienne": "Gallia Transalpina",
-  "Nemausus": "Gallia Transalpina",
-  "Nicaea (Gallia)": "Gallia Transalpina",
-  "Tarraco": "Hispania Citerior",
-  "Barcino": "Hispania Citerior",
-  "Caesaraugusta": "Hispania Citerior",
-  "Emerita": "Hispania Ulterior",
-  "Colonia Patricia": "Hispania Ulterior",
+  "Rome": "Latium", "Ostia": "Latium",
+  "Mediolanum": "Gallia Cisalpina", "Aquileia": "Gallia Cisalpina", "Ticinum": "Gallia Cisalpina",
+  "Lugdunum": "Gallia Transalpina", "Arelate": "Gallia Transalpina", "Arelate comitatensian mint": "Gallia Transalpina",
+  "Narbo": "Gallia Transalpina", "Vienne": "Gallia Transalpina", "Nemausus": "Gallia Transalpina", "Nicaea (Gallia)": "Gallia Transalpina",
+  "Tarraco": "Hispania Citerior", "Barcino": "Hispania Citerior", "Caesaraugusta": "Hispania Citerior",
+  "Emerita": "Hispania Ulterior", "Colonia Patricia": "Hispania Ulterior",
   "Thessalonica": "Bisaltian District",
-  "Antioch, Syria": "Seleucis and Pieria",
-  "Emisa": "Phoenicia",
-  "Laodicea ad Mare": "Seleucis and Pieria",
-  "Tripolis": "Phoenicia",
-  "Carthage": "Zeugitana"
+  "Antioch, Syria": "Seleucis and Pieria", "Emisa": "Phoenicia", "Laodicea ad Mare": "Seleucis and Pieria", "Tripolis": "Phoenicia",
+  "Carthage": "Zeugitana", "Nicomedia": "Bithynia", "Heraclea": "Bithynia"
 };
 
-// MAPPATURA COMPLETA (Città/Subsub/Sub/Regioni -> Province Romane)
 var IMP_MAP_TO_PROVS = {
   // REGIONI
   "Europe": ["Britannia","Dalmatia","Lugdunensis","Belgica","Aquitania","Narbonensis","Germania Superior","Germania Inferior","Tarraconensis","Baetica","Lusitania","Italia","Macedonia","Pannonia Superior","Pannonia Inferior","Achaia","Thracia","Moesia Superior","Moesia Inferior"],
@@ -912,7 +894,7 @@ var IMP_MAP_TO_PROVS = {
   "Asia": ["Asia","Bithynia et Pontus","Galatia et Cappadocia","Syria","Iudaea"],
   "Africa": ["Africa Proconsularis","Creta et Cyrene","Aegyptus"],
 
-  // SUBREGIONI (chiavi di IDB.tree[*])
+  // SUBREGIONI
   "Britannia": ["Britannia"],
   "Dalmatia": ["Dalmatia"],
   "Gallia": ["Lugdunensis","Belgica","Aquitania","Narbonensis"],
@@ -932,16 +914,12 @@ var IMP_MAP_TO_PROVS = {
   "Cyrenaica": ["Creta et Cyrene"],
   "Egypt": ["Aegyptus"],
 
-  // SUBSUBREGIONI (foglie di IDB.tree)
+  // SUBSUBREGIONI
   "Gallia Cisalpina": ["Italia"],
   "Gallia Transalpina": ["Narbonensis","Lugdunensis"],
   "Hispania Citerior": ["Tarraconensis"],
   "Hispania Ulterior": ["Baetica","Lusitania"],
-  "Italy": ["Italia"],
-  "Latium": ["Italia"],
-  "Campania": ["Italia"],
-  "Etruria": ["Italia"],
-  "Umbria": ["Italia"],
+  "Italy": ["Italia"], "Latium": ["Italia"], "Campania": ["Italia"], "Etruria": ["Italia"], "Umbria": ["Italia"],
   "Bisaltian District": ["Macedonia"],
   "Inland Cities of Thrace": ["Thracia"],
   "The European Coast of the Propontis": ["Thracia"],
@@ -1122,14 +1100,19 @@ function coinInMapProvince(c, ourName){
   if (c.period === 'prov') {
     provinces = resolveProvinces(c.geo, '');
   } else if (c.period === 'imp') {
-    if (c.mint && IMP_MAP_TO_PROVS[c.mint]) {
-      provinces = IMP_MAP_TO_PROVS[c.mint];
-    } else {
-      var raw = [];
-      (c.impSubsubs || []).forEach(function(ss){ if(IMP_MAP_TO_PROVS[ss]) raw = raw.concat(IMP_MAP_TO_PROVS[ss]); });
-      (c.impSubs || []).forEach(function(s){ if(IMP_MAP_TO_PROVS[s]) raw = raw.concat(IMP_MAP_TO_PROVS[s]); });
-      (c.impRegions || []).forEach(function(r){ if(IMP_MAP_TO_PROVS[r]) raw = raw.concat(IMP_MAP_TO_PROVS[r]); });
-      provinces = raw;
+    // Priorità: Città > Subsub > Sub > Region (per un singolo record)
+    var hasDetail = false;
+    if (c.mint && IMP_MAP_TO_PROVS[c.mint]) { provinces = IMP_MAP_TO_PROVS[c.mint]; hasDetail = true; }
+    if (!hasDetail && c.impSubsubs && c.impSubsubs.length > 0) {
+      provinces = c.impSubsubs.reduce(function(acc, ss) { return acc.concat(IMP_MAP_TO_PROVS[ss] || []); }, []);
+      hasDetail = true;
+    }
+    if (!hasDetail && c.impSubs && c.impSubs.length > 0) {
+      provinces = c.impSubs.reduce(function(acc, s) { return acc.concat(IMP_MAP_TO_PROVS[s] || []); }, []);
+      hasDetail = true;
+    }
+    if (!hasDetail && c.impRegions && c.impRegions.length > 0) {
+      provinces = c.impRegions.reduce(function(acc, r) { return acc.concat(IMP_MAP_TO_PROVS[r] || []); }, []);
     }
   } else {
     provinces = c.prov ? [c.prov] : [];
@@ -1534,7 +1517,7 @@ function impGeoAdd(key, id) {
     }
   } else if (key === 'cities') {
     if (impGeoSel.cities.indexOf(id) < 0) impGeoSel.cities.push(id);
-    // Cascata inversa completa: città -> subsub (se nota) -> sub -> region
+    // Cascata: città -> subsub -> sub -> region
     var subsub = IDB.cityToSubsub[id];
     if (subsub) {
       if (impGeoSel.subsubs.indexOf(subsub) < 0) impGeoSel.subsubs.push(subsub);
@@ -1820,13 +1803,29 @@ function previewHighlight(){
   } else if (currentPeriod === 'rep') {
     provinces = resolveProvinces(emptyGeo(), document.getElementById('f-prov').value);
   } else if (currentPeriod === 'imp') {
+    // Priorità geografica assoluta: Città > Subsub > Sub > Region
     var raw = [];
-    impGeoSel.cities.forEach(function(c){ if (IMP_MAP_TO_PROVS[c]) raw = raw.concat(IMP_MAP_TO_PROVS[c]); });
-    impGeoSel.subsubs.forEach(function(ss){ if (IMP_MAP_TO_PROVS[ss]) raw = raw.concat(IMP_MAP_TO_PROVS[ss]); });
-    impGeoSel.subs.forEach(function(s){ if (IMP_MAP_TO_PROVS[s]) raw = raw.concat(IMP_MAP_TO_PROVS[s]); });
-    impGeoSel.regions.forEach(function(r){ if (IMP_MAP_TO_PROVS[r]) raw = raw.concat(IMP_MAP_TO_PROVS[r]); });
+    var hasDetail = false;
+    
+    if (impGeoSel.cities.length > 0) {
+      impGeoSel.cities.forEach(function(c){ if (IMP_MAP_TO_PROVS[c]) raw = raw.concat(IMP_MAP_TO_PROVS[c]); });
+      hasDetail = true;
+    }
+    if (!hasDetail && impGeoSel.subsubs.length > 0) {
+      impGeoSel.subsubs.forEach(function(ss){ if (IMP_MAP_TO_PROVS[ss]) raw = raw.concat(IMP_MAP_TO_PROVS[ss]); });
+      hasDetail = true;
+    }
+    if (!hasDetail && impGeoSel.subs.length > 0) {
+      impGeoSel.subs.forEach(function(s){ if (IMP_MAP_TO_PROVS[s]) raw = raw.concat(IMP_MAP_TO_PROVS[s]); });
+      hasDetail = true;
+    }
+    if (!hasDetail && impGeoSel.regions.length > 0) {
+      impGeoSel.regions.forEach(function(r){ if (IMP_MAP_TO_PROVS[r]) raw = raw.concat(IMP_MAP_TO_PROVS[r]); });
+    }
     provinces = raw;
   }
+  // Rimuove duplicati
+  provinces = provinces.filter(function(item, pos) { return provinces.indexOf(item) === pos; });
   setHighlight(provinces);
   updateGeoHint();
 }
@@ -2111,23 +2110,22 @@ function openDetail(id){
   if(c.period==='rep' || c.period==='prov') {
     setHighlight(resolveProvinces(c.geo,c.prov));
   } else if (c.period==='imp') {
+    // Stessa logica di prioritizzazione: Città > Subsub > Sub > Region
     var provs = [];
-    if (c.mint && IMP_MAP_TO_PROVS[c.mint]) provs = IMP_MAP_TO_PROVS[c.mint];
-    if (provs.length === 0) {
-      provs = (c.impSubsubs || []).reduce(function(acc, ss) {
-        return acc.concat(IMP_MAP_TO_PROVS[ss] || []);
-      }, []);
+    var hasDetail = false;
+    if (c.mint && IMP_MAP_TO_PROVS[c.mint]) { provs = IMP_MAP_TO_PROVS[c.mint]; hasDetail = true; }
+    if (!hasDetail && c.impSubsubs && c.impSubsubs.length > 0) {
+      provs = c.impSubsubs.reduce(function(acc, ss) { return acc.concat(IMP_MAP_TO_PROVS[ss] || []); }, []);
+      hasDetail = true;
     }
-    if (provs.length === 0) {
-      provs = (c.impSubs || []).reduce(function(acc, s) {
-        return acc.concat(IMP_MAP_TO_PROVS[s] || []);
-      }, []);
+    if (!hasDetail && c.impSubs && c.impSubs.length > 0) {
+      provs = c.impSubs.reduce(function(acc, s) { return acc.concat(IMP_MAP_TO_PROVS[s] || []); }, []);
+      hasDetail = true;
     }
-    if (provs.length === 0) {
-      provs = (c.impRegions || []).reduce(function(acc, r) {
-        return acc.concat(IMP_MAP_TO_PROVS[r] || []);
-      }, []);
+    if (!hasDetail && c.impRegions && c.impRegions.length > 0) {
+      provs = c.impRegions.reduce(function(acc, r) { return acc.concat(IMP_MAP_TO_PROVS[r] || []); }, []);
     }
+    provs = provs.filter(function(item, pos) { return provs.indexOf(item) === pos; });
     setHighlight(provs);
   } else {
     setHighlight([]); 

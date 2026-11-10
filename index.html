@@ -889,8 +889,56 @@ var IMP_CITY_TO_SUB = {
   "Barcino": "Hispania", "Caesaraugusta": "Hispania"
 };
 
-// MAPPATURA PRECISA CITTA' IMPERIALI -> PROVINCE ROMANE (per la colorazione)
-var IMP_CITY_TO_PROVS = {
+// MAPPATURA COMPLETA (Città/Subsub/Sub/Regioni -> Province Romane)
+var IMP_MAP_TO_PROVS = {
+  // REGIONI
+  "Europe": ["Britannia", "Dalmatia", "Lugdunensis", "Belgica", "Aquitania", "Narbonensis", "Germania Superior", "Germania Inferior", "Tarraconensis", "Baetica", "Lusitania", "Italia", "Macedonia", "Pannonia Superior", "Pannonia Inferior", "Achaia", "Thracia", "Moesia Superior", "Moesia Inferior"],
+  "Italy": ["Italia"],
+  "Asia": ["Asia", "Bithynia et Pontus", "Galatia et Cappadocia", "Syria", "Iudaea"],
+  "Africa": ["Africa Proconsularis", "Creta et Cyrene", "Aegyptus"],
+  
+  // SUBREGIONI
+  "Britannia": ["Britannia"],
+  "Dalmatia": ["Dalmatia"],
+  "Gallia": ["Lugdunensis", "Belgica", "Aquitania", "Narbonensis"],
+  "Germania": ["Germania Superior", "Germania Inferior"],
+  "Hispania": ["Tarraconensis", "Baetica", "Lusitania"],
+  "Macedon": ["Macedonia"],
+  "Pannonia": ["Pannonia Superior", "Pannonia Inferior"],
+  "Peloponnesus": ["Achaia"],
+  "Thrace": ["Thracia", "Moesia Superior", "Moesia Inferior"],
+  "Bithynia": ["Bithynia et Pontus"],
+  "Cappadocia": ["Galatia et Cappadocia"],
+  "Ionia": ["Asia"],
+  "Mysia": ["Asia"],
+  "Pisidia": ["Galatia et Cappadocia"],
+  "Syria": ["Syria", "Iudaea"],
+  "Africa": ["Africa Proconsularis"],
+  "Cyrenaica": ["Creta et Cyrene"],
+  "Egypt": ["Aegyptus"],
+
+  // SUBSUBREGIONI
+  "Gallia Cisalpina": ["Italia"],
+  "Gallia Transalpina": ["Narbonensis", "Lugdunensis"],
+  "Hispania Citerior": ["Tarraconensis"],
+  "Hispania Ulterior": ["Baetica", "Lusitania"],
+  "Italy": ["Italia"],
+  "Latium": ["Italia"],
+  "Campania": ["Italia"],
+  "Etruria": ["Italia"],
+  "Umbria": ["Italia"],
+  "Bisaltian District": ["Macedonia"],
+  "Inland Cities of Thrace": ["Thracia"],
+  "The European Coast of the Propontis": ["Thracia"],
+  "Asia Minor": ["Asia"],
+  "Islands off Ionia": ["Asia"],
+  "Commagene": ["Syria"],
+  "Judaea": ["Iudaea"],
+  "Phoenicia": ["Syria"],
+  "Seleucis and Pieria": ["Syria"],
+  "Zeugitana": ["Africa Proconsularis"],
+  
+  // CITTA'
   "Rome": ["Italia"], "Ostia": ["Italia"], "Ravenna": ["Italia"], "Ravenna comitatensian mint": ["Italia"],
   "Mediolanum": ["Italia"], "Aquileia": ["Italia"], "Ticinum": ["Italia"],
   "Constantinople": ["Thracia"], "Serdica": ["Thracia"], "Thessalonica": ["Macedonia"],
@@ -1052,16 +1100,22 @@ function geoToOur(geoName){
 }
 
 function coinInMapProvince(c, ourName){
-  // FILTRO AGGIUNTO: se il tipo di moneta non corrisponde al filtro attivo, restituisce false
   if (currentCoinFilter !== 'all' && c.period !== currentCoinFilter) return false;
 
   var provinces = [];
   if (c.period === 'prov') {
     provinces = resolveProvinces(c.geo, '');
   } else if (c.period === 'imp') {
-    provinces = (c.impSubsubs || []).reduce(function(acc, ss) {
-      return acc.concat(IMP_GEO_TO_PROVS[ss] || []);
-    }, []);
+    if (c.mint && IMP_MAP_TO_PROVS[c.mint]) {
+      provinces = IMP_MAP_TO_PROVS[c.mint];
+    } else {
+      // Fallback su subsubregioni, subregioni, regioni
+      var raw = [];
+      (c.impSubsubs || []).forEach(function(ss){ if(IMP_MAP_TO_PROVS[ss]) raw = raw.concat(IMP_MAP_TO_PROVS[ss]); });
+      (c.impSubs || []).forEach(function(s){ if(IMP_MAP_TO_PROVS[s]) raw = raw.concat(IMP_MAP_TO_PROVS[s]); });
+      (c.impRegions || []).forEach(function(r){ if(IMP_MAP_TO_PROVS[r]) raw = raw.concat(IMP_MAP_TO_PROVS[r]); });
+      provinces = raw;
+    }
   } else {
     provinces = c.prov ? [c.prov] : [];
   }
@@ -1741,32 +1795,12 @@ function previewHighlight(){
   } else if (currentPeriod === 'rep') {
     provinces = resolveProvinces(emptyGeo(), document.getElementById('f-prov').value);
   } else if (currentPeriod === 'imp') {
-    provinces = impGeoSel.cities.reduce(function(acc, city) {
-      return acc.concat(IMP_CITY_TO_PROVS[city] || []);
-    }, []);
-    if (provinces.length === 0) {
-      provinces = impGeoSel.subsubs.reduce(function(acc, ss) {
-        return acc.concat(IMP_GEO_TO_PROVS[ss] || []);
-      }, []);
-    }
-    if (provinces.length === 0) {
-      provinces = impGeoSel.subs.reduce(function(acc, ss) {
-        var found = [];
-        for(var r in IMP_GEO_TREE) {
-          if (IMP_GEO_TREE[r][ss]) found = found.concat(IMP_GEO_TREE[r][ss].reduce(function(a,s){ return a.concat(IMP_GEO_TO_PROVS[s]||[]); }, []));
-        }
-        return acc.concat(found);
-      }, []);
-    }
-    if (provinces.length === 0) {
-      provinces = impGeoSel.regions.reduce(function(acc, reg) {
-        var found = [];
-        for(var s in IMP_GEO_TREE[reg]) {
-          found = found.concat(IMP_GEO_TREE[reg][s].reduce(function(a,ss){ return a.concat(IMP_GEO_TO_PROVS[ss]||[]); }, []));
-        }
-        return acc.concat(found);
-      }, []);
-    }
+    var raw = [];
+    impGeoSel.cities.forEach(function(c){ if (IMP_MAP_TO_PROVS[c]) raw = raw.concat(IMP_MAP_TO_PROVS[c]); });
+    impGeoSel.subsubs.forEach(function(ss){ if (IMP_MAP_TO_PROVS[ss]) raw = raw.concat(IMP_MAP_TO_PROVS[ss]); });
+    impGeoSel.subs.forEach(function(s){ if (IMP_MAP_TO_PROVS[s]) raw = raw.concat(IMP_MAP_TO_PROVS[s]); });
+    impGeoSel.regions.forEach(function(r){ if (IMP_MAP_TO_PROVS[r]) raw = raw.concat(IMP_MAP_TO_PROVS[r]); });
+    provinces = raw;
   }
   setHighlight(provinces);
   updateGeoHint();

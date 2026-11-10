@@ -1152,7 +1152,7 @@ function updateMap(){
    LOGICA ZECCHE (MINTS)
    ===================================================================== */
 let allMintsData = [];
-let currentMintMode = 'all'; // 'none', 'mine', 'all'
+let currentMintMode = 'none'; // 'none', 'mine', 'all'
 let mintsLayer = L.layerGroup().addTo(map);
 
 // Carica il JSON appena la pagina è pronta
@@ -1160,7 +1160,7 @@ fetch('mints.json')
   .then(r => r.json())
   .then(data => {
     allMintsData = data;
-    setMintMode('all'); // Mostra tutto all'avvio
+    setMintMode('none'); // Mostra tutto all'avvio
   })
   .catch(err => console.error("Errore caricamento mints.json:", err));
 

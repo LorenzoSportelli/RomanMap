@@ -18,19 +18,13 @@
 }
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif}
 
-/* ===== SOLO PC ===== */
 #desktop-only-msg{display:none}
 @media (max-width: 900px), (pointer: coarse){
   #hdr,#body,#overlay,#detail,#confirm{display:none !important}
   #desktop-only-msg{
-    display:flex;
-    position:fixed;inset:0;
-    background:var(--bg);color:var(--text);
-    align-items:center;justify-content:center;
-    text-align:center;padding:40px;
-    font-family:'Inter',sans-serif;
-    font-size:1rem;letter-spacing:.05em;
-    z-index:99999;
+    display:flex;position:fixed;inset:0;background:var(--bg);color:var(--text);
+    align-items:center;justify-content:center;text-align:center;padding:40px;
+    font-family:'Inter',sans-serif;font-size:1rem;letter-spacing:.05em;z-index:99999;
   }
   #desktop-only-msg div{max-width:420px;line-height:1.6}
   #desktop-only-msg b{display:block;font-size:1.1rem;margin-bottom:10px;letter-spacing:.12em}
@@ -146,7 +140,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 #modal-body::-webkit-scrollbar-thumb{background:var(--border)}
 #modal-foot{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
 
-/* --- FIELD SPACING --- */
 .frow{margin-bottom:var(--space-fields)}
 .frow label{display:block;font-family:'Inter', sans-serif;;font-size:.6rem;color:var(--text3);letter-spacing:.1em;margin-bottom:5px}
 .frow label span{color:var(--border2)}
@@ -159,12 +152,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-fields)}
 .frow textarea{min-height:60px}
 
-/* Tight fields: no extra gap between them and the next/prev field, just the normal margin */
-.frow-tight{margin-bottom:var(--space-fields) !important}
-.fgrid-tight{gap:0 !important;display:block}
-.fgrid-tight .frow{margin-bottom:0 !important}
-
-/* Separator: 22px above (slightly bigger) and 13px below */
 .fsep{
   height:1px;background:var(--border);
   margin:22px 0 13px;
@@ -260,14 +247,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
 #modal-head, #detail-head{cursor:grab;user-select:none;-webkit-user-select:none}
 #modal-head:active, #detail-head:active{cursor:grabbing}
-
-/* Legacy classes */
-.ct-prov-name{color:#1f4f80}
-.ct-region{color:#2c6b3b}
-.ct-city{color:#8a6612}
-.ct-authority{color:#6f5028}
-.ct-magistrate{color:#5a3f6b}
-.ct-mat{color:#2f5a5a}
 </style>
 </head>
 <body>
@@ -330,7 +309,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   </div>
 </div>
 
-<!-- ADD COIN MODAL -->
 <div id="overlay" onclick="if(event.target===this)closeModal()">
 <div id="modal">
   <div id="modal-head">
@@ -353,7 +331,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <input id="f-ref" type="text" placeholder="RIC 207">
     </div>
     
-    <!-- REPUBLICAN ONLY: Geography -->
     <div class="fgrid" id="block-main-geography" style="display:none">
       <div class="frow">
         <label>PROVINCE / REGION <span>*</span></label>
@@ -365,7 +342,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       </div>
     </div>
     
-    <!-- PROVINCIAL ONLY: chronology -->
     <div id="block-prov-chrono" style="display:none">
       <div class="fsep"><div class="fsep-label">REIGN &amp; MAGISTRATE</div></div>
       <div class="fgrid">
@@ -385,7 +361,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="pk-hint" id="prov-hint"></div>
     </div>
 
-    <!-- PROVINCIAL ONLY: Geography -->
     <div id="block-prov-geography">
       <div class="fsep"><div class="fsep-label">GEOGRAPHY</div></div>
       <div class="frow">
@@ -425,7 +400,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       </div>
     </div>
 
-    <!-- IMPERIAL ONLY: Geography -->
     <div id="block-imp-geography" style="display:none">
       <div class="fsep"><div class="fsep-label">GEOGRAPHY</div></div>
       <div class="fgrid">
@@ -557,7 +531,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 </div>
 </div>
 
-<!-- COIN DETAIL MODAL -->
 <div id="detail" onclick="if(event.target===this)closeDetail()">
 <div id="detail-box">
   <div id="detail-head">
@@ -572,7 +545,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 </div>
 </div>
 
-<!-- DELETE CONFIRMATION -->
 <div id="confirm">
 <div id="confirm-box">
   <p class="confirm-text">REMOVE THIS COIN FROM THE COLLECTION?</p>
@@ -592,17 +564,11 @@ var PROVS = [
   "Italia","Iudaea","Lugdunensis","Lusitania","Lycia et Pamphylia","Macedonia","Mauretania Caesariensis",
   "Mauretania Tingitana","Moesia Inferior","Moesia Superior","Narbonensis","Noricum","Numidia",
   "Pannonia Inferior","Pannonia Superior","Raetia","Sardinia et Corsica","Sicilia","Syria","Tarraconensis","Thracia",
-  "Italia — Regio I — Latium et Campania",
-  "Italia — Regio II — Apulia et Calabria",
-  "Italia — Regio III — Lucania et Bruttii",
-  "Italia — Regio IV — Samnium",
-  "Italia — Regio V — Picenum",
-  "Italia — Regio VI — Umbria et Ager Gallicus",
-  "Italia — Regio VII — Etruria",
-  "Italia — Regio VIII — Aemilia",
-  "Italia — Regio IX — Liguria",
-  "Italia — Regio X — Venetia et Histria",
-  "Italia — Regio XI — Transpadana"
+  "Italia — Regio I — Latium et Campania","Italia — Regio II — Apulia et Calabria",
+  "Italia — Regio III — Lucania et Bruttii","Italia — Regio IV — Samnium",
+  "Italia — Regio V — Picenum","Italia — Regio VI — Umbria et Ager Gallicus",
+  "Italia — Regio VII — Etruria","Italia — Regio VIII — Aemilia",
+  "Italia — Regio IX — Liguria","Italia — Regio X — Venetia et Histria","Italia — Regio XI — Transpadana"
 ];
 
 var GEO_MAP = {
@@ -826,11 +792,6 @@ var IMP_ISSUERS = ["A. Licinius Nerva Silianus","Apronius","C. Annius Pollio","C
 
 var IMP_CITIES = ["Rome","Constantinople","Alexandria","Ambianum","Antioch of Pisidia","Antioch, Syria","Aquileia","Arelate","Arelate comitatensian mint","Barcino","Caesaraugusta","Caesarea in Cappadocia","Camulodunum","Carnuntum","Carthage","Cologne","Colonia Patricia","Comitatensian","Cyrene","Cyzicus","Eastern Mint","Emerita","Emisa","Ephesus","Heraclea","Laodicea ad Mare","Londinium","Lugdunum","Mainz","Mediolanum","Narbo","Nemausus","Nicaea (Gallia)","Nicomedia","Ostia","Pergamum","Ravenna","Ravenna comitatensian mint","Rotomagus","Samos","Serdica","Sirmium","Siscia","Southern Gallic Mint","Tarraco","Thessalonica","Ticinum","Trier","Tripolis","Uncertain value","Vienne","Viminacium"];
 
-/* Hierarchy defined by user's images:
-   Gen 2 = Regions (Europe, Asia, Africa, Italy)
-   Gen 3 = Subregions (Hispania, Gallia, Syria...)
-   Gen 4 = Subsubregions (Hispania Citerior, Gallia Cisalpina...)
-*/
 var IMP_GEO_TREE = {
   "Africa": {
     "Africa": ["Africa", "Zeugitana"],
@@ -863,19 +824,72 @@ var IMP_GEO_TREE = {
   }
 };
 
-// City mapping to Subregion (Gen 3) for filtering
+// City mapping to Subregion (Gen 3) per filtering
+// City mapping to Subregion (Gen 3) per filtering
 var IMP_CITY_TO_SUB = {
-  "Rome": "Italy", "Ostia": "Italy", "Ravenna": "Italy", "Ravenna comitatensian mint": "Italy",
-  "Mediolanum": "Italy", "Aquileia": "Italy", "Ticinum": "Italy",
-  "Constantinople": "Thrace", "Serdica": "Thrace", "Thessalonica": "Macedon",
-  "Alexandria": "Egypt", "Cyrene": "Cyrenaica", "Carthage": "Africa",
-  "Antioch, Syria": "Syria", "Tripolis": "Phoenicia", "Caesarea in Cappadocia": "Cappadocia",
-  "Antioch of Pisidia": "Pisidia", "Ephesus": "Asia", "Pergamum": "Mysia", "Samos": "Ionia", "Cyzicus": "Mysia",
-  "Lugdunum": "Gallia", "Arelate": "Gallia", "Narbo": "Gallia", "Vienne": "Gallia",
-  "Londinium": "Britannia", "Camulodunum": "Britannia", "Trier": "Gallia", "Cologne": "Germania", "Mainz": "Germania",
-  "Siscia": "Pannonia", "Sirmium": "Pannonia", "Viminacium": "Moesia Superior",
-  "Tarraco": "Hispania", "Emerita": "Hispania", "Colonia Patricia": "Hispania", "Barcino": "Hispania", "Caesaraugusta": "Hispania",
-  "Nicomedia": "Bithynia", "Heraclea": "Bithynia", "Ambianum": "Gallia", "Rotomagus": "Gallia", "Nemausus": "Gallia"
+  // --- GENERICHE (non filtrate per geografia) ---
+  // "Comitatensian", "Eastern Mint", "Southern Gallic Mint", "Uncertain value" sono escluse di proposito
+  // perché non hanno una collocazione geografica fissa.
+
+  // --- ITALY ---
+  "Rome": "Italy",
+  "Ostia": "Italy",
+  "Ravenna": "Italy",
+  "Ravenna comitatensian mint": "Italy",
+  "Mediolanum": "Italy",
+  "Aquileia": "Italy",
+  "Ticinum": "Italy",
+
+  // --- THRACE / MOESIA / MACEDON ---
+  "Constantinople": "Thrace",
+  "Serdica": "Thrace",
+  "Sirmium": "Pannonia",
+  "Siscia": "Pannonia",
+  "Viminacium": "Moesia Superior",
+  "Thessalonica": "Macedon",
+  "Carnuntum": "Pannonia",
+
+  // --- AFRICA / EGYPT ---
+  "Alexandria": "Egypt",
+  "Cyrene": "Cyrenaica",
+  "Carthage": "Africa",
+
+  // --- SYRIA / ASIA MINOR ---
+  "Antioch, Syria": "Syria",
+  "Emisa": "Syria",
+  "Laodicea ad Mare": "Syria",
+  "Tripolis": "Phoenicia",
+  "Caesarea in Cappadocia": "Cappadocia",
+  "Antioch of Pisidia": "Pisidia",
+  "Ephesus": "Asia",
+  "Pergamum": "Mysia",
+  "Samos": "Ionia",
+  "Cyzicus": "Mysia",
+  "Nicomedia": "Bithynia",
+  "Heraclea": "Bithynia",
+
+  // --- GALLIA / GERMANIA / BRITANNIA ---
+  "Lugdunum": "Gallia",
+  "Arelate": "Gallia",
+  "Arelate comitatensian mint": "Gallia",
+  "Narbo": "Gallia",
+  "Vienne": "Gallia",
+  "Ambianum": "Gallia",
+  "Rotomagus": "Gallia",
+  "Nemausus": "Gallia",
+  "Nicaea (Gallia)": "Gallia",
+  "Trier": "Gallia",
+  "Cologne": "Germania",
+  "Mainz": "Germania",
+  "Londinium": "Britannia",
+  "Camulodunum": "Britannia",
+
+  // --- HISPANIA ---
+  "Tarraco": "Hispania",
+  "Emerita": "Hispania",
+  "Colonia Patricia": "Hispania",
+  "Barcino": "Hispania",
+  "Caesaraugusta": "Hispania"
 };
 
 var IDB = {
@@ -1372,7 +1386,6 @@ var PICKERS = {
     items: function() {
       var list = [];
       impGeoSel.subs.forEach(function(s){
-        // Find parent region for this sub
         var parentRegion = "";
         for(var r in IDB.tree) {
           if(IDB.tree[r][s]) { parentRegion = r; break; }
@@ -1389,15 +1402,39 @@ var PICKERS = {
   impcities: {
     el: 'pk-imp-cities',
     items: function() {
-      var list = IDB.cities;
-      // If subregions are selected, filter cities
-      if (impGeoSel.subs.length > 0) {
-        list = list.filter(function(city) {
+      // 1. Partiamo da tutte le città o da quelle filtrate per Subregion?
+      // Se l'utente ha selezionato delle Subsubregions, filtriamo per quelle.
+      // Se ha selezionato solo delle Subregions, filtriamo per quelle.
+      // Se non ha selezionato nulla, mostriamo tutto.
+      
+      var pool = IDB.cities.slice();
+      
+      // Filter logic:
+      // - If subsubs selected: strictly match against cities in those subsubs
+      // - Else if subs selected: strictly match against cities in those subs
+      // - Else: all
+      
+      // For now, our data only maps city->subregion (Gen 3). 
+      // So we filter by subregions.
+      
+      var filterSubs = impGeoSel.subs.slice();
+      
+      // If subsubs are selected, we need to map them to a subregion and
+      // check if that subregion is selected. But our city mapping is at the subregion level.
+      // A more precise mapping would be city -> subsub, but we don't have that yet.
+      // We'll just use subs for the strict filter.
+      
+      if (filterSubs.length > 0) {
+        pool = pool.filter(function(city) {
           var sub = IDB.cityToSub[city];
-          return impGeoSel.subs.indexOf(sub) >= 0;
+          return filterSubs.indexOf(sub) >= 0;
         });
       }
-      return list.map(function(c){ return {id:c, label:c}; }).sort(byLabel);
+      
+      // If no cities match the filter, return empty array. 
+      // The picker will show "No options available".
+      
+      return pool.map(function(c){ return {id:c, label:c}; }).sort(byLabel);
     },
     get: function(){ return impGeoSel.cities; },
     set: function(v){ impGeoSel.cities = v; },
@@ -1706,31 +1743,26 @@ function renderList(){
     var tags = '';
     var gn = coinGeoNames(c);
 
-    // 1. PROVINCE (blu) 
     if(visibleTags.includes('province')){
       var provinces = c.period === 'prov' ? gn.provs : (c.period === 'imp' ? gn.provs : (c.prov ? [c.prov] : []));
       provinces.forEach(function(p){ tags += '<span class="ctag ct-prov-name">'+esc(p)+'</span>'; });
     }
 
-    // 2. REGION (verde) 
     if(visibleTags.includes('region')){
       if(c.period === 'prov' || c.period === 'imp'){
         gn.regions.forEach(function(r){ tags += '<span class="ctag ct-region">'+esc(r)+'</span>'; });
       }
     }
 
-    // 3. CITY (giallo)
     if(visibleTags.includes('city') && (c.period === 'prov' || c.period === 'imp')){
       gn.cities.forEach(function(city){ tags += '<span class="ctag ct-city">'+esc(city)+'</span>'; });
     }
 
-    // 4. AUTHORITY (marrone)
     if(visibleTags.includes('authority')){
       var authority = coinAuthority(c);
       if(authority){ tags += '<span class="ctag ct-authority">'+esc(authority)+'</span>'; }
     }
 
-    // 5. MAGISTRATE / ISSUER (viola)
     if(visibleTags.includes('magistrate')){
       var magistrates = [];
       if(c.period === 'prov'){ magistrates = coinMagNames(c); }
@@ -1739,7 +1771,6 @@ function renderList(){
       magistrates.forEach(function(m){ if(m){ tags += '<span class="ctag ct-magistrate">'+esc(m)+'</span>'; } });
     }
 
-    // 6. METAL (ottanio)
     if(visibleTags.includes('metal') && c.metal){
       tags += '<span class="ctag ct-mat">'+esc(c.metal)+'</span>';
     }

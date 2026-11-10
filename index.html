@@ -331,17 +331,20 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <input id="f-ref" type="text" placeholder="RIC 207">
     </div>
     
-    <div class="fgrid" id="block-main-geography" style="display:none">
+    <!-- REPUBLICAN ONLY: Geography -->
+    <div id="block-main-geography" style="display:none">
+      <div class="fsep"><div class="fsep-label">GEOGRAPHY</div></div>
       <div class="frow">
         <label>PROVINCE / REGION <span>*</span></label>
         <select id="f-prov" onchange="previewHighlight()"></select>
       </div>
       <div class="frow">
-        <label>MINT</label>
-        <input id="f-mint" type="text" placeholder="Roma, Lugdunum…">
+        <label>CITY / MINT</label>
+        <input id="f-mint" type="text" placeholder="Roma, Lugdunum, moving mint…">
       </div>
     </div>
     
+    <!-- PROVINCIAL ONLY: chronology -->
     <div id="block-prov-chrono" style="display:none">
       <div class="fsep"><div class="fsep-label">REIGN &amp; MAGISTRATE</div></div>
       <div class="fgrid">
@@ -361,6 +364,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="pk-hint" id="prov-hint"></div>
     </div>
 
+    <!-- PROVINCIAL ONLY: Geography -->
     <div id="block-prov-geography">
       <div class="fsep"><div class="fsep-label">GEOGRAPHY</div></div>
       <div class="frow">
@@ -390,16 +394,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         </div>
       </div>
       <div class="frow">
-        <label>CITY</label>
+        <label>CITY / MINT</label>
         <div class="picker" id="pk-cities">
           <div class="pk-chips"></div>
-          <input class="pk-in" type="text" placeholder="Search city…" autocomplete="off">
+          <input class="pk-in" type="text" placeholder="Search city / mint…" autocomplete="off">
           <div class="pk-list"></div>
         </div>
         <div class="pk-hint" id="geo-hint"></div>
       </div>
     </div>
 
+    <!-- IMPERIAL ONLY: Geography -->
     <div id="block-imp-geography" style="display:none">
       <div class="fsep"><div class="fsep-label">GEOGRAPHY</div></div>
       <div class="fgrid">
@@ -824,72 +829,38 @@ var IMP_GEO_TREE = {
   }
 };
 
-// City mapping to Subregion (Gen 3) per filtering
-// City mapping to Subregion (Gen 3) per filtering
+// City mapping to Subregion (Gen 3) per filtering - COMPLETE
 var IMP_CITY_TO_SUB = {
   // --- GENERICHE (non filtrate per geografia) ---
-  // "Comitatensian", "Eastern Mint", "Southern Gallic Mint", "Uncertain value" sono escluse di proposito
-  // perché non hanno una collocazione geografica fissa.
+  // "Comitatensian", "Eastern Mint", "Southern Gallic Mint", "Uncertain value"
 
   // --- ITALY ---
-  "Rome": "Italy",
-  "Ostia": "Italy",
-  "Ravenna": "Italy",
-  "Ravenna comitatensian mint": "Italy",
-  "Mediolanum": "Italy",
-  "Aquileia": "Italy",
-  "Ticinum": "Italy",
+  "Rome": "Italy", "Ostia": "Italy", "Ravenna": "Italy", "Ravenna comitatensian mint": "Italy",
+  "Mediolanum": "Italy", "Aquileia": "Italy", "Ticinum": "Italy",
 
-  // --- THRACE / MOESIA / MACEDON ---
-  "Constantinople": "Thrace",
-  "Serdica": "Thrace",
-  "Sirmium": "Pannonia",
-  "Siscia": "Pannonia",
-  "Viminacium": "Moesia Superior",
-  "Thessalonica": "Macedon",
-  "Carnuntum": "Pannonia",
+  // --- THRACE / MOESIA / MACEDON / PANNONIA ---
+  "Constantinople": "Thrace", "Serdica": "Thrace", "Thessalonica": "Macedon",
+  "Sirmium": "Pannonia", "Siscia": "Pannonia", "Viminacium": "Moesia Superior", "Carnuntum": "Pannonia",
 
   // --- AFRICA / EGYPT ---
-  "Alexandria": "Egypt",
-  "Cyrene": "Cyrenaica",
-  "Carthage": "Africa",
+  "Alexandria": "Egypt", "Cyrene": "Cyrenaica", "Carthage": "Africa",
 
   // --- SYRIA / ASIA MINOR ---
-  "Antioch, Syria": "Syria",
-  "Emisa": "Syria",
-  "Laodicea ad Mare": "Syria",
-  "Tripolis": "Phoenicia",
-  "Caesarea in Cappadocia": "Cappadocia",
-  "Antioch of Pisidia": "Pisidia",
-  "Ephesus": "Asia",
-  "Pergamum": "Mysia",
-  "Samos": "Ionia",
-  "Cyzicus": "Mysia",
-  "Nicomedia": "Bithynia",
-  "Heraclea": "Bithynia",
+  "Antioch, Syria": "Syria", "Emisa": "Syria", "Laodicea ad Mare": "Syria",
+  "Tripolis": "Phoenicia", "Caesarea in Cappadocia": "Cappadocia",
+  "Antioch of Pisidia": "Pisidia", "Ephesus": "Asia", "Pergamum": "Mysia",
+  "Samos": "Ionia", "Cyzicus": "Mysia", "Nicomedia": "Bithynia", "Heraclea": "Bithynia",
 
   // --- GALLIA / GERMANIA / BRITANNIA ---
-  "Lugdunum": "Gallia",
-  "Arelate": "Gallia",
-  "Arelate comitatensian mint": "Gallia",
-  "Narbo": "Gallia",
-  "Vienne": "Gallia",
-  "Ambianum": "Gallia",
-  "Rotomagus": "Gallia",
-  "Nemausus": "Gallia",
-  "Nicaea (Gallia)": "Gallia",
-  "Trier": "Gallia",
-  "Cologne": "Germania",
-  "Mainz": "Germania",
-  "Londinium": "Britannia",
-  "Camulodunum": "Britannia",
+  "Lugdunum": "Gallia", "Arelate": "Gallia", "Arelate comitatensian mint": "Gallia",
+  "Narbo": "Gallia", "Vienne": "Gallia", "Ambianum": "Gallia",
+  "Rotomagus": "Gallia", "Nemausus": "Gallia", "Nicaea (Gallia)": "Gallia",
+  "Trier": "Gallia", "Cologne": "Germania", "Mainz": "Germania",
+  "Londinium": "Britannia", "Camulodunum": "Britannia",
 
   // --- HISPANIA ---
-  "Tarraco": "Hispania",
-  "Emerita": "Hispania",
-  "Colonia Patricia": "Hispania",
-  "Barcino": "Hispania",
-  "Caesaraugusta": "Hispania"
+  "Tarraco": "Hispania", "Emerita": "Hispania", "Colonia Patricia": "Hispania",
+  "Barcino": "Hispania", "Caesaraugusta": "Hispania"
 };
 
 var IDB = {
@@ -1402,38 +1373,13 @@ var PICKERS = {
   impcities: {
     el: 'pk-imp-cities',
     items: function() {
-      // 1. Partiamo da tutte le città o da quelle filtrate per Subregion?
-      // Se l'utente ha selezionato delle Subsubregions, filtriamo per quelle.
-      // Se ha selezionato solo delle Subregions, filtriamo per quelle.
-      // Se non ha selezionato nulla, mostriamo tutto.
-      
       var pool = IDB.cities.slice();
-      
-      // Filter logic:
-      // - If subsubs selected: strictly match against cities in those subsubs
-      // - Else if subs selected: strictly match against cities in those subs
-      // - Else: all
-      
-      // For now, our data only maps city->subregion (Gen 3). 
-      // So we filter by subregions.
-      
-      var filterSubs = impGeoSel.subs.slice();
-      
-      // If subsubs are selected, we need to map them to a subregion and
-      // check if that subregion is selected. But our city mapping is at the subregion level.
-      // A more precise mapping would be city -> subsub, but we don't have that yet.
-      // We'll just use subs for the strict filter.
-      
-      if (filterSubs.length > 0) {
+      if (impGeoSel.subs.length > 0) {
         pool = pool.filter(function(city) {
           var sub = IDB.cityToSub[city];
-          return filterSubs.indexOf(sub) >= 0;
+          return impGeoSel.subs.indexOf(sub) >= 0;
         });
       }
-      
-      // If no cities match the filter, return empty array. 
-      // The picker will show "No options available".
-      
       return pool.map(function(c){ return {id:c, label:c}; }).sort(byLabel);
     },
     get: function(){ return impGeoSel.cities; },
@@ -1632,12 +1578,19 @@ function saveCoin(){
   if(isProv) provEnforce();
   if(isImp) impEnforce();
 
+  // Mint unificato con City per le provinciali
+  var provMint = '';
+  if (isProv && geoSel.cities.length) {
+    var cityObj = cityById(geoSel.cities[0]);
+    if (cityObj) provMint = cityObj.name;
+  }
+
   var c={
     id: editId!=null ? editId : nextId++,
     period: currentPeriod,
     ref:$v('f-ref'),
     prov:prov,
-    mint: isProv ? '' : (isImp ? (impGeoSel.cities[0] || '') : $v('f-mint')),
+    mint: isProv ? provMint : (isImp ? (impGeoSel.cities[0] || '') : $v('f-mint')),
 
     mag: isRep ? $v('f-mag') : '',
     auth: isRep ? $v('f-auth') : '',
@@ -1713,7 +1666,7 @@ function coinGeoNames(c){
   var g=normGeo(c.geo), gn=c.geoNames||{};
   
   if (c.period === 'imp') {
-    var provs = (c.impSubsubs || []).slice(); // Display subsubregion as province tag
+    var provs = (c.impSubsubs || []).slice();
     var regions = c.impRegions || [];
     var cities = c.mint ? [c.mint] : [];
     return { provs: provs, regions: regions, subs: [], cities: cities };
@@ -1800,7 +1753,7 @@ function openDetail(id){
   var h='<div class="dgrid">'+
     drow('PERIOD',periodName(c.period))+
     drow('REFERENCE',c.ref)+
-    (c.period==='rep' ? drow('PROVINCE / REGION',c.prov)+drow('MINT',c.mint) : '')+
+    (c.period==='rep' ? drow('PROVINCE / REGION',c.prov)+drow('CITY / MINT',c.mint) : '')+
     '</div>';
   
   if(c.period==='prov'){
@@ -1820,7 +1773,7 @@ function openDetail(id){
       drow('PROVINCES / REGIONS',gn.provs.join('\n'))+
       drow('REGION',gn.regions.join('\n'))+
       drow('SUBREGION',gn.subs.join('\n'))+
-      drow('CITY',gn.cities.join('\n'))+
+      drow('CITY / MINT',gn.cities.join('\n'))+
       '</div>';
   } else if (geoAnyImp) {
     h+='<div class="dsep"></div><div class="dgrid">'+

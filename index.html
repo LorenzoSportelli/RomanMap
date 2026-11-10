@@ -73,6 +73,85 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 #panel{width:var(--panel);background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
 #panel-head{padding:12px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
 #panel-head h2{font-family:'Inter', sans-serif;;font-size:.65rem;color:var(--text);letter-spacing:.12em;font-weight:500;margin-bottom:8px}
+/* TAG FILTER MENU */
+#collection-heading{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:8px;
+}
+
+#collection-heading h2{
+  margin-bottom:0;
+}
+
+#tags-wrap{
+  position:relative;
+}
+
+#btn-tags{
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--text2);
+  font-family:'Inter',sans-serif;
+  font-size:.58rem;
+  letter-spacing:.1em;
+  padding:4px 9px;
+  cursor:pointer;
+}
+
+#btn-tags:hover{
+  border-color:var(--border2);
+  color:var(--text);
+}
+
+#tags-menu{
+  display:none;
+  position:absolute;
+  right:0;
+  top:calc(100% + 5px);
+  width:175px;
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  padding:9px 11px;
+  z-index:1500;
+  box-shadow:0 4px 18px #00000018;
+}
+
+#tags-menu.open{
+  display:block;
+}
+
+.tag-option{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 2px;
+  font-family:'Inter',sans-serif;
+  font-size:.68rem;
+  color:var(--text2);
+  cursor:pointer;
+}
+
+.tag-option input{
+  accent-color:#555;
+  cursor:pointer;
+}
+
+.tag-option:hover{
+  color:var(--text);
+}
+
+#tags-menu .tag-menu-title{
+  font-family:'Inter',sans-serif;
+  font-size:.57rem;
+  letter-spacing:.1em;
+  color:var(--text3);
+  padding-bottom:7px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:5px;
+}
+  
 #srch{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Crimson Text',serif;font-size:.9rem;padding:4px 8px;outline:none}
 #srch:focus{border-color:var(--border2)}
 #srch::placeholder{color:var(--text3)}
@@ -143,6 +222,30 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   background:#eaf5ee;
 }
 
+.ct-region{
+  color:#526b91;
+  border-color:#526b9133;
+  background:#edf2f8;
+}
+
+.ct-city{
+  color:#2a7a4a;
+  border-color:#2a7a4a33;
+  background:#eaf5ee;
+}
+
+.ct-authority{
+  color:#8a6840;
+  border-color:#8a684033;
+  background:#f7f1e8;
+}
+
+.ct-magistrate{
+  color:#80618e;
+  border-color:#80618e33;
+  background:#f3eef6;
+}
+  
 .ct-mat{color:#706050;border-color:#70605033;background:#f5f2ee}
 .ct-reign{color:#7a5a2a;border-color:#7a5a2a33;background:#f7f1e8}
 .crow-actions{float:right;display:flex;gap:3px;opacity:0;transition:opacity .15s}
@@ -351,7 +454,49 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
   <div id="panel">
     <div id="panel-head">
-      <h2>COLLECTION</h2>
+      <div id="collection-heading">
+        <h2>COLLECTION</h2>
+      
+        <div id="tags-wrap">
+          <button id="btn-tags" onclick="toggleTagsMenu()">
+            TAGS &#9662;
+          </button>
+      
+          <div id="tags-menu">
+            <div class="tag-menu-title">VISIBLE TAGS</div>
+      
+            <label class="tag-option">
+              <input type="checkbox" data-tag="province" checked>
+              Province
+            </label>
+      
+            <label class="tag-option">
+              <input type="checkbox" data-tag="region" checked>
+              Region
+            </label>
+      
+            <label class="tag-option">
+              <input type="checkbox" data-tag="city" checked>
+              City
+            </label>
+      
+            <label class="tag-option">
+              <input type="checkbox" data-tag="authority" checked>
+              Authority
+            </label>
+      
+            <label class="tag-option">
+              <input type="checkbox" data-tag="magistrate" checked>
+              Magistrate
+            </label>
+      
+            <label class="tag-option">
+              <input type="checkbox" data-tag="metal" checked>
+              Metal
+            </label>
+          </div>
+        </div>
+      </div>
       <input id="srch" type="text" placeholder="Search…" oninput="renderList()">
       <div class="filter-row">
         <button class="ftab on" onclick="setFilter('all',this)">All</button>
@@ -922,6 +1067,89 @@ var detailId = null;
 var filterMode = 'all';
 var currentPeriod = 'prov';
 
+/* =====================================================================
+   COLLECTION TAG VISIBILITY
+   ===================================================================== */
+
+var TAG_ORDER = [
+  'province',
+  'region',
+  'city',
+  'authority',
+  'magistrate',
+  'metal'
+];
+
+var DEFAULT_TAGS = TAG_ORDER.slice();
+
+var visibleTags = (function(){
+  try{
+    var saved = JSON.parse(
+      localStorage.getItem('numismatica_tags') || 'null'
+    );
+
+    if(!Array.isArray(saved)) return DEFAULT_TAGS.slice();
+
+    return TAG_ORDER.filter(function(tag){
+      return saved.indexOf(tag) >= 0;
+    });
+
+  }catch(e){
+    return DEFAULT_TAGS.slice();
+  }
+})();
+
+function saveTagPreferences(){
+  localStorage.setItem(
+    'numismatica_tags',
+    JSON.stringify(visibleTags)
+  );
+}
+
+function toggleTagsMenu(){
+  document.getElementById('tags-menu')
+    .classList.toggle('open');
+}
+
+function initTagMenu(){
+
+  var menu = document.getElementById('tags-menu');
+
+  menu.querySelectorAll('input[data-tag]').forEach(function(input){
+
+    input.checked = visibleTags.indexOf(input.dataset.tag) >= 0;
+
+    input.addEventListener('change',function(){
+
+      var tag = input.dataset.tag;
+
+      if(input.checked){
+        if(visibleTags.indexOf(tag)<0){
+          visibleTags.push(tag);
+        }
+      }else{
+        visibleTags = visibleTags.filter(function(t){
+          return t !== tag;
+        });
+      }
+
+      // Mantiene sempre l'ordine prestabilito
+      visibleTags = TAG_ORDER.filter(function(t){
+        return visibleTags.indexOf(t)>=0;
+      });
+
+      saveTagPreferences();
+      renderList();
+    });
+  });
+
+  document.addEventListener('mousedown',function(e){
+    if(!e.target.closest('#tags-wrap')){
+      menu.classList.remove('open');
+    }
+  });
+}
+  
 function save(){
   localStorage.setItem('numismatica_v2', JSON.stringify(coins));
   localStorage.setItem('numismatica_nid', String(nextId));
@@ -1560,10 +1788,72 @@ function renderList(){
   var el=document.getElementById('clist');
   if(!list.length){ el.innerHTML='<div class="empty-msg">'+(coins.length?'No coins match.':'No coins yet — add the first one.')+'</div>'; }
   else el.innerHTML=list.map(function(c){
-    var tags='<span class="ctag ct-'+c.period+'">'+periodName(c.period).toUpperCase()+'</span>';
-    if(c.prov) tags+='<span class="ctag ct-prov-name">'+esc(c.prov)+'</span>';
-    if(c.period==='prov'&&c.reign) tags+='<span class="ctag ct-reign">'+esc(c.reign)+'</span>';
-    if(c.metal) tags+='<span class="ctag ct-mat">'+esc(c.metal)+'</span>';
+    var tags = '';
+    
+    var gn = coinGeoNames(c);
+    
+    // 1. PROVINCE
+    if(visibleTags.includes('province')){
+      var provinces = c.period === 'prov'
+        ? gn.provs
+        : (c.prov ? [c.prov] : []);
+    
+      provinces.forEach(function(p){
+        tags += '<span class="ctag ct-prov-name">'+
+          esc(p)+'</span>';
+      });
+    }
+    
+    // 2. REGION
+    if(visibleTags.includes('region') && c.period === 'prov'){
+      gn.regions.forEach(function(r){
+        tags += '<span class="ctag ct-region">'+
+          esc(r)+'</span>';
+      });
+    }
+    
+    // 3. CITY
+    if(visibleTags.includes('city') && c.period === 'prov'){
+      gn.cities.forEach(function(city){
+        tags += '<span class="ctag ct-city">'+
+          esc(city)+'</span>';
+      });
+    }
+    
+    // 4. AUTHORITY
+    if(visibleTags.includes('authority')){
+      var authority = coinAuthority(c);
+    
+      if(authority){
+        tags += '<span class="ctag ct-authority">'+
+          esc(authority)+'</span>';
+      }
+    }
+    
+    // 5. MAGISTRATE
+    if(visibleTags.includes('magistrate')){
+      var magistrates = [];
+    
+      if(c.period === 'prov'){
+        magistrates = coinMagNames(c);
+      }else if(c.period === 'rep' && c.mag){
+        magistrates = [c.mag];
+      }
+    
+      magistrates.forEach(function(m){
+        if(m){
+          tags += '<span class="ctag ct-magistrate">'+
+            esc(m)+'</span>';
+        }
+      });
+    }
+    
+    // 6. METAL
+    if(visibleTags.includes('metal') && c.metal){
+      tags += '<span class="ctag ct-mat">'+
+        esc(c.metal)+'</span>';
+    }
+
     var title=c.ref||coinAuthority(c)||c.denom||'—';
     var sub=[coinAuthority(c), c.denom, c.date, c.mint].filter(Boolean).join(' · ');
     return '<div class="crow" onclick="openDetail('+c.id+')">'+
@@ -1739,6 +2029,7 @@ makeDraggable(
     else if(document.getElementById('detail').classList.contains('open')) closeDetail();
     else if(modalOpen()) closeModal();
   });
+  initTagMenu();
   renderList();
 })();
 </script>

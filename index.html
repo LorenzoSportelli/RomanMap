@@ -284,11 +284,24 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div id="tt"></div>
     <div id="legend"><span>0</span><div id="legbar"></div><span id="legmax">0</span><div class="leg-hl"><i></i><span>SELECTION</span></div></div>
     
-    <!-- Pulsanti Zecche -->
-    <div id="mint-controls" style="position:absolute; top:15px; right:15px; z-index:1000; display:flex; gap:6px;">
-      <button id="btn-mints-none" class="btn" onclick="setMintMode('none')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">NO MINTS</button>
-      <button id="btn-mints-mine" class="btn" onclick="setMintMode('mine')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">MY MINTS</button>
-      <button id="btn-mints-all" class="btn" onclick="setMintMode('all')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">ALL THE MINTS</button>
+    <!-- Controlli Mappa (Zecche + Filtri Monete) -->
+    <div id="map-controls" style="position:absolute; top:15px; right:15px; z-index:1000; display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+      
+      <!-- Pulsanti Zecche -->
+      <div style="display:flex; gap:6px;">
+        <button id="btn-mints-none" class="btn" onclick="setMintMode('none')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">NO MINTS</button>
+        <button id="btn-mints-mine" class="btn" onclick="setMintMode('mine')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">MY MINTS</button>
+        <button id="btn-mints-all" class="btn" onclick="setMintMode('all')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">ALL THE MINTS</button>
+      </div>
+
+      <!-- Pulsanti Filtro Monete (sotto) -->
+      <div style="display:flex; gap:6px;">
+        <button id="btn-filter-all" class="btn" onclick="setCoinFilter('all')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">ALL COINS</button>
+        <button id="btn-filter-prov" class="btn" onclick="setCoinFilter('prov')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">PROVINCIAL</button>
+        <button id="btn-filter-imp" class="btn" onclick="setCoinFilter('imp')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">IMPERIAL</button>
+        <button id="btn-filter-rep" class="btn" onclick="setCoinFilter('rep')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">REPUBLICAN</button>
+      </div>
+
     </div>
   </div>
 
@@ -876,6 +889,51 @@ var IMP_CITY_TO_SUB = {
   "Barcino": "Hispania", "Caesaraugusta": "Hispania"
 };
 
+// MAPPER IMPERIALE -> PROVINCE ROMANE (GeoJSON)
+var IMP_GEO_TO_PROVS = {
+  "Africa": ["Africa Proconsularis"],
+  "Zeugitana": ["Africa Proconsularis"],
+  "Cyrenaica": ["Creta et Cyrene"],
+  "Egypt": ["Aegyptus"],
+  "Asia": ["Asia"],
+  "Asia Minor": ["Asia"],
+  "Bithynia": ["Bithynia et Pontus"],
+  "Cappadocia": ["Galatia et Cappadocia"],
+  "Ionia": ["Asia"],
+  "Islands off Ionia": ["Asia"],
+  "Mysia": ["Asia"],
+  "Pisidia": ["Galatia et Cappadocia"],
+  "Syria": ["Syria"],
+  "Commagene": ["Syria"],
+  "Judaea": ["Iudaea"],
+  "Phoenicia": ["Syria"],
+  "Seleucis and Pieria": ["Syria"],
+  "Britannia": ["Britannia"],
+  "Dalmatia": ["Dalmatia"],
+  "Gallia": ["Lugdunensis", "Belgica", "Aquitania", "Narbonensis"],
+  "Gallia Cisalpina": ["Italia"],
+  "Gallia Transalpina": ["Narbonensis", "Lugdunensis"],
+  "Germania": ["Germania Superior", "Germania Inferior"],
+  "Hispania": ["Tarraconensis", "Baetica", "Lusitania"],
+  "Hispania Citerior": ["Tarraconensis"],
+  "Hispania Ulterior": ["Baetica", "Lusitania"],
+  "Italy": ["Italia"],
+  "Latium": ["Italia"],
+  "Campania": ["Italia"],
+  "Etruria": ["Italia"],
+  "Umbria": ["Italia"],
+  "Macedon": ["Macedonia"],
+  "Bisaltian District": ["Macedonia"],
+  "Pannonia": ["Pannonia Superior", "Pannonia Inferior"],
+  "Peloponnesus": ["Achaia"],
+  "Achaea": ["Achaia"],
+  "Thrace": ["Thracia"],
+  "Inland Cities of Thrace": ["Thracia"],
+  "Moesia Superior": ["Moesia Superior"],
+  "Moesia": ["Moesia Superior", "Moesia Inferior"],
+  "The European Coast of the Propontis": ["Thracia"]
+};
+
 var IDB = {
   ready: true,
   authorities: IMP_AUTHORITIES,
@@ -1019,9 +1077,16 @@ function geoToOur(geoName){
 }
 
 function coinInMapProvince(c, ourName){
-  var provinces = c.period === 'prov'
-    ? resolveProvinces(c.geo, '')
-    : (c.prov ? [c.prov] : []);
+  var provinces = [];
+  if (c.period === 'prov') {
+    provinces = resolveProvinces(c.geo, '');
+  } else if (c.period === 'imp') {
+    provinces = (c.impSubsubs || []).reduce(function(acc, ss) {
+      return acc.concat(IMP_GEO_TO_PROVS[ss] || []);
+    }, []);
+  } else {
+    provinces = c.prov ? [c.prov] : [];
+  }
 
   if(provinces.indexOf('Italia') >= 0){
     return ourName === 'Italia' || (ourName && ourName.indexOf('Italia') === 0);
@@ -1050,12 +1115,11 @@ var map = L.map("map", {
   zoom: 4.85, minZoom: 4.85, maxZoom: 8, zoomSnap: 0.1, zoomDelta: 0.5
 });
 
-// Creazione dei pannelli per gestire l'ordine Z (Z-Index) personalizzato
 map.createPane('provincesPane');
-map.getPane('provincesPane').style.zIndex = 400; // Le province stanno sotto
+map.getPane('provincesPane').style.zIndex = 400;
 
 map.createPane('mintsPane');
-map.getPane('mintsPane').style.zIndex = 650; // Le zecche stanno sopra
+map.getPane('mintsPane').style.zIndex = 650;
 
 var tt=document.getElementById("tt");
 var mw=document.getElementById("mapwrap");
@@ -1065,7 +1129,7 @@ fetch("https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces
   .then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
   .then(function(data){
     geoLayer=L.geoJSON(data,{
-      pane: 'provincesPane', // Assegna al pannello corretto
+      pane: 'provincesPane',
       style:function(){return{fillColor:"#c8c8b3",fillOpacity:.83,color:"#6a5020",weight:.8};},
       onEachFeature:function(feat,lyr){
         var geoName=feat.properties&&feat.properties.name||"";
@@ -1149,29 +1213,35 @@ function updateMap(){
 }
 
 /* =====================================================================
-   LOGICA ZECCHE (MINTS)
+   LOGICA ZECCHE (MINTS) & FILTRI
    ===================================================================== */
 let allMintsData = [];
-let currentMintMode = 'none'; // 'none', 'mine', 'all'
+let currentMintMode = 'none';
+let currentCoinFilter = 'all';
 let mintsLayer = L.layerGroup().addTo(map);
 
-// Carica il JSON appena la pagina è pronta
 fetch('mints.json')
   .then(r => r.json())
   .then(data => {
     allMintsData = data;
-    setMintMode('none'); // Mostra tutto all'avvio
+    setMintMode('none');
+    setCoinFilter('all');
   })
   .catch(err => console.error("Errore caricamento mints.json:", err));
 
-// Funzione per disegnare i marker in base alla modalità
+function getMintType(name) {
+  // Se l'ID inizia con 'imp-', è una zecca imperiale
+  const m = allMintsData.find(x => x.name === name);
+  if (m && m.id.startsWith('imp-')) return 'imp';
+  return 'prov'; // Altrimenti la consideriamo provinciale
+}
+
 function renderMints() {
   if (!mintsLayer) return;
   mintsLayer.clearLayers();
   
   if (allMintsData.length === 0 || currentMintMode === 'none') return;
 
-  // Se siamo in modalità "Le mie", creiamo un set delle zecche possedute
   let ownedMints = new Set();
   if (currentMintMode === 'mine') {
     coins.forEach(c => {
@@ -1185,10 +1255,12 @@ function renderMints() {
   allMintsData.forEach(m => {
     let isOwned = ownedMints.has(m.name.toLowerCase().trim());
     
-    // Se chiediamo "Le mie" e questa zecca non è posseduta, la saltiamo
     if (currentMintMode === 'mine' && !isOwned) return;
 
-    // Crea il marker nel pannello mintsPane
+    // Applica il filtro delle monete
+    let mintType = getMintType(m.name);
+    if (currentCoinFilter !== 'all' && mintType !== currentCoinFilter) return;
+
     let marker = L.circleMarker([m.lat, m.lng], {
       pane: 'mintsPane',
       radius: isOwned ? 6 : 4,
@@ -1200,7 +1272,6 @@ function renderMints() {
       className: 'mint-marker'
     });
 
-    // Tooltip al passaggio del mouse
     marker.bindTooltip(`<strong>${m.name}</strong><br><span style="font-size:10px;">${isOwned ? 'In collection' : 'Not owned'}</span>`, {
       direction: 'top',
       offset: [0, -8]
@@ -1210,7 +1281,6 @@ function renderMints() {
   });
 }
 
-// Funzione chiamata dai pulsanti
 function setMintMode(mode) {
   currentMintMode = mode;
   
@@ -1223,6 +1293,24 @@ function setMintMode(mode) {
   if (mode === 'none') { bNone.style.borderColor = 'var(--text)'; bNone.style.color = 'var(--text)'; bNone.style.background = 'var(--bg3)'; }
   else if (mode === 'mine') { bMine.style.borderColor = 'var(--text)'; bMine.style.color = 'var(--text)'; bMine.style.background = 'var(--bg3)'; }
   else if (mode === 'all') { bAll.style.borderColor = 'var(--text)'; bAll.style.color = 'var(--text)'; bAll.style.background = 'var(--bg3)'; }
+
+  renderMints();
+}
+
+function setCoinFilter(mode) {
+  currentCoinFilter = mode;
+  
+  const bAll = document.getElementById('btn-filter-all');
+  const bProv = document.getElementById('btn-filter-prov');
+  const bImp = document.getElementById('btn-filter-imp');
+  const bRep = document.getElementById('btn-filter-rep');
+
+  [bAll, bProv, bImp, bRep].forEach(b => { b.style.borderColor = 'var(--border2)'; b.style.color = 'var(--text2)'; b.style.background = 'var(--bg2)'; });
+
+  if (mode === 'all') { bAll.style.borderColor = 'var(--text)'; bAll.style.color = 'var(--text)'; bAll.style.background = 'var(--bg3)'; }
+  else if (mode === 'prov') { bProv.style.borderColor = 'var(--text)'; bProv.style.color = 'var(--text)'; bProv.style.background = 'var(--bg3)'; }
+  else if (mode === 'imp') { bImp.style.borderColor = 'var(--text)'; bImp.style.color = 'var(--text)'; bImp.style.background = 'var(--bg3)'; }
+  else if (mode === 'rep') { bRep.style.borderColor = 'var(--text)'; bRep.style.color = 'var(--text)'; bRep.style.background = 'var(--bg3)'; }
 
   renderMints();
 }
@@ -1333,7 +1421,7 @@ function updateProvHint(){
 }
 
 /* =====================================================================
-   IMPERIAL INTERSECTION FILTER
+   IMPERIAL INTERSECTION FILTER & CASCADE
    ===================================================================== */
 var impGeoSel = { regions: [], subs: [], subsubs: [], cities: [] };
 var impAuthSel = [];
@@ -1374,6 +1462,63 @@ function impEnforce(){
         sel=impSelection(); changed=true;
       }
     }
+  }
+}
+
+function impGeoAdd(key, id) {
+  if (key === 'regions') {
+    if (impGeoSel.regions.indexOf(id) < 0) impGeoSel.regions.push(id);
+  } else if (key === 'subs') {
+    if (impGeoSel.subs.indexOf(id) < 0) impGeoSel.subs.push(id);
+    for (var r in IDB.tree) {
+      if (IDB.tree[r][id] && impGeoSel.regions.indexOf(r) < 0) {
+        impGeoSel.regions.push(r); break;
+      }
+    }
+  } else if (key === 'subsubs') {
+    if (impGeoSel.subsubs.indexOf(id) < 0) impGeoSel.subsubs.push(id);
+    for (var r in IDB.tree) {
+      for (var s in IDB.tree[r]) {
+        if (IDB.tree[r][s].indexOf(id) >= 0) {
+          if (impGeoSel.subs.indexOf(s) < 0) impGeoSel.subs.push(s);
+          if (impGeoSel.regions.indexOf(r) < 0) impGeoSel.regions.push(r);
+          return;
+        }
+      }
+    }
+  } else if (key === 'cities') {
+    if (impGeoSel.cities.indexOf(id) < 0) impGeoSel.cities.push(id);
+    var s = IDB.cityToSub[id];
+    if (s) impGeoAdd('subs', s);
+  }
+}
+
+function impGeoRemove(key, id) {
+  if (key === 'cities') {
+    impGeoSel.cities = impGeoSel.cities.filter(function(x){ return x !== id; });
+  } else if (key === 'subsubs') {
+    impGeoSel.subsubs = impGeoSel.subsubs.filter(function(x){ return x !== id; });
+  } else if (key === 'subs') {
+    impGeoSel.subs = impGeoSel.subs.filter(function(x){ return x !== id; });
+    var stillUsed = impGeoSel.cities.some(function(c){ return IDB.cityToSub[c] === id; });
+    if (!stillUsed) {
+      impGeoSel.subsubs = impGeoSel.subsubs.filter(function(ss){
+        for (var r in IDB.tree) {
+          if (IDB.tree[r][id] && IDB.tree[r][id].indexOf(ss) >= 0) return false;
+        }
+        return true;
+      });
+    }
+  } else if (key === 'regions') {
+    impGeoSel.regions = impGeoSel.regions.filter(function(x){ return x !== id; });
+    var subsInRegion = Object.keys(IDB.tree[id] || {});
+    impGeoSel.subs = impGeoSel.subs.filter(function(s){ return subsInRegion.indexOf(s) < 0; });
+    impGeoSel.subsubs = impGeoSel.subsubs.filter(function(ss){
+      for (var s in (IDB.tree[id] || {})) {
+        if (IDB.tree[id][s].indexOf(ss) >= 0) return false;
+      }
+      return true;
+    });
   }
 }
 
@@ -1528,6 +1673,12 @@ function pkRender(key){
 }
 function pkRenderAll(){ Object.keys(PICKERS).forEach(pkRender); updateGeoHint(); }
 function pkAdd(key,id){
+  if (currentPeriod === 'imp' && (key === 'regions' || key === 'subs' || key === 'subsubs' || key === 'cities')) {
+    impGeoAdd(key, id);
+    pkAfterChange(key);
+    return;
+  }
+  
   var P=PICKERS[key];
   if(key==='provs'){
     if(geoSel.provs.indexOf(id)<0){ geoSel.provs.push(id); }
@@ -1541,6 +1692,12 @@ function pkAdd(key,id){
 }
 
 function pkRemove(key,id){
+  if (currentPeriod === 'imp' && (key === 'regions' || key === 'subs' || key === 'subsubs' || key === 'cities')) {
+    impGeoRemove(key, id);
+    pkAfterChange(key);
+    return;
+  }
+
   var P=PICKERS[key];
   if(key==='provs'){
     var derived=resolveProvinces({
@@ -1558,7 +1715,7 @@ function pkRemove(key,id){
   pkAfterChange(key);
 }
 function pkAfterChange(key){
-  var root=document.getElementById(PICKERS[key].el); root.querySelector('.pk-in').value='';
+  var root=document.getElementById(PICKERS[key].el); if(root) root.querySelector('.pk-in').value='';
   if(currentPeriod==='imp'){ impEnforce(); }
   else { provEnforce(); }
   pkRenderAll(); previewHighlight();
@@ -1599,13 +1756,15 @@ function $v(id){ return document.getElementById(id).value.trim(); }
 function $set(id,v){ document.getElementById(id).value=v==null?'':v; }
 
 function previewHighlight(){
-  var provinces;
-  if(currentPeriod === 'prov'){
+  var provinces = [];
+  if (currentPeriod === 'prov') {
     provinces = resolveProvinces(geoSel, '');
-  } else if(currentPeriod === 'rep') {
+  } else if (currentPeriod === 'rep') {
     provinces = resolveProvinces(emptyGeo(), document.getElementById('f-prov').value);
-  } else {
-    provinces = [];
+  } else if (currentPeriod === 'imp') {
+    provinces = impGeoSel.subsubs.reduce(function(acc, ss) {
+      return acc.concat(IMP_GEO_TO_PROVS[ss] || []);
+    }, []);
   }
   setHighlight(provinces);
   updateGeoHint();

@@ -1077,6 +1077,9 @@ function geoToOur(geoName){
 }
 
 function coinInMapProvince(c, ourName){
+  // FILTRO AGGIUNTO: se il tipo di moneta non corrisponde al filtro attivo, restituisce false
+  if (currentCoinFilter !== 'all' && c.period !== currentCoinFilter) return false;
+
   var provinces = [];
   if (c.period === 'prov') {
     provinces = resolveProvinces(c.geo, '');
@@ -1313,6 +1316,7 @@ function setCoinFilter(mode) {
   else if (mode === 'rep') { bRep.style.borderColor = 'var(--text)'; bRep.style.color = 'var(--text)'; bRep.style.background = 'var(--bg3)'; }
 
   renderMints();
+  updateMap(); // AGGIORNATO: Ricarica i colori della mappa in base al filtro
 }
 
 /* =====================================================================

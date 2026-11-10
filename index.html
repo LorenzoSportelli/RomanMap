@@ -1151,6 +1151,10 @@ map.getPane('provincesPane').style.zIndex = 400;
 map.createPane('mintsPane');
 map.getPane('mintsPane').style.zIndex = 650;
 
+// Pane dedicato ai tooltip delle zecche (sopra i marker)
+map.createPane('mintsTooltipPane');
+map.getPane('mintsTooltipPane').style.zIndex = 700;
+
 var tt=document.getElementById("tt");
 var mw=document.getElementById("mapwrap");
 var geoLayer=null;
@@ -1306,7 +1310,8 @@ function renderMints() {
 
     marker.bindTooltip(`<strong>${m.name}</strong><br><span style="font-size:10px;">${isOwned ? 'In collection' : 'Not owned'}</span>`, {
       direction: 'top',
-      offset: [0, -8]
+      offset: [0, -8],
+      pane: 'mintsTooltipPane'
     });
 
     mintsLayer.addLayer(marker);

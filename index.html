@@ -1,19 +1,3 @@
-Hai perfettamente ragione, ho fatto un pasticcio mescolando le versioni. Il problema principale era che il codice che ti avevo dato prima conteneva i riferimenti a un DB strutturato per le imperiali (`IDB`) ma l'HTML della modale non era stato aggiornato di conseguenza, causando crash silenziosi non appena provavi ad aprire "ADD COIN".
-
-Ho preso il tuo file originale funzionante e ho implementato il sistema strutturato per le imperiali in modo pulito, **senza toccare minimamente la logica delle provinciali e delle repubblicane**.
-
-Ecco il codice completo e funzionante. 
-
-### Cosa è stato corretto e aggiunto:
-1. **Ripristinato il funzionamento di base**: la modale si apre, salva e modifica correttamente per tutte e tre le categorie.
-2. **Imperiali strutturate**: ho sostituito i vecchi campi di testo libero (Emperor, Issued By) con dei **picker a selezione multipla** basati sulle liste che mi hai fornito (`AUTHORITY`, `ISSUER`, `CITY`, `REGION`).
-3. **Gerarchia geografica imperiale**: ho ricreato l'albero delle regioni esattamente come nell'immagine (Africa, Asia, Europe con le rispettive subregioni), con i select che si filtrano a vicenda.
-4. **Mint (City)**: ho unito "City" e "Mint" in un unico picker per le imperiali, mettendo **Rome** e **Constantinople** fisse in cima.
-5. **Logica di salvataggio**: ho mappato i nuovi campi in modo che il database (`localStorage`) salvi correttamente i dati, e i tag nella lista (Province, Region, City, Authority, Magistrate) vengano visualizzati con i colori corretti anche per le imperiali.
-
-Ecco il file completo:
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>

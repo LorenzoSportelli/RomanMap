@@ -201,7 +201,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   text-overflow:ellipsis;
 }
 
-/* ===== TAG (lista) — forma sobria, stile editoriale ===== */
+/* ===== TAG (lista) ===== */
 .crow-meta{
   display:flex;
   flex-wrap:wrap;
@@ -236,7 +236,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 /* Region — verde */
 .ct-region{color:#2c6b3b}
 
-/* City — ocra scuro (leggibile su fondo chiaro) */
+/* City — ocra scuro */
 .ct-city{color:#8a6612}
 
 /* Authority — marrone */
@@ -250,7 +250,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
 /* Reign — usato in altri punti, tenuto per compatibilità */
 .ct-reign{color:#7a5a2a}
-/* Periodi (non mostrati nella lista, mantenuti per sicurezza) */
+/* Periodi */
 .ct-rep,.ct-imp,.ct-prov{color:var(--text2)}
 
 .crow-actions{float:right;display:flex;gap:3px;opacity:0;transition:opacity .15s}
@@ -323,11 +323,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .pk-hint:empty{display:none}
 
 /* chip colore testo per picker (stessa palette dei tag) */
-#pk-provs .pk-chip{color:#2f5d8c}
-#pk-regions .pk-chip{color:#3d7a4b}
+#pk-provs .pk-chip{color:#1f4f80}
+#pk-regions .pk-chip{color:#2c6b3b}
 #pk-subs .pk-chip{color:#7a5a2a}
-#pk-cities .pk-chip{color:#a8801a}
-#pk-mag .pk-chip{color:#6f5480}
+#pk-cities .pk-chip{color:#8a6612}
+#pk-mag .pk-chip{color:#5a3f6b}
+#pk-authorities .pk-chip{color:#6f5028}
 
 .btn{background:transparent;border:1px solid var(--border2);color:var(--text2);font-family:'Inter', sans-serif;;font-size:.65rem;letter-spacing:.1em;padding:7px 18px;cursor:pointer;transition:all .2s}
 .btn:hover{border-color:var(--text);color:var(--text)}
@@ -435,7 +436,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 #detail-head:active{
   cursor:grabbing;
 }
-  
 </style>
 </head>
 <body>
@@ -474,44 +474,16 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div id="panel-head">
       <div id="collection-heading">
         <h2>COLLECTION</h2>
-      
         <div id="tags-wrap">
-          <button id="btn-tags" type="button" onclick="toggleTagsMenu(event)">
-            TAGS &#9662;
-          </button>
-      
+          <button id="btn-tags" type="button" onclick="toggleTagsMenu(event)">TAGS &#9662;</button>
           <div id="tags-menu">
             <div class="tag-menu-title">VISIBLE TAGS</div>
-      
-            <label class="tag-option">
-              <input type="checkbox" data-tag="province" checked>
-              Province
-            </label>
-      
-            <label class="tag-option">
-              <input type="checkbox" data-tag="region" checked>
-              Region
-            </label>
-      
-            <label class="tag-option">
-              <input type="checkbox" data-tag="city" checked>
-              City
-            </label>
-      
-            <label class="tag-option">
-              <input type="checkbox" data-tag="authority" checked>
-              Authority
-            </label>
-      
-            <label class="tag-option">
-              <input type="checkbox" data-tag="magistrate" checked>
-              Magistrate
-            </label>
-      
-            <label class="tag-option">
-              <input type="checkbox" data-tag="metal" checked>
-              Metal
-            </label>
+            <label class="tag-option"><input type="checkbox" data-tag="province" checked> Province</label>
+            <label class="tag-option"><input type="checkbox" data-tag="region" checked> Region</label>
+            <label class="tag-option"><input type="checkbox" data-tag="city" checked> City</label>
+            <label class="tag-option"><input type="checkbox" data-tag="authority" checked> Authority</label>
+            <label class="tag-option"><input type="checkbox" data-tag="magistrate" checked> Magistrate</label>
+            <label class="tag-option"><input type="checkbox" data-tag="metal" checked> Metal</label>
           </div>
         </div>
       </div>
@@ -548,15 +520,16 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
     <div class="frow">
       <label>REFERENCE <span style="font-size:.55rem;letter-spacing:.05em;color:var(--text3)">(e.g. RRC 44/5 · RPC I 985 · RIC 207)</span></label>
-      <input id="f-ref" type="text" placeholder="RRC 44/5">
+      <input id="f-ref" type="text" placeholder="RIC 207">
     </div>
     
-    <div class="fgrid" id="block-main-geography">
-      <div class="frow" id="field-prov">
+    <!-- REPUBLICAN ONLY: Geography -->
+    <div class="fgrid" id="block-rep-geography" style="display:none">
+      <div class="frow">
         <label>PROVINCE / REGION <span>*</span></label>
-        <select id="f-prov" onchange="previewHighlight()"></select>
+        <select id="f-rep-prov" onchange="previewHighlight()"></select>
       </div>
-      <div class="frow" id="field-mint">
+      <div class="frow">
         <label>MINT</label>
         <input id="f-mint" type="text" placeholder="Roma, Lugdunum…">
       </div>
@@ -582,55 +555,84 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="pk-hint" id="prov-hint"></div>
     </div>
 
-    <div id="block-prov-geography"> <!-- PEDCQR -->
-    <div class="fsep"><div class="fsep-label">GEOGRAPHY</div></div>
-
-    <div class="frow">
-      <label>PROVINCES / REGIONS</label>
-      <div class="picker" id="pk-provs">
-        <div class="pk-chips"></div>
-        <input class="pk-in" type="text" placeholder="Search province…" autocomplete="off">
-        <div class="pk-list"></div>
-      </div>
-    </div>
-
-    <div class="fgrid">
+    <!-- PROVINCIAL ONLY: Geography -->
+    <div id="block-prov-geography" style="display:none">
+      <div class="fsep"><div class="fsep-label">GEOGRAPHY</div></div>
       <div class="frow">
-        <label>REGION</label>
-        <div class="picker" id="pk-regions">
+        <label>PROVINCES / REGIONS</label>
+        <div class="picker" id="pk-provs">
           <div class="pk-chips"></div>
-          <input class="pk-in" type="text" placeholder="Search region…" autocomplete="off">
+          <input class="pk-in" type="text" placeholder="Search province…" autocomplete="off">
           <div class="pk-list"></div>
         </div>
       </div>
+      <div class="fgrid">
+        <div class="frow">
+          <label>REGION</label>
+          <div class="picker" id="pk-regions">
+            <div class="pk-chips"></div>
+            <input class="pk-in" type="text" placeholder="Search region…" autocomplete="off">
+            <div class="pk-list"></div>
+          </div>
+        </div>
+        <div class="frow">
+          <label>SUBREGION</label>
+          <div class="picker" id="pk-subs">
+            <div class="pk-chips"></div>
+            <input class="pk-in" type="text" placeholder="Search subregion…" autocomplete="off">
+            <div class="pk-list"></div>
+          </div>
+        </div>
+      </div>
       <div class="frow">
-        <label>SUBREGION</label>
-        <div class="picker" id="pk-subs">
+        <label>CITY</label>
+        <div class="picker" id="pk-cities">
           <div class="pk-chips"></div>
-          <input class="pk-in" type="text" placeholder="Search subregion…" autocomplete="off">
+          <input class="pk-in" type="text" placeholder="Search city…" autocomplete="off">
+          <div class="pk-list"></div>
+        </div>
+        <div class="pk-hint" id="geo-hint"></div>
+      </div>
+    </div>
+
+    <!-- IMPERIAL ONLY: Geography -->
+    <div id="block-imp-geography" style="display:none">
+      <div class="fsep"><div class="fsep-label">GEOGRAPHY</div></div>
+      <div class="fgrid">
+        <div class="frow">
+          <label>REGION</label>
+          <div class="picker" id="pk-imp-regions">
+            <div class="pk-chips"></div>
+            <input class="pk-in" type="text" placeholder="Search region…" autocomplete="off">
+            <div class="pk-list"></div>
+          </div>
+        </div>
+        <div class="frow">
+          <label>SUBREGION</label>
+          <div class="picker" id="pk-imp-subs">
+            <div class="pk-chips"></div>
+            <input class="pk-in" type="text" placeholder="Search subregion…" autocomplete="off">
+            <div class="pk-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="frow">
+        <label>CITY / MINT</label>
+        <div class="picker" id="pk-imp-cities">
+          <div class="pk-chips"></div>
+          <input class="pk-in" type="text" placeholder="Search city / mint…" autocomplete="off">
           <div class="pk-list"></div>
         </div>
       </div>
     </div>
 
-    <div class="frow">
-      <label>CITY</label>
-      <div class="picker" id="pk-cities">
-        <div class="pk-chips"></div>
-        <input class="pk-in" type="text" placeholder="Search city…" autocomplete="off">
-        <div class="pk-list"></div>
-      </div>
-      <div class="pk-hint" id="geo-hint"></div>
-    </div>
-    </div> <!-- PEDCQR -->
-    
     <div class="fsep"><div class="fsep-label">ISSUE</div></div>
 
     <div id="block-rep" style="display:none">
       <div class="fgrid">
         <div class="frow">
           <label>MAGISTRATE / TRESVIRI</label>
-          <input id="f-mag" type="text" placeholder="L. Aemilius Lepidus, M. Furius Philus…">
+          <input id="f-mag" type="text" placeholder="L. Aemilius Lepidus…">
         </div>
         <div class="frow">
           <label>ISSUED BY <span style="font-size:.5rem">(if different)</span></label>
@@ -642,12 +644,20 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div id="block-imp" style="display:none">
       <div class="fgrid">
         <div class="frow">
-          <label>EMPEROR / AUTHORITY</label>
-          <input id="f-imp" type="text" placeholder="Augustus, Trajan…">
+          <label>AUTHORITY (EMPEROR)</label>
+          <div class="picker" id="pk-authorities">
+            <div class="pk-chips"></div>
+            <input class="pk-in" type="text" placeholder="Search authority…" autocomplete="off">
+            <div class="pk-list"></div>
+          </div>
         </div>
         <div class="frow">
-          <label>ISSUED BY <span style="font-size:.5rem">(if different)</span></label>
-          <input id="f-imp-auth" type="text" placeholder="General, governor…">
+          <label>ISSUER <span style="font-size:.5rem">(if different)</span></label>
+          <div class="picker" id="pk-issuers">
+            <div class="pk-chips"></div>
+            <input class="pk-in" type="text" placeholder="Search issuer…" autocomplete="off">
+            <div class="pk-list"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -656,11 +666,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="fgrid">
         <div class="frow">
           <label>EMPEROR / AUTHORITY</label>
-          <input id="f-prov-imp" type="text" placeholder="Trajan, Hadrian, Antoninus Pius…">
+          <input id="f-prov-imp" type="text" placeholder="Trajan, Hadrian…">
         </div>
         <div class="frow">
           <label>ISSUED BY <span style="font-size:.5rem">(if different)</span></label>
-          <input id="f-prov-auth" type="text" placeholder="City, governor, koinon, local magistrate…">
+          <input id="f-prov-auth" type="text" placeholder="City, governor…">
         </div>
       </div>
     </div>
@@ -775,11 +785,7 @@ var GEO_MAP = {
 };
 
 /* =====================================================================
-   GEOGRAPHICAL DATA
-   REGIONS / SUBREGIONS / CITIES are populated at runtime from the CSV
-   files in this folder (città.csv, magistrati.csv). Nothing is transcribed
-   here. REGION_PROVINCES maps a historical region to the 117 AD province(s)
-   drawn on the map; regions found in the CSV but absent here map to nothing.
+   PROVINCIAL DATA (CSV)
    ===================================================================== */
 var REGIONS = [];
 var SUBREGIONS = [];
@@ -805,7 +811,6 @@ var REGION_PROVINCES = {
   "Troas":["Asia"],"Uncertain":[]
 };
 
-/* ids used by coins saved with the previous hard-coded subregion list */
 var LEGACY_SUB_IDS = {
   "sub-cilicia-trachea":"sub-cilicia-cilicia-trachea",
   "sub-cilicia-pedias":"sub-cilicia-cilicia-pedias",
@@ -814,12 +819,6 @@ var LEGACY_SUB_IDS = {
   "sub-pelop-laconia":"sub-peloponnesus-laconia"
 };
 
-/* =====================================================================
-   PROVINCIAL DATABASE (built from the CSV files)
-   PDB.tuples = every (reign, magistrate, city, region, subregion) combination
-   supported by the data; the intersection filter works on this set only.
-   The "More" column (RPC links) is kept on each city as `rpc` for future use.
-   ===================================================================== */
 var PDB = {
   ready:false, error:null,
   cities:[], cityById:{}, cityByKey:{}, cityByName:{},
@@ -868,7 +867,6 @@ function pickCol(row, candidates){
   for(var i=0;i<candidates.length;i++) if(candidates[i] in row) return candidates[i];
   return null;
 }
-/* split a multi-value cell on commas / semicolons that are outside parentheses */
 function splitMulti(s){
   var out=[],depth=0,cur='';
   for(var i=0;i<(s||'').length;i++){
@@ -897,7 +895,6 @@ function pdbAddCity(name, region, sub, rpc){
   (PDB.cityByName[norm(name)]=PDB.cityByName[norm(name)]||[]).push(c);
   return c;
 }
-/* "Olbia (Sarmatia)" → city record; region from parentheses disambiguates homonyms */
 function resolveCityRef(ref){
   var m=/^(.*?)\s*\(([^()]*)\)\s*$/.exec(ref);
   var name=m?m[1].trim():ref.trim(), region=m?m[2].trim():'';
@@ -947,7 +944,6 @@ function buildProvDB(magRows, cityRows){
     if(ia>=0&&ib>=0) return ia-ib; if(ia>=0) return -1; if(ib>=0) return 1;
     return a.localeCompare(b);
   });
-  /* tuples */
   var withMag={};
   PDB.mags.forEach(function(m){
     var reigns=m.reigns.length?m.reigns:[null];
@@ -983,11 +979,48 @@ Promise.all([
 ]).then(function(res){ buildProvDB(parseCSV(res[0]), parseCSV(res[1])); })
   .catch(function(e){ PDB.error=e; setProvHint('CSV not loaded ('+e.message+'). Open the page through a local web server.'); });
 
-/* ---- lookups (shared by all periods) ---- */
+
+/* =====================================================================
+   IMPERIAL DATA (IDB)
+   ===================================================================== */
+const IMP_AUTHORITIES = ["Aemilian","Allectus","Amandus","Anonymous","Anthemius","Antoninus Pius","Arcadius","Augustus","Aurelian","Aureolus","Avitus","Balbinus","Basiliscus","Bonosus","Burgundians or Franks","Caracalla","Carausius","Carinus","Carus","Claudius","Claudius II Gothicus","Clodius Albinus","Clodius Macer","Commodus","Constans","Constantine I","Constantine II","Constantine III","Constantius Chlorus","Constantius II","Diadumenian","Didius Julianus","Diocletian","Domitian","Domitian II","Domitius Alexander","Dryantilla","Elagabalus","Eugenius","Flavius Marcus","Florianus","Gaius/Caligula","Galba","Galerius","Gallienus","Geta","Glycerius","Gordian I","Gordian II","Gordian III","Gratian","Hadrian","Honorius","Hostilian","Joannes","Jotapianus","Jovianus","Jovinus","Julian of Pannonia","Julian the Apostate","Julius Nepos","Laelianus","Leo I","Leo II","Leontius","Libius Severus","Licinius","Macrianus Minor","Macrinus","Magnentius","Magnus Maximus","Majorian","Mar. Silbannacus","Marcian","Marcus Aurelius","Marius","Maxentius","Maximian","Maximinus Daia","Maximinus Thrax","Maximus","Maximus of Barcelona","Nero","Nerva","Non-imperial African coinages","Numerian","Odoacer","Olybrius","Otho","Pacatianus","Pertinax","Pescennius Niger","Petronius Maximus","Philip the Arab","Postumus","Priscus Attalus","Probus","Procopius","Pupienus","Quietus","Quintillus","Regalianus","Romulus Augustulus","Saturninus","Septimius Severus","Severus Alexander","Severus II","Sponsianus","Suevi","Tacitus","Tetricus I","Theodosius I","Theodosius II","Tiberius","Titus","Trajan","Trajan Decius","Trebonianus Gallus","Uranius Antoninus","Vabalathus","Valens","Valentinian I","Valentinian II","Valentinian III","Valerian","Vespasian","Victorinus","Visigoths","Vitellius","Volusian","Zeno","Zenobia"];
+
+const IMP_ISSUERS = ["A. Licinius Nerva Silianus","Apronius","C. Annius Pollio","C. Antistius Reginus","C. Antistius Vetus","C. Asinius Gallus","C. Cassius Celer","C. Gallius Lupercus","C. Marcius Censorinus","C. Marius C F Tro","C. Naevius Capella","C. Plotius Rufus","C. Rubellius Blandus","C. Sulpicius Platorinus","Claudius Pulcher","Cn. PISO Cn.F","Cossus Cornelius Lentulus","Galus","L. Aelius Lamia","L. Aquillius Florus","L. Caninius Gallus","L. Lentulus","L. Mescinius Rufus","L. Naevius Surdinus","L. Valerius Catullus","L. Vinicius","Livineius Regulus","M. Durmius","M. Maecilius Tullus","M. Salvius Otho","M. Sanquinius","Messalla","P. Betilienus Bassus","P. Carisius","P. Licinius Stolo","P. Lurius Agrippa","P. Petronius Turpilianus","P. Silius P.","Q. Aelius Lamia","Q. Rustius","Sex. Nonius Quinctilianus","Sisenna","Statilius Taurus","T. Quinctius Crispinus Sulpicianus","Ti. Sempronius Graccus","Volusus Valerius Messalla"];
+
+const IMP_CITIES = ["Rome","Constantinople","Alexandria","Ambianum","Antioch of Pisidia","Antioch, Syria","Aquileia","Arelate","Arelate comitatensian mint","Barcino","Caesaraugusta","Caesarea in Cappadocia","Camulodunum","Carnuntum","Carthage","Cologne","Colonia Patricia","Comitatensian","Cyrene","Cyzicus","Eastern Mint","Emerita","Emisa","Ephesus","Heraclea","Laodicea ad Mare","Londinium","Lugdunum","Mainz","Mediolanum","Narbo","Nemausus","Nicaea (Gallia)","Nicomedia","Ostia","Pergamum","Ravenna","Ravenna comitatensian mint","Rotomagus","Samos","Serdica","Sirmium","Siscia","Southern Gallic Mint","Tarraco","Thessalonica","Ticinum","Trier","Tripolis","Uncertain value","Vienne","Viminacium"];
+
+const IMP_REGIONS = ["Italy","Africa","Asia","Europe"];
+const IMP_SUBREGIONS = {
+  "Africa": ["Africa", "Cyrenaica", "Egypt", "Zeugitana"],
+  "Asia": ["Asia", "Asia Minor", "Bithynia", "Cappadocia", "Ionia", "Islands off Ionia", "Mysia", "Pisidia", "Syria", "Commagene", "Judaea", "Phoenicia", "Seleucis and Pieria"],
+  "Europe": ["Britannia", "Dalmatia", "Gallia", "Gallia Cisalpina", "Gallia Transalpina", "Germania", "Hispania", "Hispania Citerior", "Hispania Ulterior", "Italy", "Latium", "Macedon", "Bisaltian District", "Pannonia", "Peloponnesus", "Achaea", "Thrace", "Inland Cities of Thrace", "Moesia Superior", "Moesia", "The European Coast of the Propontis"]
+};
+
+const IDB = {
+  ready: true,
+  authorities: IMP_AUTHORITIES,
+  issuers: IMP_ISSUERS,
+  cities: IMP_CITIES,
+  regions: IMP_REGIONS,
+  subs: IMP_SUBREGIONS,
+  // Tuples per intersection filtering (Authority -> Issuer)
+  tuples: []
+};
+
+// Build tuples: basically every Emperor can be paired with any Issuer 
+// since we don't have a specific CSV mapping linking them yet.
+IMP_AUTHORITIES.forEach(a => {
+  IMP_ISSUERS.forEach(i => {
+    IDB.tuples.push({ a: a, i: i });
+  });
+});
+
+/* =====================================================================
+   SHARED LOOKUPS & GEO
+   ===================================================================== */
 function subById(id){ if(!id) return null; return PDB.subById[id]||PDB.subById[LEGACY_SUB_IDS[id]]||null; }
 function cityById(id){ if(!id) return null; return PDB.cityById[id]||null; }
 function subLabel(s){ return s ? s.name+' ('+s.region+')' : ''; }
-/* MODIFICA: solo il nome della città, senza regione/subregion */
 function cityLabel(c){
   if(!c) return '';
   return c.name;
@@ -1006,69 +1039,31 @@ function provsForCity(id){
   return provsForRegion(c.region);
 }
 function emptyGeo(){
-  return {
-    provs:[],
-    provExclusions:[],
-    regions:[],
-    subs:[],
-    cities:[]
-  };
+  return { provs:[], provExclusions:[], regions:[], subs:[], cities:[] };
 }
 
 function normGeo(g){
   g = g || {};
-
-  var subs=Array.isArray(g.subs)
-    ? g.subs.map(function(s){
-        return LEGACY_SUB_IDS[s]||s;
-      })
-    : [];
-
+  var subs=Array.isArray(g.subs) ? g.subs.map(function(s){ return LEGACY_SUB_IDS[s]||s; }) : [];
   return {
     provs:Array.isArray(g.provs)?g.provs.slice():[],
-    provExclusions:Array.isArray(g.provExclusions)
-      ? g.provExclusions.slice()
-      : [],
+    provExclusions:Array.isArray(g.provExclusions) ? g.provExclusions.slice() : [],
     regions:Array.isArray(g.regions)?g.regions.slice():[],
     subs:subs,
     cities:Array.isArray(g.cities)?g.cities.slice():[]
   };
 }
+
 function resolveProvinces(geo, primary){
   var set = {};
-  function add(arr){
-    arr.forEach(function(p){
-      if(p) set[p]=true;
-    });
-  }
-
+  function add(arr){ arr.forEach(function(p){ if(p) set[p]=true; }); }
   geo = normGeo(geo);
-
   if(primary) set[primary]=true;
-
-  // Province selezionate manualmente
   add(geo.provs);
-
-  // Province ricavate dalle regioni
-  geo.regions.forEach(function(r){
-    add(provsForRegion(r));
-  });
-
-  // Province ricavate dalle sotto-regioni
-  geo.subs.forEach(function(s){
-    add(provsForSub(s));
-  });
-
-  // Province ricavate dalle città
-  geo.cities.forEach(function(c){
-    add(provsForCity(c));
-  });
-
-  // Rimuove le province escluse manualmente
-  geo.provExclusions.forEach(function(p){
-    delete set[p];
-  });
-
+  geo.regions.forEach(function(r){ add(provsForRegion(r)); });
+  geo.subs.forEach(function(s){ add(provsForSub(s)); });
+  geo.cities.forEach(function(c){ add(provsForCity(c)); });
+  geo.provExclusions.forEach(function(p){ delete set[p]; });
   return Object.keys(set);
 }
 
@@ -1085,98 +1080,38 @@ var detailId = null;
 var filterMode = 'all';
 var currentPeriod = 'prov';
 
-/* =====================================================================
-   COLLECTION TAG VISIBILITY
-   ===================================================================== */
-
-var TAG_ORDER = [
-  'province',
-  'region',
-  'city',
-  'authority',
-  'magistrate',
-  'metal'
-];
-
+var TAG_ORDER = ['province','region','city','authority','magistrate','metal'];
 var DEFAULT_TAGS = TAG_ORDER.slice();
 
 var visibleTags = (function(){
   try{
-    var saved = JSON.parse(
-      localStorage.getItem('numismatica_tags') || 'null'
-    );
-
+    var saved = JSON.parse(localStorage.getItem('numismatica_tags') || 'null');
     if(!Array.isArray(saved)) return DEFAULT_TAGS.slice();
-
-    return TAG_ORDER.filter(function(tag){
-      return saved.indexOf(tag) >= 0;
-    });
-
-  }catch(e){
-    return DEFAULT_TAGS.slice();
-  }
+    return TAG_ORDER.filter(function(tag){ return saved.indexOf(tag) >= 0; });
+  }catch(e){ return DEFAULT_TAGS.slice(); }
 })();
 
-function saveTagPreferences(){
-  localStorage.setItem(
-    'numismatica_tags',
-    JSON.stringify(visibleTags)
-  );
-}
-
+function saveTagPreferences(){ localStorage.setItem('numismatica_tags', JSON.stringify(visibleTags)); }
 function toggleTagsMenu(event){
   if(event) event.stopPropagation();
-  document.getElementById('tags-menu')
-    .classList.toggle('open');
+  document.getElementById('tags-menu').classList.toggle('open');
 }
-
 function initTagMenu(){
-
   var menu = document.getElementById('tags-menu');
   var wrap = document.getElementById('tags-wrap');
-
-  // Sincronizza i checkbox con lo stato salvato
   menu.querySelectorAll('input[data-tag]').forEach(function(input){
-
     input.checked = visibleTags.indexOf(input.dataset.tag) >= 0;
-
     input.addEventListener('change',function(e){
-
       e.stopPropagation();
-
       var tag = input.dataset.tag;
-
-      if(input.checked){
-        if(visibleTags.indexOf(tag)<0){
-          visibleTags.push(tag);
-        }
-      }else{
-        visibleTags = visibleTags.filter(function(t){
-          return t !== tag;
-        });
-      }
-
-      // Mantiene sempre l'ordine prestabilito
-      visibleTags = TAG_ORDER.filter(function(t){
-        return visibleTags.indexOf(t)>=0;
-      });
-
-      saveTagPreferences();
-      renderList();
+      if(input.checked){ if(visibleTags.indexOf(tag)<0){ visibleTags.push(tag); } }
+      else{ visibleTags = visibleTags.filter(function(t){ return t !== tag; }); }
+      visibleTags = TAG_ORDER.filter(function(t){ return visibleTags.indexOf(t)>=0; });
+      saveTagPreferences(); renderList();
     });
   });
-
-  // Chiude il menu solo se il click avviene FUORI da #tags-wrap.
-  document.addEventListener('click',function(e){
-    if(!wrap.contains(e.target)){
-      menu.classList.remove('open');
-    }
-  });
-
-  // Impedisce che i click dentro il menu chiudano il menu stesso
-  menu.addEventListener('click',function(e){
-    e.stopPropagation();
-  });
+  document.addEventListener('click',function(e){ if(!wrap.contains(e.target)){ menu.classList.remove('open'); } });
+  menu.addEventListener('click',function(e){ e.stopPropagation(); });
 }
 
 function save(){
@@ -1185,7 +1120,7 @@ function save(){
 }
 
 (function(){
-  var sel = document.getElementById('f-prov');
+  var sel = document.getElementById('f-rep-prov');
   PROVS.forEach(function(p){
     var o = document.createElement('option');
     o.value = p; o.textContent = p; sel.appendChild(o);
@@ -1216,20 +1151,14 @@ function coinInMapProvince(c, ourName){
   if(provinces.indexOf('Italia') >= 0){
     return ourName === 'Italia' || (ourName && ourName.indexOf('Italia') === 0);
   }
-
   if(ourName === 'Italia'){
-    return provinces.some(function(p){
-      return p === 'Italia' || p.indexOf('Italia') === 0;
-    });
+    return provinces.some(function(p){ return p === 'Italia' || p.indexOf('Italia') === 0; });
   }
-
   return provinces.indexOf(ourName) >= 0;
 }
 
 function provCount(ourName){
-  return coins.filter(function(c){
-    return coinInMapProvince(c, ourName);
-  }).length;
+  return coins.filter(function(c){ return coinInMapProvince(c, ourName); }).length;
 }
 
 function getMax(gl){
@@ -1243,11 +1172,7 @@ function getMax(gl){
 }
 
 var map = L.map("map", {
-  zoom: 4.85,
-  minZoom: 4.85,
-  maxZoom: 8,
-  zoomSnap: 0.1,
-  zoomDelta: 0.5
+  zoom: 4.85, minZoom: 4.85, maxZoom: 8, zoomSnap: 0.1, zoomDelta: 0.5
 });
 
 var tt=document.getElementById("tt");
@@ -1266,9 +1191,7 @@ fetch("https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces
           mouseover:function(e){
             lyr.setStyle({weight:2,color:"#e8c020",fillOpacity:.95});
             lyr.bringToFront();
-            var pc = ourName ? coins.filter(function(c){
-              return coinInMapProvince(c, ourName);
-            }) : [];
+            var pc = ourName ? coins.filter(function(c){ return coinInMapProvince(c, ourName); }) : [];
             var html="<strong>"+(ourName||geoName)+"</strong>";
             html+="<div class='tl'>Coins: <b>"+pc.length+"</b></div>";
             if(pc.length){
@@ -1294,13 +1217,10 @@ fetch("https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces
     map.fitBounds(b, { padding: [20, 20] });
     map.setMaxBounds(b);
     map.options.maxBoundsViscosity = 1.0;
-
     document.getElementById("loading").style.display="none";
     updateMap();
   })
-  .catch(function(e){
-    document.getElementById("loading").innerHTML="<b style='color:#c0392b'>Error: "+e.message+"</b>";
-  });
+  .catch(function(e){ document.getElementById("loading").innerHTML="<b style='color:#c0392b'>Error: "+e.message+"</b>"; });
 
 function postt(e){
   var r=mw.getBoundingClientRect();
@@ -1310,7 +1230,6 @@ function postt(e){
   tt.style.left=x+"px";tt.style.top=y+"px";
 }
 
-/* ---- Selection highlight layer ---- */
 var highlightSet = {};
 function setHighlight(list){
   highlightSet = {};
@@ -1347,9 +1266,10 @@ function updateMap(){
 }
 
 /* =====================================================================
-   PERIOD (order: Provincial · Imperial · Republican)
+   PERIOD SWITCHING
    ===================================================================== */
 function isProvMode(){ return currentPeriod==='prov' && PDB.ready; }
+function isImpMode(){ return currentPeriod==='imp' && IDB.ready; }
 function modalOpen(){ return document.getElementById('overlay').classList.contains('open'); }
 
 function setPeriod(p){
@@ -1360,14 +1280,17 @@ function setPeriod(p){
   document.getElementById('r-rep').className='radio-opt'+(p==='rep'?' on':'');
 
   var isProv = p === 'prov';
+  var isImp = p === 'imp';
+  var isRep = p === 'rep';
 
   document.getElementById('block-prov').style.display=isProv?'':'none';
-  document.getElementById('block-imp').style.display=p==='imp'?'':'none';
-  document.getElementById('block-rep').style.display=p==='rep'?'':'none';
+  document.getElementById('block-imp').style.display=isImp?'':'none';
+  document.getElementById('block-rep').style.display=isRep?'':'none';
   document.getElementById('block-prov-chrono').style.display=isProv?'':'none';
 
-  document.getElementById('block-main-geography').style.display=isProv?'none':'';
   document.getElementById('block-prov-geography').style.display=isProv?'':'none';
+  document.getElementById('block-imp-geography').style.display=isImp?'':'none';
+  document.getElementById('block-rep-geography').style.display=isRep?'':'none';
 
   if(modalOpen()){
     provEnforce();
@@ -1447,26 +1370,60 @@ function updateProvHint(){
 }
 
 /* =====================================================================
-   MULTI-SELECT PICKERS
+   IMPERIAL INTERSECTION FILTER (Authority <-> Issuer)
+   ===================================================================== */
+var impAuthSel = [];
+var impIssuerSel = [];
+var IDIMS = ['a','i'];
+
+function impSelection(){
+  return { a: impAuthSel.slice(), i: impIssuerSel.slice() };
+}
+function impTupleOk(t, sel, skip){
+  for(var j=0;j<IDIMS.length;j++){
+    var k=IDIMS[j]; if(k===skip) continue;
+    if(sel[k].length && sel[k].indexOf(t[k])<0) return false;
+  }
+  return true;
+}
+function impFacet(k, sel){
+  var seen={}, out=[];
+  for(var j=0;j<IDB.tuples.length;j++){
+    var t=IDB.tuples[j];
+    if(t[k]==null || seen[t[k]]) continue;
+    if(impTupleOk(t,sel,k)){ seen[t[k]]=true; out.push(t[k]); }
+  }
+  return out;
+}
+function impEnforce(){
+  var changed=true, guard=0;
+  while(changed && guard++<10){
+    changed=false;
+    var sel=impSelection();
+    for(var j=0;j<IDIMS.length;j++){
+      var k=IDIMS[j]; if(!sel[k].length) continue;
+      var okSet={}; impFacet(k,sel).forEach(function(v){ okSet[v]=true; });
+      var kept=sel[k].filter(function(v){ return okSet[v]; });
+      if(kept.length!==sel[k].length){
+        if(k==='a') impAuthSel=kept;
+        else if(k==='i') impIssuerSel=kept;
+        sel=impSelection(); changed=true;
+      }
+    }
+  }
+}
+
+/* =====================================================================
+   PICKERS
    ===================================================================== */
 function byLabel(a,b){ return a.label.localeCompare(b.label); }
 var PICKERS = {
   provs:{
       el:'pk-provs',
-      items:function(){
-        return PROVS.map(function(p){
-          return {id:p,label:p};
-        });
-      },
-      get:function(){
-        return resolveProvinces(geoSel, '');
-      },
-      set:function(v){
-        geoSel.provs=v;
-      },
-      label:function(id){
-        return id;
-      }
+      items:function(){ return PROVS.map(function(p){ return {id:p,label:p}; }); },
+      get:function(){ return resolveProvinces(geoSel, ''); },
+      set:function(v){ geoSel.provs=v; },
+      label:function(id){ return id; }
   },
   regions:{
     el:'pk-regions',
@@ -1491,7 +1448,6 @@ var PICKERS = {
     items:function(){
       var list = isProvMode() ? facet('c',provSelection()).map(cityById) : CITIES;
       return list.filter(Boolean).map(function(c){
-        /* MODIFICA: niente "sardis - lydia"; solo nome + eventuale sub */
         var s=c.sub?subById(c.sub):null;
         return {id:c.id,label:c.name,small:s?s.name:''};
       }).sort(byLabel);
@@ -1508,8 +1464,64 @@ var PICKERS = {
     },
     get:function(){ return magSel; }, set:function(v){ magSel=v; },
     label:function(id){ return magLabel(PDB.magById[id])||id; }
+  },
+  // --- IMPERIAL PICKERS ---
+  impregions: {
+    el: 'pk-imp-regions',
+    items: function() {
+      return IDB.regions.map(r => ({id:r, label:r})).sort(byLabel);
+    },
+    get: function(){ return impGeoSel.regions; },
+    set: function(v){ impGeoSel.regions = v; },
+    label: function(id){ return id; }
+  },
+  impsubs: {
+    el: 'pk-imp-subs',
+    items: function() {
+      var list = [];
+      impGeoSel.regions.forEach(function(r){
+        var subs = IDB.subs[r] || [];
+        subs.forEach(function(s){ list.push({id:s, label:s, small:r}); });
+      });
+      return list.sort(byLabel);
+    },
+    get: function(){ return impGeoSel.subs; },
+    set: function(v){ impGeoSel.subs = v; },
+    label: function(id){ return id; }
+  },
+  impcities: {
+    el: 'pk-imp-cities',
+    items: function() {
+      return IDB.cities.map(c => ({id:c, label:c})).sort(byLabel);
+    },
+    get: function(){ return impGeoSel.cities; },
+    set: function(v){ impGeoSel.cities = v; },
+    label: function(id){ return id; }
+  },
+  authorities: {
+    el: 'pk-authorities',
+    items: function() {
+      if(!IDB.ready) return [];
+      var list = impFacet('a', impSelection());
+      return list.map(a => ({id:a, label:a})).sort(byLabel);
+    },
+    get: function(){ return impAuthSel; },
+    set: function(v){ impAuthSel = v; },
+    label: function(id){ return id; }
+  },
+  issuers: {
+    el: 'pk-issuers',
+    items: function() {
+      if(!IDB.ready) return [];
+      var list = impFacet('i', impSelection());
+      return list.map(i => ({id:i, label:i})).sort(byLabel);
+    },
+    get: function(){ return impIssuerSel; },
+    set: function(v){ impIssuerSel = v; },
+    label: function(id){ return id; }
   }
 };
+
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
 function pkRender(key){
@@ -1529,19 +1541,12 @@ function pkRender(key){
 function pkRenderAll(){ Object.keys(PICKERS).forEach(pkRender); updateGeoHint(); }
 function pkAdd(key,id){
   var P=PICKERS[key];
-
   if(key==='provs'){
-    if(geoSel.provs.indexOf(id)<0){
-      geoSel.provs.push(id);
-    }
-    geoSel.provExclusions=geoSel.provExclusions.filter(function(p){
-      return p!==id;
-    });
+    if(geoSel.provs.indexOf(id)<0){ geoSel.provs.push(id); }
+    geoSel.provExclusions=geoSel.provExclusions.filter(function(p){ return p!==id; });
   } else {
     var v=P.get().slice();
-    if(v.indexOf(id)<0){
-      v.push(id);
-    }
+    if(v.indexOf(id)<0){ v.push(id); }
     P.set(v);
   }
   pkAfterChange(key);
@@ -1549,46 +1554,31 @@ function pkAdd(key,id){
 
 function pkRemove(key,id){
   var P=PICKERS[key];
-
   if(key==='provs'){
     var derived=resolveProvinces({
-      provs:[],
-      regions:geoSel.regions,
-      subs:geoSel.subs,
-      cities:geoSel.cities
+      provs:[], regions:geoSel.regions, subs:geoSel.subs, cities:geoSel.cities
     },'').indexOf(id)>=0;
-
-    geoSel.provs=geoSel.provs.filter(function(p){
-      return p!==id;
-    });
-
+    geoSel.provs=geoSel.provs.filter(function(p){ return p!==id; });
     if(derived){
-      if(geoSel.provExclusions.indexOf(id)<0){
-        geoSel.provExclusions.push(id);
-      }
+      if(geoSel.provExclusions.indexOf(id)<0){ geoSel.provExclusions.push(id); }
     } else {
-      geoSel.provExclusions=geoSel.provExclusions.filter(function(p){
-        return p!==id;
-      });
+      geoSel.provExclusions=geoSel.provExclusions.filter(function(p){ return p!==id; });
     }
   } else {
-    P.set(P.get().filter(function(x){
-      return x!==id;
-    }));
+    P.set(P.get().filter(function(x){ return x!==id; }));
   }
   pkAfterChange(key);
 }
 function pkAfterChange(key){
   var root=document.getElementById(PICKERS[key].el); root.querySelector('.pk-in').value='';
-  provEnforce(); pkRenderAll(); previewHighlight();
+  if(currentPeriod==='imp'){ impEnforce(); }
+  else { provEnforce(); }
+  pkRenderAll(); previewHighlight();
 }
 function pkCloseAll(){ document.querySelectorAll('.picker.open').forEach(function(p){ p.classList.remove('open'); }); }
 function updateGeoHint(){
   var hint = document.getElementById('geo-hint');
-  if(currentPeriod !== 'prov'){
-    hint.textContent = '';
-    return;
-  }
+  if(currentPeriod !== 'prov'){ hint.textContent = ''; return; }
   var provs = resolveProvinces(geoSel, '');
   hint.textContent = provs.length ? 'Map highlight: '+provs.join(' · ') : '';
 }
@@ -1622,20 +1612,23 @@ function $set(id,v){ document.getElementById(id).value=v==null?'':v; }
 
 function previewHighlight(){
   var provinces;
-
   if(currentPeriod === 'prov'){
     provinces = resolveProvinces(geoSel, '');
+  } else if(currentPeriod === 'rep') {
+    provinces = resolveProvinces(emptyGeo(), document.getElementById('f-rep-prov').value);
   } else {
-    provinces = resolveProvinces(emptyGeo(), document.getElementById('f-prov').value);
+    // Imperial doesn't highlight on this map (different region structure)
+    provinces = [];
   }
-
   setHighlight(provinces);
   updateGeoHint();
 }
 function resetForm(){
   ['f-ref','f-mint','f-mag','f-auth','f-imp','f-imp-auth','f-prov-imp','f-prov-auth','f-denom','f-date','f-desc','f-notes'].forEach(function(id){ $set(id,''); });
-  $set('f-metal',''); document.getElementById('f-prov').selectedIndex=0;
+  $set('f-metal',''); document.getElementById('f-rep-prov').selectedIndex=0;
   geoSel=emptyGeo(); magSel=[]; $set('f-reign','');
+  impGeoSel={regions:[], subs:[], cities:[]};
+  impAuthSel=[]; impIssuerSel=[];
   document.querySelectorAll('.pk-in').forEach(function(i){ i.value=''; });
 }
 function openModal(id){
@@ -1645,22 +1638,35 @@ function openModal(id){
   if(editId!=null){
     var c=coins.find(function(x){ return x.id===editId; });
     if(c){
-      $set('f-ref',c.ref); $set('f-prov',c.prov||''); $set('f-mint',c.mint);
+      $set('f-ref',c.ref); $set('f-mint',c.mint);
       $set('f-mag',c.mag); $set('f-auth',c.auth);
-      $set('f-imp',c.imp); $set('f-imp-auth',c.impAuth!=null?c.impAuth:(c.period==='imp'?c.auth:''));
-      $set('f-prov-imp',c.provImp!=null?c.provImp:(c.period==='prov'?c.imp:'')); $set('f-prov-auth',c.provAuth!=null?c.provAuth:(c.period==='prov'?c.auth:''));
+      
+      // Legacy fields mapping
+      $set('f-imp',c.imp); $set('f-imp-auth',c.impAuth);
+      $set('f-prov-imp',c.provImp); $set('f-prov-auth',c.provAuth);
+      
       $set('f-metal',c.metal); $set('f-denom',c.denom); $set('f-date',c.date); $set('f-desc',c.desc); $set('f-notes',c.notes);
-      geoSel=normGeo(c.geo);
-
-      if(c.period==='prov' && c.prov && geoSel.provs.indexOf(c.prov)<0){
-        geoSel.provs.unshift(c.prov);
-      }
-
-      magSel=Array.isArray(c.mags)?c.mags.slice():[];
+      
       currentPeriod=c.period||'rep';
-      rebuildReignSelect(); $set('f-reign',c.reign||'');
-      if(c.reign && document.getElementById('f-reign').value!==c.reign){
-        var o=document.createElement('option'); o.value=c.reign; o.textContent=c.reign; document.getElementById('f-reign').appendChild(o); $set('f-reign',c.reign);
+      
+      if(currentPeriod === 'prov'){
+        geoSel=normGeo(c.geo);
+        magSel=Array.isArray(c.mags)?c.mags.slice():[];
+        rebuildReignSelect(); $set('f-reign',c.reign||'');
+        if(c.reign && document.getElementById('f-reign').value!==c.reign){
+          var o=document.createElement('option'); o.value=c.reign; o.textContent=c.reign; document.getElementById('f-reign').appendChild(o); $set('f-reign',c.reign);
+        }
+      } else if(currentPeriod === 'imp'){
+        $set('f-rep-prov', c.prov||'');
+        impGeoSel = {
+          regions: c.impRegions || [],
+          subs: c.impSubs || [],
+          cities: c.mint ? [c.mint] : []
+        };
+        impAuthSel = c.imp ? [c.imp] : [];
+        impIssuerSel = c.impAuth ? [c.impAuth] : [];
+      } else {
+        $set('f-rep-prov', c.prov||'');
       }
     }
   } else {
@@ -1676,37 +1682,37 @@ function closeModal(){
 }
 function saveCoin(){
   var isProv = currentPeriod === 'prov';
-  var prov = isProv ? '' : $v('f-prov');
+  var isImp = currentPeriod === 'imp';
+  var isRep = currentPeriod === 'rep';
 
-  if(!isProv && !prov){
+  var prov = isRep ? $v('f-rep-prov') : '';
+  if(isRep && !prov){
     alert('Please select a province / region.');
     return;
   }
 
   if(isProv) provEnforce();
+  if(isImp) impEnforce();
 
   var c={
     id: editId!=null ? editId : nextId++,
     period: currentPeriod,
-
     ref:$v('f-ref'),
     prov:prov,
-    mint:isProv?'':$v('f-mint'),
+    mint: isProv ? '' : (isImp ? (impGeoSel.cities[0] || '') : $v('f-mint')),
 
-    mag: currentPeriod==='rep'?$v('f-mag'):'',
-    auth: currentPeriod==='rep'?$v('f-auth'):'',
+    mag: isRep ? $v('f-mag') : '',
+    auth: isRep ? $v('f-auth') : '',
 
-    imp: currentPeriod==='imp'?$v('f-imp'):(isProv?$v('f-prov-imp'):''),
-    impAuth: currentPeriod==='imp'?$v('f-imp-auth'):'',
+    imp: isImp ? (impAuthSel[0] || '') : (isProv ? $v('f-prov-imp') : ''),
+    impAuth: isImp ? (impIssuerSel[0] || '') : '',
 
-    provImp: isProv?$v('f-prov-imp'):'',
-    provAuth: isProv?$v('f-prov-auth'):'',
+    provImp: isProv ? $v('f-prov-imp') : '',
+    provAuth: isProv ? $v('f-prov-auth') : '',
 
-    reign: isProv?$v('f-reign'):'',
-    mags: isProv?magSel.slice():[],
-    magNames: isProv?magSel.map(function(id){
-      return magLabel(PDB.magById[id]);
-    }):[],
+    reign: isProv ? $v('f-reign') : '',
+    mags: isProv ? magSel.slice() : [],
+    magNames: isProv ? magSel.map(function(id){ return magLabel(PDB.magById[id]); }) : [],
 
     metal:$v('f-metal'),
     denom:$v('f-denom'),
@@ -1714,25 +1720,19 @@ function saveCoin(){
     desc:$v('f-desc'),
     notes:$v('f-notes'),
 
+    // Geo per province
     geo: isProv ? normGeo(geoSel) : emptyGeo(),
+    
+    // Geo per imperial
+    impRegions: isImp ? impGeoSel.regions.slice() : [],
+    impSubs: isImp ? impGeoSel.subs.slice() : [],
 
     geoNames: isProv ? {
       provs: geoSel.provs.slice(),
       regions: geoSel.regions.slice(),
-      subs: geoSel.subs.map(function(s){
-        var o=subById(s);
-        return o?o.name:s;
-      }),
-      cities: geoSel.cities.map(function(x){
-        var o=cityById(x);
-        return o?o.name:x;
-      })
-    } : {
-      provs:[],
-      regions:[],
-      subs:[],
-      cities:[]
-    }
+      subs: geoSel.subs.map(function(s){ var o=subById(s); return o?o.name:s; }),
+      cities: geoSel.cities.map(function(x){ var o=cityById(x); return o?o.name:x; })
+    } : { provs:[], regions:[], subs:[], cities:[] }
   };
 
   if(editId!=null){
@@ -1775,6 +1775,14 @@ function coinMagNames(c){
 }
 function coinGeoNames(c){
   var g=normGeo(c.geo), gn=c.geoNames||{};
+  
+  if (c.period === 'imp') {
+    var provs = (c.impSubs || []).slice(); // subregions act as provinces for map tags
+    var regions = c.impRegions || [];
+    var cities = c.mint ? [c.mint] : [];
+    return { provs: provs, regions: regions, subs: [], cities: cities };
+  }
+
   return {
     provs:c.period==='prov' ? resolveProvinces(g,'') : g.provs,
     regions:g.regions,
@@ -1797,66 +1805,44 @@ function renderList(){
   if(!list.length){ el.innerHTML='<div class="empty-msg">'+(coins.length?'No coins match.':'No coins yet — add the first one.')+'</div>'; }
   else el.innerHTML=list.map(function(c){
     var tags = '';
-
     var gn = coinGeoNames(c);
 
-    // 1. PROVINCE (blu)
+    // 1. PROVINCE (blu) — per Imperial mostra le subregioni (es. Hispania)
     if(visibleTags.includes('province')){
-      var provinces = c.period === 'prov'
-        ? gn.provs
-        : (c.prov ? [c.prov] : []);
-
-      provinces.forEach(function(p){
-        tags += '<span class="ctag ct-prov-name">'+
-          esc(p)+'</span>';
-      });
+      var provinces = c.period === 'prov' ? gn.provs : (c.period === 'imp' ? gn.provs : (c.prov ? [c.prov] : []));
+      provinces.forEach(function(p){ tags += '<span class="ctag ct-prov-name">'+esc(p)+'</span>'; });
     }
 
-    // 2. REGION (verde)
-    if(visibleTags.includes('region') && c.period === 'prov'){
-      gn.regions.forEach(function(r){
-        tags += '<span class="ctag ct-region">'+
-          esc(r)+'</span>';
-      });
+    // 2. REGION (verde) — per Imperial mostra es. Europe, Asia
+    if(visibleTags.includes('region')){
+      if(c.period === 'prov' || c.period === 'imp'){
+        gn.regions.forEach(function(r){ tags += '<span class="ctag ct-region">'+esc(r)+'</span>'; });
+      }
     }
 
-    // 3. CITY (giallo) — solo nome città
-    if(visibleTags.includes('city') && c.period === 'prov'){
-      gn.cities.forEach(function(city){
-        tags += '<span class="ctag ct-city">'+
-          esc(city)+'</span>';
-      });
+    // 3. CITY (giallo)
+    if(visibleTags.includes('city') && (c.period === 'prov' || c.period === 'imp')){
+      gn.cities.forEach(function(city){ tags += '<span class="ctag ct-city">'+esc(city)+'</span>'; });
     }
 
-    // 4. AUTHORITY
+    // 4. AUTHORITY (marrone)
     if(visibleTags.includes('authority')){
       var authority = coinAuthority(c);
-      if(authority){
-        tags += '<span class="ctag ct-authority">'+
-          esc(authority)+'</span>';
-      }
+      if(authority){ tags += '<span class="ctag ct-authority">'+esc(authority)+'</span>'; }
     }
 
-    // 5. MAGISTRATE
+    // 5. MAGISTRATE / ISSUER (viola)
     if(visibleTags.includes('magistrate')){
       var magistrates = [];
-      if(c.period === 'prov'){
-        magistrates = coinMagNames(c);
-      }else if(c.period === 'rep' && c.mag){
-        magistrates = [c.mag];
-      }
-      magistrates.forEach(function(m){
-        if(m){
-          tags += '<span class="ctag ct-magistrate">'+
-            esc(m)+'</span>';
-        }
-      });
+      if(c.period === 'prov'){ magistrates = coinMagNames(c); }
+      else if(c.period === 'rep' && c.mag){ magistrates = [c.mag]; }
+      else if(c.period === 'imp' && c.impAuth){ magistrates = [c.impAuth]; }
+      magistrates.forEach(function(m){ if(m){ tags += '<span class="ctag ct-magistrate">'+esc(m)+'</span>'; } });
     }
 
-    // 6. METAL
+    // 6. METAL (ottanio)
     if(visibleTags.includes('metal') && c.metal){
-      tags += '<span class="ctag ct-mat">'+
-        esc(c.metal)+'</span>';
+      tags += '<span class="ctag ct-mat">'+esc(c.metal)+'</span>';
     }
 
     var title=c.ref||coinAuthority(c)||c.denom||'—';
@@ -1884,18 +1870,21 @@ function openDetail(id){
   var h='<div class="dgrid">'+
     drow('PERIOD',periodName(c.period))+
     drow('REFERENCE',c.ref)+
-    (c.period!=='prov' ? drow('PROVINCE / REGION',c.prov)+drow('MINT',c.mint) : '')+
+    (c.period==='rep' ? drow('PROVINCE / REGION',c.prov)+drow('MINT',c.mint) : '')+
     '</div>';
+  
   if(c.period==='prov'){
     h+='<div class="dsep"></div><div class="dgrid">'+drow('REIGN',c.reign)+drow('MAGISTRATE',coinMagNames(c).join('\n'))+
        drow('EMPEROR / AUTHORITY',c.provImp||c.imp)+drow('ISSUED BY',c.provAuth)+'</div>';
   } else if(c.period==='imp'){
-    h+='<div class="dsep"></div><div class="dgrid">'+drow('EMPEROR / AUTHORITY',c.imp)+drow('ISSUED BY',c.impAuth!=null?c.impAuth:c.auth)+'</div>';
+    h+='<div class="dsep"></div><div class="dgrid">'+drow('AUTHORITY',c.imp)+drow('ISSUER',c.impAuth)+'</div>';
   } else {
     h+='<div class="dsep"></div><div class="dgrid">'+drow('MAGISTRATE / TRESVIRI',c.mag)+drow('ISSUED BY',c.auth)+'</div>';
   }
-  var geoAny=c.period==='prov' &&
-    (gn.provs.length||gn.regions.length||gn.subs.length||gn.cities.length);
+  
+  var geoAny=c.period==='prov' && (gn.provs.length||gn.regions.length||gn.subs.length||gn.cities.length);
+  var geoAnyImp=c.period==='imp' && (gn.provs.length||gn.regions.length||gn.cities.length);
+  
   if(geoAny){
     h+='<div class="dsep"></div><div class="dgrid">'+
       drow('PROVINCES / REGIONS',gn.provs.join('\n'))+
@@ -1903,12 +1892,24 @@ function openDetail(id){
       drow('SUBREGION',gn.subs.join('\n'))+
       drow('CITY',gn.cities.join('\n'))+
       '</div>';
+  } else if (geoAnyImp) {
+    h+='<div class="dsep"></div><div class="dgrid">'+
+      drow('SUBREGION',gn.provs.join('\n'))+
+      drow('REGION',gn.regions.join('\n'))+
+      drow('CITY / MINT',gn.cities.join('\n'))+
+      '</div>';
   }
+  
   h+='<div class="dsep"></div><div class="dgrid">'+drow('METAL',c.metal)+drow('DENOMINATION',c.denom)+'</div>'+drow('PERIOD / DATE',c.date)+
      drow('DESCRIPTION',c.desc)+drow('NOTES',c.notes);
   document.getElementById('detail-body').innerHTML=h;
   document.getElementById('detail').classList.add('open');
-  setHighlight(resolveProvinces(c.geo,c.prov));
+  
+  if(c.period==='rep' || c.period==='prov') {
+    setHighlight(resolveProvinces(c.geo,c.prov));
+  } else {
+    setHighlight([]); // no highlight for imperial
+  }
 }
 function closeDetail(){ document.getElementById('detail').classList.remove('open'); detailId=null; clearHighlight(); }
 function editFromDetail(){ var id=detailId; closeDetail(); openModal(id); }
@@ -1928,90 +1929,48 @@ function doDelete(){
 }
 
 /* =====================================================================
-   DRAGGABLE MODALS — HEADER ONLY
+   DRAGGABLE MODALS
    ===================================================================== */
-
 function makeDraggable(windowElement, handleElement) {
   if (!windowElement || !handleElement) return;
-
-  let dragging = false;
-  let startX = 0;
-  let startY = 0;
-  let initialLeft = 0;
-  let initialTop = 0;
-  let activePointer = null;
-
+  let dragging = false, startX = 0, startY = 0, initialLeft = 0, initialTop = 0, activePointer = null;
   handleElement.addEventListener('pointerdown', function(e) {
     if (e.button !== 0 || !e.isPrimary) return;
     if (e.target.closest('button')) return;
-
     const rect = windowElement.getBoundingClientRect();
-
-    dragging = true;
-    activePointer = e.pointerId;
-
-    startX = e.clientX;
-    startY = e.clientY;
-
-    initialLeft = rect.left;
-    initialTop = rect.top;
-
+    dragging = true; activePointer = e.pointerId;
+    startX = e.clientX; startY = e.clientY;
+    initialLeft = rect.left; initialTop = rect.top;
     windowElement.style.transform = 'none';
     windowElement.style.left = initialLeft + 'px';
     windowElement.style.top = initialTop + 'px';
-
     handleElement.setPointerCapture(e.pointerId);
-
     e.preventDefault();
   });
-
   handleElement.addEventListener('pointermove', function(e) {
     if (!dragging || e.pointerId !== activePointer) return;
-
-    const deltaX = e.clientX - startX;
-    const deltaY = e.clientY - startY;
-
-    const maxLeft = window.innerWidth - 60;
-    const maxTop = window.innerHeight - 40;
-
-    const newLeft = Math.max(
-      0,
-      Math.min(initialLeft + deltaX, maxLeft)
-    );
-
-    const newTop = Math.max(
-      0,
-      Math.min(initialTop + deltaY, maxTop)
-    );
-
-    windowElement.style.left = newLeft + 'px';
-    windowElement.style.top = newTop + 'px';
+    const deltaX = e.clientX - startX, deltaY = e.clientY - startY;
+    const maxLeft = window.innerWidth - 60, maxTop = window.innerHeight - 40;
+    const newLeft = Math.max(0, Math.min(initialLeft + deltaX, maxLeft));
+    const newTop = Math.max(0, Math.min(initialTop + deltaY, maxTop));
+    windowElement.style.left = newLeft + 'px'; windowElement.style.top = newTop + 'px';
   });
-
   function stopDragging(e) {
     if (e.pointerId !== activePointer) return;
-
-    dragging = false;
-    activePointer = null;
+    dragging = false; activePointer = null;
   }
-
   handleElement.addEventListener('pointerup', stopDragging);
   handleElement.addEventListener('pointercancel', stopDragging);
 }
 
-makeDraggable(
-  document.getElementById('modal'),
-  document.getElementById('modal-head')
-);
-
-makeDraggable(
-  document.getElementById('detail-box'),
-  document.getElementById('detail-head')
-);
+makeDraggable(document.getElementById('modal'), document.getElementById('modal-head'));
+makeDraggable(document.getElementById('detail-box'), document.getElementById('detail-head'));
 
 /* =====================================================================
    BOOT
    ===================================================================== */
+var impGeoSel = { regions: [], subs: [], cities: [] };
+
 (function(){
   var dirty=false;
   coins.forEach(function(c){

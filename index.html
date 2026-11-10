@@ -14,6 +14,7 @@
   --border:#d8d5cf;--border2:#b0aca4;
   --text:#1a1a1a;--text2:#555550;--text3:#999990;
   --red:#c0392b;--panel:300px;
+  --space-fields:13px;
 }
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif}
 
@@ -61,27 +62,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
 #legend{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:900;background:#f9f8f6cc;border:1px solid var(--border);padding:5px 14px;display:flex;align-items:center;gap:8px;font-size:.7rem;color:var(--text2);pointer-events:none;font-family:'Inter', sans-serif;;letter-spacing:.05em}
 #legbar{
-  width:150px;
-  height:9px;
-  border-radius:1px;
+  width:150px;height:9px;border-radius:1px;
   background:linear-gradient(
     to right,
-    rgb(207,207,207),
-    rgb(121,160,211),
-    rgb(128,172,160),
-    rgb(171,197,132),
-    rgb(236,213,120),
-    rgb(239,201,96),
-    rgb(243,184,75),
-    rgb(242,171,61),
-    rgb(241,157,52),
-    rgb(238,143,46),
-    rgb(234,127,41),
-    rgb(229,111,38),
-    rgb(223,96,35),
-    rgb(218,79,31),
-    rgb(214,61,28),
-    rgb(211,44,25)
+    rgb(207,207,207),rgb(121,160,211),rgb(128,172,160),rgb(171,197,132),
+    rgb(236,213,120),rgb(239,201,96),rgb(243,184,75),rgb(242,171,61),
+    rgb(241,157,52),rgb(238,143,46),rgb(234,127,41),rgb(229,111,38),
+    rgb(223,96,35),rgb(218,79,31),rgb(214,61,28),rgb(211,44,25)
   );
 }
 #legend .leg-hl{display:none;align-items:center;gap:5px;margin-left:10px;padding-left:10px;border-left:1px solid var(--border)}
@@ -91,85 +78,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 #panel{width:var(--panel);background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
 #panel-head{padding:12px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
 #panel-head h2{font-family:'Inter', sans-serif;;font-size:.65rem;color:var(--text);letter-spacing:.12em;font-weight:500;margin-bottom:8px}
-/* TAG FILTER MENU */
-#collection-heading{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin-bottom:8px;
-}
-
-#collection-heading h2{
-  margin-bottom:0;
-}
-
-#tags-wrap{
-  position:relative;
-  z-index:1600;
-}
-
-#btn-tags{
-  background:transparent;
-  border:1px solid var(--border);
-  color:var(--text2);
-  font-family:'Inter',sans-serif;
-  font-size:.58rem;
-  letter-spacing:.1em;
-  padding:4px 9px;
-  cursor:pointer;
-}
-
-#btn-tags:hover{
-  border-color:var(--border2);
-  color:var(--text);
-}
-
-#tags-menu{
-  display:none;
-  position:absolute;
-  right:0;
-  top:calc(100% + 5px);
-  width:175px;
-  background:var(--bg2);
-  border:1px solid var(--border2);
-  padding:9px 11px;
-  z-index:1700;
-  box-shadow:0 4px 18px #00000018;
-}
-
-#tags-menu.open{
-  display:block;
-}
-
-.tag-option{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  padding:6px 2px;
-  font-family:'Inter',sans-serif;
-  font-size:.68rem;
-  color:var(--text2);
-  cursor:pointer;
-}
-
-.tag-option input{
-  accent-color:#555;
-  cursor:pointer;
-}
-
-.tag-option:hover{
-  color:var(--text);
-}
-
-#tags-menu .tag-menu-title{
-  font-family:'Inter',sans-serif;
-  font-size:.57rem;
-  letter-spacing:.1em;
-  color:var(--text3);
-  padding-bottom:7px;
-  border-bottom:1px solid var(--border);
-  margin-bottom:5px;
-}
+#collection-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+#collection-heading h2{margin-bottom:0}
+#tags-wrap{position:relative;z-index:1600}
+#btn-tags{background:transparent;border:1px solid var(--border);color:var(--text2);font-family:'Inter',sans-serif;font-size:.58rem;letter-spacing:.1em;padding:4px 9px;cursor:pointer}
+#btn-tags:hover{border-color:var(--border2);color:var(--text)}
+#tags-menu{display:none;position:absolute;right:0;top:calc(100% + 5px);width:175px;background:var(--bg2);border:1px solid var(--border2);padding:9px 11px;z-index:1700;box-shadow:0 4px 18px #00000018}
+#tags-menu.open{display:block}
+.tag-option{display:flex;align-items:center;gap:8px;padding:6px 2px;font-family:'Inter',sans-serif;font-size:.68rem;color:var(--text2);cursor:pointer}
+.tag-option input{accent-color:#555;cursor:pointer}
+.tag-option:hover{color:var(--text)}
+#tags-menu .tag-menu-title{font-family:'Inter',sans-serif;font-size:.57rem;letter-spacing:.1em;color:var(--text3);padding-bottom:7px;border-bottom:1px solid var(--border);margin-bottom:5px}
   
 #srch{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Crimson Text',serif;font-size:.9rem;padding:4px 8px;outline:none}
 #srch:focus{border-color:var(--border2)}
@@ -186,71 +105,19 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
 .crow{padding:12px 16px;border-bottom:1px solid #00000008;cursor:pointer;transition:background .1s}
 .crow:hover{background:#00000005}
-.crow-ref{
-  font-family:'Inter', sans-serif;
-  font-size:.85rem;
-  font-weight:600;
-  letter-spacing:.02em;
-}
-.crow-desc{
-  font-size:.95rem;
-  color:var(--text2);
-  margin-top:3px;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
+.crow-ref{font-family:'Inter', sans-serif;font-size:.85rem;font-weight:600;letter-spacing:.02em}
+.crow-desc{font-size:.95rem;color:var(--text2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ===== TAG (lista) — forma sobria, stile editoriale ===== */
-.crow-meta{
-  display:flex;
-  flex-wrap:wrap;
-  align-items:baseline;
-  gap:0;
-  margin-top:6px;
-  font-family:'Inter', sans-serif;
-  font-size:.7rem;
-  letter-spacing:.02em;
-}
-
-.ctag{
-  display:inline;
-  padding:0;
-  border:0;
-  background:transparent;
-  font-variant:small-caps;
-  letter-spacing:.05em;
-  font-weight:600;
-}
-
-.ctag + .ctag::before{
-  content:"·";
-  margin:0 7px;
-  color:var(--text3);
-  font-weight:400;
-}
-
-/* Province — blu */
+.crow-meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:0;margin-top:6px;font-family:'Inter', sans-serif;font-size:.7rem;letter-spacing:.02em}
+.ctag{display:inline;padding:0;border:0;background:transparent;font-variant:small-caps;letter-spacing:.05em;font-weight:600}
+.ctag + .ctag::before{content:"·";margin:0 7px;color:var(--text3);font-weight:400}
 .ct-prov-name{color:#1f4f80}
-
-/* Region — verde */
 .ct-region{color:#2c6b3b}
-
-/* City — ocra scuro (leggibile su fondo chiaro) */
 .ct-city{color:#8a6612}
-
-/* Authority — marrone */
 .ct-authority{color:#6f5028}
-
-/* Magistrate — viola */
 .ct-magistrate{color:#5a3f6b}
-
-/* Metal — ottanio */
 .ct-mat{color:#2f5a5a}
-
-/* Reign — usato in altri punti, tenuto per compatibilità */
 .ct-reign{color:#7a5a2a}
-/* Periodi (non mostrati nella lista, mantenuti per sicurezza) */
 .ct-rep,.ct-imp,.ct-prov{color:var(--text2)}
 
 .crow-actions{float:right;display:flex;gap:3px;opacity:0;transition:opacity .15s}
@@ -265,19 +132,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 #overlay{display:none;position:fixed;inset:0;background:#00000044;z-index:2000;align-items:center;justify-content:center}
 #overlay.open{display:flex}
 #modal{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  background:var(--bg2);
-  border:1px solid var(--border2);
-  width:520px;
-  max-width:95vw;
-  max-height:90vh;
-  display:flex;
-  flex-direction:column;
-  box-shadow:0 8px 60px #00000022;
-  cursor:grab;
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  background:var(--bg2);border:1px solid var(--border2);
+  width:520px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;
+  box-shadow:0 8px 60px #00000022;cursor:grab;
 }
 #modal-head{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
 #modal-head h3{font-family:'Inter', sans-serif;;font-size:.8rem;color:var(--text);letter-spacing:.12em;font-weight:500;flex:1}
@@ -288,22 +146,41 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 #modal-body::-webkit-scrollbar-thumb{background:var(--border)}
 #modal-foot{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
 
-.frow{margin-bottom:13px}
+/* --- FIELD SPACING --- */
+.frow{margin-bottom:var(--space-fields)}
 .frow label{display:block;font-family:'Inter', sans-serif;;font-size:.6rem;color:var(--text3);letter-spacing:.1em;margin-bottom:5px}
 .frow label span{color:var(--border2)}
-.frow input,.frow select,.frow textarea{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Crimson Text',serif;font-size:.95rem;padding:5px 9px;outline:none;resize:vertical}
+.frow input,.frow select,.frow textarea{
+  width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);
+  font-family:'Crimson Text',serif;font-size:.95rem;padding:5px 9px;outline:none;resize:vertical;
+}
 .frow input:focus,.frow select:focus,.frow textarea:focus{border-color:var(--border2)}
 .frow select option{background:var(--bg2);color:var(--text)}
-.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-fields)}
 .frow textarea{min-height:60px}
-.fsep{height:1px;background:var(--border);margin:16px 0 14px;position:relative}
-.fsep-label{position:absolute;left:50%;transform:translateX(-50%) translateY(-50%);background:var(--bg2);padding:0 10px;font-family:'Inter', sans-serif;;font-size:.58rem;color:var(--text3);letter-spacing:.1em}
+
+/* Tight fields: no extra gap between them and the next/prev field, just the normal margin */
+.frow-tight{margin-bottom:var(--space-fields) !important}
+.fgrid-tight{gap:0 !important;display:block}
+.fgrid-tight .frow{margin-bottom:0 !important}
+
+/* Separator: 22px above (slightly bigger) and 13px below */
+.fsep{
+  height:1px;background:var(--border);
+  margin:22px 0 13px;
+  position:relative;
+}
+.fsep-label{
+  position:absolute;left:50%;transform:translateX(-50%) translateY(-50%);
+  background:var(--bg2);padding:0 10px;
+  font-family:'Inter', sans-serif;;font-size:.58rem;color:var(--text3);letter-spacing:.1em;
+}
+
 .radio-group{display:flex;gap:8px}
 .radio-opt{flex:1;border:1px solid var(--border);padding:7px 10px;cursor:pointer;text-align:center;font-family:'Inter', sans-serif;;font-size:.65rem;letter-spacing:.08em;color:var(--text3);transition:all .2s}
 .radio-opt.on{border-color:var(--text);background:var(--bg3);color:var(--text)}
 .radio-opt:hover:not(.on){border-color:var(--border2);color:var(--text2)}
 
-/* ---- Geographic multi-select picker ---- */
 .picker{position:relative}
 .pk-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px}
 .pk-chips:empty{display:none}
@@ -322,7 +199,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .pk-hint{font-family:'Inter',sans-serif;font-size:.58rem;color:var(--text3);letter-spacing:.05em;margin-top:4px;font-style:italic}
 .pk-hint:empty{display:none}
 
-/* chip colore testo per picker (stessa palette dei tag) */
 #pk-provs .pk-chip{color:#1f4f80}
 #pk-regions .pk-chip{color:#2c6b3b}
 #pk-subs .pk-chip{color:#7a5a2a}
@@ -330,6 +206,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 #pk-mag .pk-chip{color:#5a3f6b}
 #pk-imp-regions .pk-chip{color:#2c6b3b}
 #pk-imp-subs .pk-chip{color:#1f4f80}
+#pk-imp-subsubs .pk-chip{color:#5a3f6b}
 #pk-imp-cities .pk-chip{color:#8a6612}
 #pk-authorities .pk-chip{color:#6f5028}
 #pk-issuers .pk-chip{color:#5a3f6b}
@@ -345,23 +222,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 #confirm-box p{font-style:italic;color:var(--text2);margin-bottom:14px;font-size:.95rem}
 #confirm-box .btns{display:flex;gap:8px;justify-content:center}
 
-/* ---- Coin detail modal ---- */
 #detail{display:none;position:fixed;inset:0;background:#00000044;z-index:2500;align-items:center;justify-content:center}
 #detail.open{display:flex}
 #detail-box{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  background:var(--bg2);
-  border:1px solid var(--border2);
-  width:480px;
-  max-width:95vw;
-  max-height:90vh;
-  display:flex;
-  flex-direction:column;
-  box-shadow:0 8px 60px #00000022;
-  cursor:grab;
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  background:var(--bg2);border:1px solid var(--border2);
+  width:480px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;
+  box-shadow:0 8px 60px #00000022;cursor:grab;
 }
 #detail-head{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
 #detail-head h3{font-family:'Inter', sans-serif;font-size:.8rem;color:var(--text);letter-spacing:.12em;font-weight:500;flex:1}
@@ -379,68 +246,28 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
 .leaflet-container{background:#e8e8e0}
 .leaflet-control-zoom a{background:var(--bg2)!important;color:var(--text)!important;border-color:var(--border)!important}
-
 .leaflet-control-attribution {
-  font-size: 7px !important;
-  line-height: 1.1 !important;
-  opacity: 0.65 !important;
-  background: rgba(249,248,246,0.55) !important;
-  color: #333333 !important;
-  border: 1px solid #d8d5cf !important;
-  padding: 2px 5px !important;
-  border-radius: 3px;
+  font-size: 7px !important;line-height: 1.1 !important;opacity: 0.65 !important;
+  background: rgba(249,248,246,0.55) !important;color: #333333 !important;
+  border: 1px solid #d8d5cf !important;padding: 2px 5px !important;border-radius: 3px;
   transform-origin: bottom right;
 }
 
-#hdr{
-  height:48px;
-  background:var(--bg2);
-  border-bottom:1px solid var(--border);
-  display:flex;
-  align-items:center;
-  padding:0 20px;
-  position:relative;
-}
+#hdr{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;position:relative}
+#hdr-left{position:absolute;left:50%;transform:translateX(-50%);text-align:center;display:flex;flex-direction:column;gap:2px;margin-top:8px}
+#hdr-title{font-family:'Inter', sans-serif;font-size:1.05rem;letter-spacing:.12em;font-weight:600}
+#hdr-right{margin-left:auto;display:flex;align-items:center;gap:12px;margin-top:14px}
 
-#hdr-left{
-  position:absolute;
-  left:50%;
-  transform:translateX(-50%);
-  text-align:center;
-  display:flex;
-  flex-direction:column;
-  gap:2px;
-  margin-top:8px;
-}
+#modal-head, #detail-head{cursor:grab;user-select:none;-webkit-user-select:none}
+#modal-head:active, #detail-head:active{cursor:grabbing}
 
-#hdr-title{
-  font-family:'Inter', sans-serif;
-  font-size:1.05rem;
-  letter-spacing:.12em;
-  font-weight:600;
-}
-
-#hdr-right{
-  margin-left:auto;
-  display:flex;
-  align-items:center;
-  gap:12px;
-  margin-top:14px;
-}
-
-/* DRAGGABLE MODALS — HEADER ONLY */
-#modal-head,
-#detail-head{
-  cursor:grab;
-  user-select:none;
-  -webkit-user-select:none;
-}
-
-#modal-head:active,
-#detail-head:active{
-  cursor:grabbing;
-}
-  
+/* Legacy classes */
+.ct-prov-name{color:#1f4f80}
+.ct-region{color:#2c6b3b}
+.ct-city{color:#8a6612}
+.ct-authority{color:#6f5028}
+.ct-magistrate{color:#5a3f6b}
+.ct-mat{color:#2f5a5a}
 </style>
 </head>
 <body>
@@ -458,9 +285,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div id="hdr-title">ROMAN EMPIRE · NUMISMATIC COLLECTION</div>
     <div id="hdr-sub">Provinces at 117 AD</div>
   </div>
-
   <div id="hdr-sep"></div>
-
   <div id="hdr-right">
     <div id="hdr-count">Coins: <span id="hc">0</span></div>
     <button id="btn-add" onclick="openModal()">+ ADD COIN</button>
@@ -621,12 +446,22 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           </div>
         </div>
       </div>
-      <div class="frow">
-        <label>CITY / MINT</label>
-        <div class="picker" id="pk-imp-cities">
-          <div class="pk-chips"></div>
-          <input class="pk-in" type="text" placeholder="Search city / mint…" autocomplete="off">
-          <div class="pk-list"></div>
+      <div class="fgrid">
+        <div class="frow">
+          <label>SUBSUBREGION</label>
+          <div class="picker" id="pk-imp-subsubs">
+            <div class="pk-chips"></div>
+            <input class="pk-in" type="text" placeholder="Search subsubregion…" autocomplete="off">
+            <div class="pk-list"></div>
+          </div>
+        </div>
+        <div class="frow">
+          <label>CITY / MINT</label>
+          <div class="picker" id="pk-imp-cities">
+            <div class="pk-chips"></div>
+            <input class="pk-in" type="text" placeholder="Search city / mint…" autocomplete="off">
+            <div class="pk-list"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -789,9 +624,6 @@ var GEO_MAP = {
   "IX":"Italia — Regio IX — Liguria","X":"Italia — Regio X — Venetia et Histria","XI":"Italia — Regio XI — Transpadana"
 };
 
-/* =====================================================================
-   PROVINCIAL DATA (CSV)
-   ===================================================================== */
 var REGIONS = [];
 var SUBREGIONS = [];
 var CITIES = [];
@@ -986,7 +818,7 @@ Promise.all([
 
 
 /* =====================================================================
-   IMPERIAL DATA (IDB)
+   IMPERIAL DATA (IDB) — FOUR GENERATIONS
    ===================================================================== */
 var IMP_AUTHORITIES = ["Aemilian","Allectus","Amandus","Anonymous","Anthemius","Antoninus Pius","Arcadius","Augustus","Aurelian","Aureolus","Avitus","Balbinus","Basiliscus","Bonosus","Burgundians or Franks","Caracalla","Carausius","Carinus","Carus","Claudius","Claudius II Gothicus","Clodius Albinus","Clodius Macer","Commodus","Constans","Constantine I","Constantine II","Constantine III","Constantius Chlorus","Constantius II","Diadumenian","Didius Julianus","Diocletian","Domitian","Domitian II","Domitius Alexander","Dryantilla","Elagabalus","Eugenius","Flavius Marcus","Florianus","Gaius/Caligula","Galba","Galerius","Gallienus","Geta","Glycerius","Gordian I","Gordian II","Gordian III","Gratian","Hadrian","Honorius","Hostilian","Joannes","Jotapianus","Jovianus","Jovinus","Julian of Pannonia","Julian the Apostate","Julius Nepos","Laelianus","Leo I","Leo II","Leontius","Libius Severus","Licinius","Macrianus Minor","Macrinus","Magnentius","Magnus Maximus","Majorian","Mar. Silbannacus","Marcian","Marcus Aurelius","Marius","Maxentius","Maximian","Maximinus Daia","Maximinus Thrax","Maximus","Maximus of Barcelona","Nero","Nerva","Non-imperial African coinages","Numerian","Odoacer","Olybrius","Otho","Pacatianus","Pertinax","Pescennius Niger","Petronius Maximus","Philip the Arab","Postumus","Priscus Attalus","Probus","Procopius","Pupienus","Quietus","Quintillus","Regalianus","Romulus Augustulus","Saturninus","Septimius Severus","Severus Alexander","Severus II","Sponsianus","Suevi","Tacitus","Tetricus I","Theodosius I","Theodosius II","Tiberius","Titus","Trajan","Trajan Decius","Trebonianus Gallus","Uranius Antoninus","Vabalathus","Valens","Valentinian I","Valentinian II","Valentinian III","Valerian","Vespasian","Victorinus","Visigoths","Vitellius","Volusian","Zeno","Zenobia"];
 
@@ -994,11 +826,56 @@ var IMP_ISSUERS = ["A. Licinius Nerva Silianus","Apronius","C. Annius Pollio","C
 
 var IMP_CITIES = ["Rome","Constantinople","Alexandria","Ambianum","Antioch of Pisidia","Antioch, Syria","Aquileia","Arelate","Arelate comitatensian mint","Barcino","Caesaraugusta","Caesarea in Cappadocia","Camulodunum","Carnuntum","Carthage","Cologne","Colonia Patricia","Comitatensian","Cyrene","Cyzicus","Eastern Mint","Emerita","Emisa","Ephesus","Heraclea","Laodicea ad Mare","Londinium","Lugdunum","Mainz","Mediolanum","Narbo","Nemausus","Nicaea (Gallia)","Nicomedia","Ostia","Pergamum","Ravenna","Ravenna comitatensian mint","Rotomagus","Samos","Serdica","Sirmium","Siscia","Southern Gallic Mint","Tarraco","Thessalonica","Ticinum","Trier","Tripolis","Uncertain value","Vienne","Viminacium"];
 
-var IMP_REGIONS = ["Italy","Africa","Asia","Europe"];
-var IMP_SUBREGIONS = {
-  "Africa": ["Africa", "Cyrenaica", "Egypt", "Zeugitana"],
-  "Asia": ["Asia", "Asia Minor", "Bithynia", "Cappadocia", "Ionia", "Islands off Ionia", "Mysia", "Pisidia", "Syria", "Commagene", "Judaea", "Phoenicia", "Seleucis and Pieria"],
-  "Europe": ["Britannia", "Dalmatia", "Gallia", "Gallia Cisalpina", "Gallia Transalpina", "Germania", "Hispania", "Hispania Citerior", "Hispania Ulterior", "Italy", "Latium", "Macedon", "Bisaltian District", "Pannonia", "Peloponnesus", "Achaea", "Thrace", "Inland Cities of Thrace", "Moesia Superior", "Moesia", "The European Coast of the Propontis"]
+/* Hierarchy defined by user's images:
+   Gen 2 = Regions (Europe, Asia, Africa, Italy)
+   Gen 3 = Subregions (Hispania, Gallia, Syria...)
+   Gen 4 = Subsubregions (Hispania Citerior, Gallia Cisalpina...)
+*/
+var IMP_GEO_TREE = {
+  "Africa": {
+    "Africa": ["Africa", "Zeugitana"],
+    "Cyrenaica": ["Cyrenaica"],
+    "Egypt": ["Egypt"]
+  },
+  "Asia": {
+    "Asia": ["Asia", "Asia Minor"],
+    "Bithynia": ["Bithynia"],
+    "Cappadocia": ["Cappadocia"],
+    "Ionia": ["Ionia", "Islands off Ionia"],
+    "Mysia": ["Mysia"],
+    "Pisidia": ["Pisidia"],
+    "Syria": ["Syria", "Commagene", "Judaea", "Phoenicia", "Seleucis and Pieria"]
+  },
+  "Europe": {
+    "Britannia": ["Britannia"],
+    "Dalmatia": ["Dalmatia"],
+    "Gallia": ["Gallia", "Gallia Cisalpina", "Gallia Transalpina"],
+    "Germania": ["Germania"],
+    "Hispania": ["Hispania", "Hispania Citerior", "Hispania Ulterior"],
+    "Italy": ["Italy", "Latium"],
+    "Macedon": ["Macedon", "Bisaltian District"],
+    "Pannonia": ["Pannonia"],
+    "Peloponnesus": ["Peloponnesus", "Achaea"],
+    "Thrace": ["Thrace", "Inland Cities of Thrace", "Moesia Superior", "Moesia", "The European Coast of the Propontis"]
+  },
+  "Italy": {
+    "Italy": ["Latium", "Campania", "Etruria", "Umbria"]
+  }
+};
+
+// City mapping to Subregion (Gen 3) for filtering
+var IMP_CITY_TO_SUB = {
+  "Rome": "Italy", "Ostia": "Italy", "Ravenna": "Italy", "Ravenna comitatensian mint": "Italy",
+  "Mediolanum": "Italy", "Aquileia": "Italy", "Ticinum": "Italy",
+  "Constantinople": "Thrace", "Serdica": "Thrace", "Thessalonica": "Macedon",
+  "Alexandria": "Egypt", "Cyrene": "Cyrenaica", "Carthage": "Africa",
+  "Antioch, Syria": "Syria", "Tripolis": "Phoenicia", "Caesarea in Cappadocia": "Cappadocia",
+  "Antioch of Pisidia": "Pisidia", "Ephesus": "Asia", "Pergamum": "Mysia", "Samos": "Ionia", "Cyzicus": "Mysia",
+  "Lugdunum": "Gallia", "Arelate": "Gallia", "Narbo": "Gallia", "Vienne": "Gallia",
+  "Londinium": "Britannia", "Camulodunum": "Britannia", "Trier": "Gallia", "Cologne": "Germania", "Mainz": "Germania",
+  "Siscia": "Pannonia", "Sirmium": "Pannonia", "Viminacium": "Moesia Superior",
+  "Tarraco": "Hispania", "Emerita": "Hispania", "Colonia Patricia": "Hispania", "Barcino": "Hispania", "Caesaraugusta": "Hispania",
+  "Nicomedia": "Bithynia", "Heraclea": "Bithynia", "Ambianum": "Gallia", "Rotomagus": "Gallia", "Nemausus": "Gallia"
 };
 
 var IDB = {
@@ -1006,8 +883,8 @@ var IDB = {
   authorities: IMP_AUTHORITIES,
   issuers: IMP_ISSUERS,
   cities: IMP_CITIES,
-  regions: IMP_REGIONS,
-  subs: IMP_SUBREGIONS,
+  tree: IMP_GEO_TREE,
+  cityToSub: IMP_CITY_TO_SUB,
   tuples: []
 };
 
@@ -1017,16 +894,14 @@ IMP_AUTHORITIES.forEach(function(a) {
   });
 });
 
+
 /* =====================================================================
    SHARED LOOKUPS & GEO
    ===================================================================== */
 function subById(id){ if(!id) return null; return PDB.subById[id]||PDB.subById[LEGACY_SUB_IDS[id]]||null; }
 function cityById(id){ if(!id) return null; return PDB.cityById[id]||null; }
 function subLabel(s){ return s ? s.name+' ('+s.region+')' : ''; }
-function cityLabel(c){
-  if(!c) return '';
-  return c.name;
-}
+function cityLabel(c){ if(!c) return ''; return c.name; }
 function magLabel(m){ return m ? m.name+(m.title?' ('+m.title+')':'') : ''; }
 function provsForRegion(r){ return (REGION_PROVINCES[r]||[]).slice(); }
 function provsForSub(id){
@@ -1046,9 +921,7 @@ function emptyGeo(){
 
 function normGeo(g){
   g = g || {};
-  var subs=Array.isArray(g.subs)
-    ? g.subs.map(function(s){ return LEGACY_SUB_IDS[s]||s; })
-    : [];
+  var subs=Array.isArray(g.subs) ? g.subs.map(function(s){ return LEGACY_SUB_IDS[s]||s; }) : [];
   return {
     provs:Array.isArray(g.provs)?g.provs.slice():[],
     provExclusions:Array.isArray(g.provExclusions) ? g.provExclusions.slice() : [],
@@ -1377,7 +1250,7 @@ function updateProvHint(){
 /* =====================================================================
    IMPERIAL INTERSECTION FILTER
    ===================================================================== */
-var impGeoSel = { regions: [], subs: [], cities: [] };
+var impGeoSel = { regions: [], subs: [], subsubs: [], cities: [] };
 var impAuthSel = [];
 var impIssuerSel = [];
 var IDIMS = ['a','i'];
@@ -1474,7 +1347,7 @@ var PICKERS = {
   impregions: {
     el: 'pk-imp-regions',
     items: function() {
-      return IDB.regions.map(function(r){ return {id:r, label:r}; }).sort(byLabel);
+      return Object.keys(IDB.tree).sort().map(function(r){ return {id:r, label:r}; });
     },
     get: function(){ return impGeoSel.regions; },
     set: function(v){ impGeoSel.regions = v; },
@@ -1485,7 +1358,7 @@ var PICKERS = {
     items: function() {
       var list = [];
       impGeoSel.regions.forEach(function(r){
-        var subs = IDB.subs[r] || [];
+        var subs = Object.keys(IDB.tree[r] || {});
         subs.forEach(function(s){ list.push({id:s, label:s, small:r}); });
       });
       return list.sort(byLabel);
@@ -1494,10 +1367,37 @@ var PICKERS = {
     set: function(v){ impGeoSel.subs = v; },
     label: function(id){ return id; }
   },
+  impsubsubs: {
+    el: 'pk-imp-subsubs',
+    items: function() {
+      var list = [];
+      impGeoSel.subs.forEach(function(s){
+        // Find parent region for this sub
+        var parentRegion = "";
+        for(var r in IDB.tree) {
+          if(IDB.tree[r][s]) { parentRegion = r; break; }
+        }
+        var subsubs = (IDB.tree[parentRegion] && IDB.tree[parentRegion][s]) || [];
+        subsubs.forEach(function(ss){ list.push({id:ss, label:ss, small:s}); });
+      });
+      return list.sort(byLabel);
+    },
+    get: function(){ return impGeoSel.subsubs; },
+    set: function(v){ impGeoSel.subsubs = v; },
+    label: function(id){ return id; }
+  },
   impcities: {
     el: 'pk-imp-cities',
     items: function() {
-      return IDB.cities.map(function(c){ return {id:c, label:c}; }).sort(byLabel);
+      var list = IDB.cities;
+      // If subregions are selected, filter cities
+      if (impGeoSel.subs.length > 0) {
+        list = list.filter(function(city) {
+          var sub = IDB.cityToSub[city];
+          return impGeoSel.subs.indexOf(sub) >= 0;
+        });
+      }
+      return list.map(function(c){ return {id:c, label:c}; }).sort(byLabel);
     },
     get: function(){ return impGeoSel.cities; },
     set: function(v){ impGeoSel.cities = v; },
@@ -1631,7 +1531,7 @@ function resetForm(){
   ['f-ref','f-mint','f-mag','f-auth','f-prov-imp','f-prov-auth','f-denom','f-date','f-desc','f-notes'].forEach(function(id){ $set(id,''); });
   $set('f-metal',''); document.getElementById('f-prov').selectedIndex=0;
   geoSel=emptyGeo(); magSel=[]; $set('f-reign','');
-  impGeoSel = { regions: [], subs: [], cities: [] };
+  impGeoSel = { regions: [], subs: [], subsubs: [], cities: [] };
   impAuthSel = []; impIssuerSel = [];
   document.querySelectorAll('.pk-in').forEach(function(i){ i.value=''; });
 }
@@ -1661,6 +1561,7 @@ function openModal(id){
         impGeoSel = {
           regions: c.impRegions || [],
           subs: c.impSubs || [],
+          subsubs: c.impSubsubs || [],
           cities: c.mint ? [c.mint] : []
         };
         impAuthSel = c.imp ? [c.imp] : [];
@@ -1723,6 +1624,7 @@ function saveCoin(){
     geo: isProv ? normGeo(geoSel) : emptyGeo(),
     impRegions: isImp ? impGeoSel.regions.slice() : [],
     impSubs: isImp ? impGeoSel.subs.slice() : [],
+    impSubsubs: isImp ? impGeoSel.subsubs.slice() : [],
 
     geoNames: isProv ? {
       provs: geoSel.provs.slice(),
@@ -1774,7 +1676,7 @@ function coinGeoNames(c){
   var g=normGeo(c.geo), gn=c.geoNames||{};
   
   if (c.period === 'imp') {
-    var provs = (c.impSubs || []).slice(); 
+    var provs = (c.impSubsubs || []).slice(); // Display subsubregion as province tag
     var regions = c.impRegions || [];
     var cities = c.mint ? [c.mint] : [];
     return { provs: provs, regions: regions, subs: [], cities: cities };
@@ -1891,7 +1793,7 @@ function openDetail(id){
       '</div>';
   } else if (geoAnyImp) {
     h+='<div class="dsep"></div><div class="dgrid">'+
-      drow('SUBREGION',gn.provs.join('\n'))+
+      drow('SUBSUBREGION',gn.provs.join('\n'))+
       drow('REGION',gn.regions.join('\n'))+
       drow('CITY / MINT',gn.cities.join('\n'))+
       '</div>';
@@ -1987,4 +1889,3 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
 </script>
 </body>
 </html>
-```

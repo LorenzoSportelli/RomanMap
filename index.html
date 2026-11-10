@@ -1,3 +1,5 @@
+index.html 2
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -551,7 +553,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     </div>
     <div class="frow">
       <label>NOTES</label>
-      <textarea id="f-notes" placeholder="Weight, diameter, condition, provenance…" style="min-height:48px"></textarea>
+      <textarea id="f-notes" placeholder="Condition, provenance, purchase…" style="min-height:48px"></textarea>
     </div>
 
   </div>
@@ -1272,16 +1274,20 @@ function renderMints() {
   if (allMintsData.length === 0 || currentMintMode === 'none') return;
 
   let ownedMints = new Set();
-  if (currentMintMode === 'mine') {
-    coins.forEach(c => {
-      let cMint = c.mint || (c.geoNames && c.geoNames.cities && c.geoNames.cities[0]);
-      if (cMint) ownedMints.add(cMint.toLowerCase().trim());
-    });
-    
-    if (ownedMints.size === 0) return;
-  }
+  coins.forEach(c => {
+    let cMint = c.mint || (c.geoNames && c.geoNames.cities && c.geoNames.cities[0]);
+    if (cMint) ownedMints.add(cMint.toLowerCase().trim());
+  });
+  if (currentMintMode === 'mine' && ownedMints.size === 0) return;
 
-  allMintsData.forEach(m => {
+  // Le zecche possedute vengono disegnate per ultime, così restano sopra le altre
+  let mintsToDraw = allMintsData.slice().sort((a, b) => {
+    let oa = ownedMints.has(a.name.toLowerCase().trim()) ? 1 : 0;
+    let ob = ownedMints.has(b.name.toLowerCase().trim()) ? 1 : 0;
+    return oa - ob;
+  });
+
+  mintsToDraw.forEach(m => {
     let isOwned = ownedMints.has(m.name.toLowerCase().trim());
     
     if (currentMintMode === 'mine' && !isOwned) return;
@@ -1291,8 +1297,8 @@ function renderMints() {
 
     let marker = L.circleMarker([m.lat, m.lng], {
       pane: 'mintsPane',
-      radius: 5,
-      fillColor: isOwned ? '#2a7a4a' : '#8a6612',
+      radius: isOwned ? 6 : 4,
+      fillColor: isOwned ? '#2a7a4a' : '#9a9a94',
       color: '#ffffff',
       weight: 1.5,
       opacity: 1,

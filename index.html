@@ -253,7 +253,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 #modal-head, #detail-head{cursor:grab;user-select:none;-webkit-user-select:none}
 #modal-head:active, #detail-head:active{cursor:grabbing}
 
-/* Stili per i marker delle zecche (colore gestito via JS) */
 .mint-marker {
   border-radius: 50%;
   box-shadow: 0 2px 5px rgba(0,0,0,0.4);
@@ -289,24 +288,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div id="tt"></div>
     <div id="legend"><span>0</span><div id="legbar"></div><span id="legmax">0</span><div class="leg-hl"><i></i><span>SELECTION</span></div></div>
     
-    <!-- Controlli Mappa (Zecche + Filtri Monete) -->
     <div id="map-controls" style="position:absolute; top:15px; right:15px; z-index:1000; display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
-      
-      <!-- Pulsanti Zecche -->
       <div style="display:flex; gap:6px;">
         <button id="btn-mints-none" class="btn" onclick="setMintMode('none')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">NO MINTS</button>
         <button id="btn-mints-mine" class="btn" onclick="setMintMode('mine')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">MY MINTS</button>
         <button id="btn-mints-all" class="btn" onclick="setMintMode('all')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">ALL THE MINTS</button>
       </div>
-
-      <!-- Pulsanti Filtro Monete (sotto) -->
       <div style="display:flex; gap:6px;">
         <button id="btn-filter-all" class="btn" onclick="setCoinFilter('all')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">ALL COINS</button>
         <button id="btn-filter-prov" class="btn" onclick="setCoinFilter('prov')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">PROVINCIAL</button>
         <button id="btn-filter-imp" class="btn" onclick="setCoinFilter('imp')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">IMPERIAL</button>
         <button id="btn-filter-rep" class="btn" onclick="setCoinFilter('rep')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">REPUBLICAN</button>
       </div>
-
     </div>
   </div>
 
@@ -362,7 +355,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <input id="f-ref" type="text" placeholder="RIC 207">
     </div>
     
-    <!-- REPUBLICAN ONLY: Geography -->
     <div id="block-main-geography" style="display:none">
       <div class="fsep"><div class="fsep-label">GEOGRAPHY</div></div>
       <div class="fgrid">
@@ -403,7 +395,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       </div>
     </div>
 
-    <!-- PROVINCIAL ONLY: chronology -->
     <div id="block-prov-chrono" style="display:none">
       <div class="fsep"><div class="fsep-label">REIGN &amp; MAGISTRATE</div></div>
       <div class="fgrid">
@@ -423,7 +414,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="pk-hint" id="prov-hint"></div>
     </div>
 
-    <!-- PROVINCIAL ONLY: Geography -->
     <div id="block-prov-geography">
       <div class="fsep"><div class="fsep-label">GEOGRAPHY</div></div>
       <div class="frow">
@@ -463,7 +453,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       </div>
     </div>
 
-    <!-- IMPERIAL ONLY: Geography -->
     <div id="block-imp-geography" style="display:none">
       <div class="fsep"><div class="fsep-label">GEOGRAPHY</div></div>
       <div class="fgrid">
@@ -624,6 +613,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 <script>
 /* =====================================================================
    DATI E VARIABILI GLOBALI
@@ -711,6 +701,60 @@ var REIGN_ORDER = ["Roman Republic","Augustus","Tiberius","Caligula","Claudius",
 
 function slug(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
 function norm(s){ return String(s||'').trim().replace(/\s+/g,' ').toLowerCase(); }
+
+/* === NUOVA FUNZIONE: normalizzazione nomi zecche === */
+function normMint(s){
+  return String(s||'')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,' ')
+    .replace(/[.,;:()]/g,'')
+    .trim();
+}
+
+/* Tabella alias: chiave = forma canonica, valore = varianti accettate */
+var MINT_ALIASES = {
+  'laodicea ad lycum': ['laodiceia ad lycum','laodicea ad mare','laodiceia ad mare'],
+  'antioch':           ['antioch syria','antiochia','antioch on the orontes'],
+  'rome':              ['roma'],
+  'lugdunum':          ['lyon'],
+  'massalia':          ['massilia','marseille'],
+  'osca':              ['huesca'],
+  'corcyra':           ['corfu','kerkyra'],
+  'messana':           ['messina','zancla'],
+  'neapolis':          ['napoli','naples'],
+  'metapontum':        ['metaponto'],
+  'canusium':          ['canosa','canosa di puglia'],
+  'luceria':           ['lucera'],
+  'narbo':             ['narbo martius','narbonne'],
+  'apollonia':         ['apollonia illyria','apollonia, illyria','apollonia, illyricum','apollonia illyricum','apollonia pojani'],
+  'salpesa':           ['salpensa']
+};
+
+function canonicalMint(name){
+  var n = normMint(name);
+  for (var canon in MINT_ALIASES){
+    if (n === canon || MINT_ALIASES[canon].indexOf(n) >= 0) return canon;
+  }
+  return n;
+}
+
+/* === COORDINATE MANCANTI per zecche repubblicane === */
+var MINT_COORD_OVERRIDES = {
+  'Apollonia, Illyria':      [40.720583, 19.470413],
+  'Canusium':                [41.2167, 16.0667],
+  'Corcyra':                 [39.6072, 19.9183],
+  'Laodiceia ad Lycum':      [37.83686, 29.10797],
+  'Luceria':                 [41.508065, 15.335065],
+  'Massalia':                [43.3, 5.367],
+  'Messana':                 [38.189444, 15.55],
+  'Metapontum':              [40.383641, 16.824332],
+  'Neapolis':                [40.8514, 14.2628],
+  'Osca':                    [42.1397, -0.4085],
+  'Salpesa':                 [-5.781536, 37.181512],
+  'Narbo':                   [43.183, 3.0],
+  'Antioch, Syria':          [36.2, 36.15]
+};
 
 function parseCSV(text){
   if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
@@ -1097,7 +1141,6 @@ var RDB = {
   tuples: []
 };
 
-// Caricamento issuers per repubblicane
 fetchFirst(['issuer.csv'])
   .then(text => {
     const rows = parseCSV(text);
@@ -1174,8 +1217,6 @@ var deleteId = null;
 var detailId = null;
 var filterMode = 'all';
 var currentPeriod = 'prov';
-
-// FIX: dichiarata qui, prima di qualsiasi uso (evita TDZ)
 var currentCoinFilter = 'all';
 
 var TAG_ORDER = ['province','region','city','authority','magistrate','metal'];
@@ -1217,8 +1258,6 @@ function save(){
   localStorage.setItem('numismatica_nid', String(nextId));
 }
 
-// FIX: rimosso il blocco che popolava #f-prov (elemento inesistente)
-
 function val2color(v, mx) {
   if (!v || !mx) return "rgb(" + STEPS[0].join(",") + ")";
   var idx = Math.ceil((v / mx) * (STEPS.length - 1));
@@ -1236,6 +1275,32 @@ function geoToOur(geoName){
   return null;
 }
 
+/* === NUOVA FUNZIONE: calcola provincia dalle coordinate === */
+var MINT_GEO_CACHE = {};
+
+function provinceOfMint(mintName){
+  if(!mintName) return null;
+  var canon = canonicalMint(mintName);
+  if(MINT_GEO_CACHE[canon]) return MINT_GEO_CACHE[canon];
+  if(!allMintsData.length || !geoLayer) return null;
+  
+  var m = allMintsData.find(x => canonicalMint(x.name) === canon);
+  var lat, lng;
+  if(m){ lat = m.lat; lng = m.lng; }
+  else if(MINT_COORD_OVERRIDES[mintName]){ lat = MINT_COORD_OVERRIDES[mintName][0]; lng = MINT_COORD_OVERRIDES[mintName][1]; }
+  else return null;
+  
+  var pt = turf.point([lng, lat]);
+  var found = null;
+  geoLayer.eachLayer(l => {
+    if(!found && l.feature && l.feature.geometry && turf.booleanPointInPolygon(pt, l.feature)){
+      found = geoToOur(l.feature.properties.name);
+    }
+  });
+  MINT_GEO_CACHE[canon] = found;
+  return found;
+}
+
 function coinInMapProvince(c, ourName){
   if (currentCoinFilter !== 'all' && c.period !== currentCoinFilter) return false;
   var provinces = [];
@@ -1243,28 +1308,36 @@ function coinInMapProvince(c, ourName){
   if (c.period === 'prov') {
     provinces = resolveProvinces(c.geo, '');
   } else if (c.period === 'imp') {
-    var hasDetail = false;
-    if (c.mint && IMP_MAP_TO_PROVS[c.mint]) { provinces = IMP_MAP_TO_PROVS[c.mint]; hasDetail = true; }
-    if (!hasDetail && c.impSubsubs && c.impSubsubs.length > 0) {
-      provinces = c.impSubsubs.reduce((acc, ss) => acc.concat(IMP_MAP_TO_PROVS[ss] || []), []); hasDetail = true;
-    }
-    if (!hasDetail && c.impSubs && c.impSubs.length > 0) {
-      provinces = c.impSubs.reduce((acc, s) => acc.concat(IMP_MAP_TO_PROVS[s] || []), []); hasDetail = true;
-    }
-    if (!hasDetail && c.impRegions && c.impRegions.length > 0) {
-      provinces = c.impRegions.reduce((acc, r) => acc.concat(IMP_MAP_TO_PROVS[r] || []), []);
+    var fromMint = provinceOfMint(c.mint);
+    if(fromMint){ provinces = [fromMint]; }
+    else {
+      var hasDetail = false;
+      if (c.mint && IMP_MAP_TO_PROVS[c.mint]) { provinces = IMP_MAP_TO_PROVS[c.mint]; hasDetail = true; }
+      if (!hasDetail && c.impSubsubs && c.impSubsubs.length > 0) {
+        provinces = c.impSubsubs.reduce((acc, ss) => acc.concat(IMP_MAP_TO_PROVS[ss] || []), []); hasDetail = true;
+      }
+      if (!hasDetail && c.impSubs && c.impSubs.length > 0) {
+        provinces = c.impSubs.reduce((acc, s) => acc.concat(IMP_MAP_TO_PROVS[s] || []), []); hasDetail = true;
+      }
+      if (!hasDetail && c.impRegions && c.impRegions.length > 0) {
+        provinces = c.impRegions.reduce((acc, r) => acc.concat(IMP_MAP_TO_PROVS[r] || []), []);
+      }
     }
   } else if (c.period === 'rep') {
-    var hasDetail = false;
-    if (c.mint && REP_MAP_TO_PROVS[c.mint]) { provinces = REP_MAP_TO_PROVS[c.mint]; hasDetail = true; }
-    if (!hasDetail && c.repSubsubs && c.repSubsubs.length > 0) {
-      provinces = c.repSubsubs.reduce((acc, ss) => acc.concat(REP_MAP_TO_PROVS[ss] || []), []); hasDetail = true;
-    }
-    if (!hasDetail && c.repSubs && c.repSubs.length > 0) {
-      provinces = c.repSubs.reduce((acc, s) => acc.concat(REP_MAP_TO_PROVS[s] || []), []); hasDetail = true;
-    }
-    if (!hasDetail && c.repRegions && c.repRegions.length > 0) {
-      provinces = c.repRegions.reduce((acc, r) => acc.concat(REP_MAP_TO_PROVS[r] || []), []);
+    var fromMint = provinceOfMint(c.mint);
+    if(fromMint){ provinces = [fromMint]; }
+    else {
+      var hasDetail = false;
+      if (c.mint && REP_MAP_TO_PROVS[c.mint]) { provinces = REP_MAP_TO_PROVS[c.mint]; hasDetail = true; }
+      if (!hasDetail && c.repSubsubs && c.repSubsubs.length > 0) {
+        provinces = c.repSubsubs.reduce((acc, ss) => acc.concat(REP_MAP_TO_PROVS[ss] || []), []); hasDetail = true;
+      }
+      if (!hasDetail && c.repSubs && c.repSubs.length > 0) {
+        provinces = c.repSubs.reduce((acc, s) => acc.concat(REP_MAP_TO_PROVS[s] || []), []); hasDetail = true;
+      }
+      if (!hasDetail && c.repRegions && c.repRegions.length > 0) {
+        provinces = c.repRegions.reduce((acc, r) => acc.concat(REP_MAP_TO_PROVS[r] || []), []);
+      }
     }
   }
 
@@ -1412,15 +1485,16 @@ fetch('mints.json')
   .catch(err => console.error("Errore caricamento mints.json:", err));
 
 function getMintType(name) {
-  const hasRep = coins.some(c => c.period === 'rep' && c.mint && c.mint.toLowerCase().includes(name.toLowerCase()));
-  const hasImp = coins.some(c => c.period === 'imp' && c.mint && c.mint.toLowerCase().includes(name.toLowerCase()));
-  const hasProv = coins.some(c => c.period === 'prov' && c.mint && c.mint.toLowerCase().includes(name.toLowerCase()));
+  var target = canonicalMint(name);
+  const hasRep = coins.some(c => c.period === 'rep' && c.mint && canonicalMint(c.mint) === target);
+  const hasImp = coins.some(c => c.period === 'imp' && c.mint && canonicalMint(c.mint) === target);
+  const hasProv = coins.some(c => c.period === 'prov' && c.mint && canonicalMint(c.mint) === target);
 
   if (hasRep) return 'rep';
   if (hasImp) return 'imp';
   if (hasProv) return 'prov';
 
-  const m = allMintsData.find(x => x.name.toLowerCase() === name.toLowerCase());
+  const m = allMintsData.find(x => canonicalMint(x.name) === target);
   if (m && m.id.startsWith('imp-')) return 'imp';
   if (m && m.id.startsWith('prov-')) return 'prov';
   return 'all';
@@ -1436,7 +1510,7 @@ function renderMints() {
   coins.forEach(c => {
     if (c.mint) {
       c.mint.split(';').forEach(m => {
-        if(m.trim()) ownedMints.add(m.trim().toLowerCase());
+        if(m.trim()) ownedMints.add(canonicalMint(m.trim()));
       });
     }
   });
@@ -1444,13 +1518,13 @@ function renderMints() {
   if (currentMintMode === 'mine' && ownedMints.size === 0) return;
 
   let mintsToDraw = allMintsData.slice().sort((a, b) => {
-    let oa = ownedMints.has(a.name.toLowerCase().trim()) ? 1 : 0;
-    let ob = ownedMints.has(b.name.toLowerCase().trim()) ? 1 : 0;
+    let oa = ownedMints.has(canonicalMint(a.name)) ? 1 : 0;
+    let ob = ownedMints.has(canonicalMint(b.name)) ? 1 : 0;
     return oa - ob;
   });
 
   mintsToDraw.forEach(m => {
-    let isOwned = ownedMints.has(m.name.toLowerCase().trim());
+    let isOwned = ownedMints.has(canonicalMint(m.name));
     
     if (currentMintMode === 'mine' && !isOwned) return;
 
@@ -1477,6 +1551,30 @@ function renderMints() {
       pane: 'mintsTooltipPane'
     });
 
+    mintsLayer.addLayer(marker);
+  });
+
+  // Aggiungi marker per zecche con override che non sono in allMintsData
+  Object.keys(MINT_COORD_OVERRIDES).forEach(name => {
+    if(allMintsData.some(m => canonicalMint(m.name) === canonicalMint(name))) return;
+    let isOwned = ownedMints.has(canonicalMint(name));
+    if (currentMintMode === 'mine' && !isOwned) return;
+    let coords = MINT_COORD_OVERRIDES[name];
+    let marker = L.circleMarker(coords, {
+      pane: 'mintsPane',
+      radius: 5,
+      fillColor: isOwned ? '#2a7a4a' : '#9a9a94',
+      color: '#ffffff',
+      weight: 1.5,
+      opacity: 1,
+      fillOpacity: 0.95,
+      className: 'mint-marker'
+    });
+    marker.bindTooltip(`<strong>${name}</strong><br><span style="font-size:10px;">${isOwned ? 'In collection' : 'Not owned'}</span>`, {
+      direction: 'top',
+      offset: [0, -8],
+      pane: 'mintsTooltipPane'
+    });
     mintsLayer.addLayer(marker);
   });
 }
@@ -1756,7 +1854,7 @@ function repFacet(k, sel){
   }
   return out;
 }
-function repEnforce(){} // Non necessario con un solo filtro
+function repEnforce(){}
 
 function repRegionOfSub(s){ for(var r in RDB.tree){ if(RDB.tree[r][s]) return r; } return ''; }
 function repCityPath(c){
@@ -2167,7 +2265,6 @@ function previewHighlight(){
   updateGeoHint();
 }
 function resetForm(){
-  // FIX: rimosso riferimento a ID inesistenti
   ['f-ref','f-prov-imp','f-prov-auth','f-rep-auth','f-denom','f-date','f-desc','f-notes'].forEach(function(id){ $set(id,''); });
   $set('f-metal','');
   geoSel=emptyGeo(); magSel=[]; $set('f-reign','');
@@ -2464,35 +2561,43 @@ function openDetail(id){
     setHighlight(resolveProvinces(c.geo,c.prov));
   } else if (c.period==='imp') {
     var provs = [];
-    var hasDetail = false;
-    if (c.mint && IMP_MAP_TO_PROVS[c.mint]) { provs = IMP_MAP_TO_PROVS[c.mint]; hasDetail = true; }
-    if (!hasDetail && c.impSubsubs && c.impSubsubs.length > 0) {
-      provs = c.impSubsubs.reduce(function(acc, ss) { return acc.concat(IMP_MAP_TO_PROVS[ss] || []); }, []);
-      hasDetail = true;
-    }
-    if (!hasDetail && c.impSubs && c.impSubs.length > 0) {
-      provs = c.impSubs.reduce(function(acc, s) { return acc.concat(IMP_MAP_TO_PROVS[s] || []); }, []);
-      hasDetail = true;
-    }
-    if (!hasDetail && c.impRegions && c.impRegions.length > 0) {
-      provs = c.impRegions.reduce(function(acc, r) { return acc.concat(IMP_MAP_TO_PROVS[r] || []); }, []);
+    var fromMint = provinceOfMint(c.mint);
+    if(fromMint){ provs = [fromMint]; }
+    else {
+      var hasDetail = false;
+      if (c.mint && IMP_MAP_TO_PROVS[c.mint]) { provs = IMP_MAP_TO_PROVS[c.mint]; hasDetail = true; }
+      if (!hasDetail && c.impSubsubs && c.impSubsubs.length > 0) {
+        provs = c.impSubsubs.reduce(function(acc, ss) { return acc.concat(IMP_MAP_TO_PROVS[ss] || []); }, []);
+        hasDetail = true;
+      }
+      if (!hasDetail && c.impSubs && c.impSubs.length > 0) {
+        provs = c.impSubs.reduce(function(acc, s) { return acc.concat(IMP_MAP_TO_PROVS[s] || []); }, []);
+        hasDetail = true;
+      }
+      if (!hasDetail && c.impRegions && c.impRegions.length > 0) {
+        provs = c.impRegions.reduce(function(acc, r) { return acc.concat(IMP_MAP_TO_PROVS[r] || []); }, []);
+      }
     }
     provs = provs.filter(function(item, pos) { return provs.indexOf(item) === pos; });
     setHighlight(provs);
   } else if (c.period==='rep') {
     var provs = [];
-    var hasDetail = false;
-    if (c.mint && REP_MAP_TO_PROVS[c.mint]) { provs = REP_MAP_TO_PROVS[c.mint]; hasDetail = true; }
-    if (!hasDetail && c.repSubsubs && c.repSubsubs.length > 0) {
-      provs = c.repSubsubs.reduce(function(acc, ss) { return acc.concat(REP_MAP_TO_PROVS[ss] || []); }, []);
-      hasDetail = true;
-    }
-    if (!hasDetail && c.repSubs && c.repSubs.length > 0) {
-      provs = c.repSubs.reduce(function(acc, s) { return acc.concat(REP_MAP_TO_PROVS[s] || []); }, []);
-      hasDetail = true;
-    }
-    if (!hasDetail && c.repRegions && c.repRegions.length > 0) {
-      provs = c.repRegions.reduce(function(acc, r) { return acc.concat(REP_MAP_TO_PROVS[r] || []); }, []);
+    var fromMint = provinceOfMint(c.mint);
+    if(fromMint){ provs = [fromMint]; }
+    else {
+      var hasDetail = false;
+      if (c.mint && REP_MAP_TO_PROVS[c.mint]) { provs = REP_MAP_TO_PROVS[c.mint]; hasDetail = true; }
+      if (!hasDetail && c.repSubsubs && c.repSubsubs.length > 0) {
+        provs = c.repSubsubs.reduce(function(acc, ss) { return acc.concat(REP_MAP_TO_PROVS[ss] || []); }, []);
+        hasDetail = true;
+      }
+      if (!hasDetail && c.repSubs && c.repSubs.length > 0) {
+        provs = c.repSubs.reduce(function(acc, s) { return acc.concat(REP_MAP_TO_PROVS[s] || []); }, []);
+        hasDetail = true;
+      }
+      if (!hasDetail && c.repRegions && c.repRegions.length > 0) {
+        provs = c.repRegions.reduce(function(acc, r) { return acc.concat(REP_MAP_TO_PROVS[r] || []); }, []);
+      }
     }
     provs = provs.filter(function(item, pos) { return provs.indexOf(item) === pos; });
     setHighlight(provs);

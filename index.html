@@ -927,14 +927,23 @@ var IMP_GEO_TREE = {
     "Gallia": ["Gallia", "Gallia Cisalpina", "Gallia Transalpina"],
     "Germania": ["Germania"],
     "Hispania": ["Hispania", "Hispania Citerior", "Hispania Ulterior"],
-    "Italy": ["Italy", "Latium"],
+    "Italy": [
+      "Italia — Regio I — Latium et Campania",
+      "Italia — Regio II — Apulia et Calabria",
+      "Italia — Regio III — Lucania et Bruttii",
+      "Italia — Regio IV — Samnium",
+      "Italia — Regio V — Picenum",
+      "Italia — Regio VI — Umbria et Ager Gallicus",
+      "Italia — Regio VII — Etruria",
+      "Italia — Regio VIII — Aemilia",
+      "Italia — Regio IX — Liguria",
+      "Italia — Regio X — Venetia et Histria",
+      "Italia — Regio XI — Transpadana"
+    ],
     "Macedon": ["Macedon", "Bisaltian District"],
     "Pannonia": ["Pannonia"],
     "Peloponnesus": ["Peloponnesus", "Achaea"],
     "Thrace": ["Thrace", "Inland Cities of Thrace", "Moesia Superior", "Moesia", "The European Coast of the Propontis"]
-  },
-  "Italy": {
-    "Italy": ["Latium", "Campania", "Etruria", "Umbria"]
   }
 };
 
@@ -958,8 +967,14 @@ var IMP_CITY_TO_SUB = {
 };
 
 var IMP_CITY_TO_SUBSUB = {
-  "Rome": "Latium", "Ostia": "Latium",
-  "Mediolanum": "Gallia Cisalpina", "Aquileia": "Gallia Cisalpina", "Ticinum": "Gallia Cisalpina",
+  "Rome": "Italia — Regio I — Latium et Campania", 
+  "Ostia": "Italia — Regio I — Latium et Campania",
+  "Mediolanum": "Italia — Regio XI — Transpadana", 
+  "Aquileia": "Italia — Regio X — Venetia et Histria", 
+  "Ticinum": "Italia — Regio XI — Transpadana",
+  "Ravenna": "Italia — Regio VIII — Aemilia",
+  "Ravenna comitatensian mint": "Italia — Regio VIII — Aemilia",
+  
   "Lugdunum": "Gallia Transalpina", "Arelate": "Gallia Transalpina", "Arelate comitatensian mint": "Gallia Transalpina",
   "Narbo": "Gallia Transalpina", "Vienne": "Gallia Transalpina", "Nemausus": "Gallia Transalpina", "Nicaea (Gallia)": "Gallia Transalpina",
   "Tarraco": "Hispania Citerior", "Barcino": "Hispania Citerior", "Caesaraugusta": "Hispania Citerior",
@@ -998,7 +1013,17 @@ var IMP_MAP_TO_PROVS = {
   "Gallia Transalpina": ["Narbonensis","Lugdunensis"],
   "Hispania Citerior": ["Tarraconensis"],
   "Hispania Ulterior": ["Baetica","Lusitania"],
-  "Italy": ["Italia"], "Latium": ["Italia"], "Campania": ["Italia"], "Etruria": ["Italia"], "Umbria": ["Italia"],
+  "Italia — Regio I — Latium et Campania": ["Italia"],
+  "Italia — Regio II — Apulia et Calabria": ["Italia"],
+  "Italia — Regio III — Lucania et Bruttii": ["Italia"],
+  "Italia — Regio IV — Samnium": ["Italia"],
+  "Italia — Regio V — Picenum": ["Italia"],
+  "Italia — Regio VI — Umbria et Ager Gallicus": ["Italia"],
+  "Italia — Regio VII — Etruria": ["Italia"],
+  "Italia — Regio VIII — Aemilia": ["Italia"],
+  "Italia — Regio IX — Liguria": ["Italia"],
+  "Italia — Regio X — Venetia et Histria": ["Italia"],
+  "Italia — Regio XI — Transpadana": ["Italia"],
   "Bisaltian District": ["Macedonia"],
   "Inland Cities of Thrace": ["Thracia"],
   "The European Coast of the Propontis": ["Thracia"],
@@ -1076,7 +1101,20 @@ var REP_GEO_TREE = {
     "Gallia": ["Gallia", "Gallia Cisalpina", "Gallia Transalpina"],
     "Germania": ["Germania"],
     "Hispania": ["Hispania", "Hispania Citerior", "Hispania Ulterior"],
-    "Italy": ["Italy", "Latium", "Campania", "Etruria", "Umbria", "Apulia", "Sardinia", "Sicily"],
+    "Italy": [
+      "Italia — Regio I — Latium et Campania",
+      "Italia — Regio II — Apulia et Calabria",
+      "Italia — Regio III — Lucania et Bruttii",
+      "Italia — Regio IV — Samnium",
+      "Italia — Regio V — Picenum",
+      "Italia — Regio VI — Umbria et Ager Gallicus",
+      "Italia — Regio VII — Etruria",
+      "Italia — Regio VIII — Aemilia",
+      "Italia — Regio IX — Liguria",
+      "Italia — Regio X — Venetia et Histria",
+      "Italia — Regio XI — Transpadana",
+      "Sardinia", "Sicily"
+    ],
     "Macedon": ["Macedon", "Bisaltian District"],
     "Pannonia": ["Pannonia"],
     "Peloponnesus": ["Peloponnesus", "Achaea"],
@@ -1096,14 +1134,32 @@ var REP_CITY_TO_SUB = {
 };
 
 var REP_CITY_TO_SUBSUB = {
-  "Rome": "Latium", "Canusium": "Apulia", "Luceria": "Apulia", "Neapolis": "Campania",
-  "Osca": "Hispania Citerior", "Massalia": "Gallia Transalpina", "Lugdunum": "Gallia Transalpina", "Narbo": "Gallia Transalpina",
-  "Antioch, Syria": "Seleucis and Pieria", "Laodiceia ad Lycum": "Asia Minor",
-  "Apollonia, Illyria": "Macedon", "Corcyra": "Macedon",
-  "Messana": "Sicily", "Metapontum": "Apulia", "Salpesa": "Hispania Ulterior",
-  "Sicily 1": "Sicily", "Sicily 2": "Sicily",
-  "Italy (Central)": "Latium", "Italy (North)": "Gallia Cisalpina", "Italy (South)": "Apulia", "Italy (Southeast)": "Apulia",
-  "Eastern Roman Mint": "Asia Minor", "Uncertain value": "Latium"
+  "Rome": "Italia — Regio I — Latium et Campania", 
+  "Canusium": "Italia — Regio II — Apulia et Calabria", 
+  "Luceria": "Italia — Regio II — Apulia et Calabria", 
+  "Neapolis": "Italia — Regio I — Latium et Campania",
+  "Metapontum": "Italia — Regio III — Lucania et Bruttii",
+  
+  "Osca": "Hispania Citerior", 
+  "Salpesa": "Hispania Ulterior",
+  "Massalia": "Gallia Transalpina", 
+  "Lugdunum": "Gallia Transalpina", 
+  "Narbo": "Gallia Transalpina",
+  "Antioch, Syria": "Seleucis and Pieria", 
+  "Laodiceia ad Lycum": "Asia Minor",
+  "Apollonia, Illyria": "Macedon", 
+  "Corcyra": "Macedon",
+  "Messana": "Sicily", 
+  "Sicily 1": "Sicily", 
+  "Sicily 2": "Sicily",
+  
+  "Italy (Central)": "Italia — Regio I — Latium et Campania", 
+  "Italy (North)": "Italia — Regio VIII — Aemilia", 
+  "Italy (South)": "Italia — Regio II — Apulia et Calabria", 
+  "Italy (Southeast)": "Italia — Regio II — Apulia et Calabria",
+  
+  "Eastern Roman Mint": "Asia Minor", 
+  "Uncertain value": "Italia — Regio I — Latium et Campania"
 };
 
 var REP_MAP_TO_PROVS = {
@@ -1116,7 +1172,20 @@ var REP_MAP_TO_PROVS = {
   "Thrace": ["Thracia","Moesia Superior","Moesia Inferior"], "Bithynia": ["Bithynia et Pontus"],
   "Cappadocia": ["Galatia et Cappadocia"], "Ionia": ["Asia"], "Mysia": ["Asia"], "Pisidia": ["Galatia et Cappadocia"],
   "Syria": ["Syria","Iudaea"], "Africa": ["Africa Proconsularis"], "Cyrenaica": ["Creta et Cyrene"], "Egypt": ["Aegyptus"],
-  "Italy": ["Italia"], "Latium": ["Italia"], "Campania": ["Italia"], "Etruria": ["Italia"], "Umbria": ["Italia"], "Apulia": ["Italia"], "Sardinia": ["Sardinia et Corsica"], "Sicily": ["Sicilia"],
+  
+  "Italia — Regio I — Latium et Campania": ["Italia"],
+  "Italia — Regio II — Apulia et Calabria": ["Italia"],
+  "Italia — Regio III — Lucania et Bruttii": ["Italia"],
+  "Italia — Regio IV — Samnium": ["Italia"],
+  "Italia — Regio V — Picenum": ["Italia"],
+  "Italia — Regio VI — Umbria et Ager Gallicus": ["Italia"],
+  "Italia — Regio VII — Etruria": ["Italia"],
+  "Italia — Regio VIII — Aemilia": ["Italia"],
+  "Italia — Regio IX — Liguria": ["Italia"],
+  "Italia — Regio X — Venetia et Histria": ["Italia"],
+  "Italia — Regio XI — Transpadana": ["Italia"],
+  "Sardinia": ["Sardinia et Corsica"], "Sicily": ["Sicilia"],
+  
   "Gallia Cisalpina": ["Italia"], "Gallia Transalpina": ["Narbonensis","Lugdunensis"],
   "Hispania Citerior": ["Tarraconensis"], "Hispania Ulterior": ["Baetica","Lusitania"],
   "Bisaltian District": ["Macedonia"], "Inland Cities of Thrace": ["Thracia"], "The European Coast of the Propontis": ["Thracia"],

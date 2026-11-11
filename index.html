@@ -1335,7 +1335,7 @@ function provinceOfMint(mintName){
   if(!mintName) return null;
   var canon = canonicalMint(mintName);
   if(canon in MINT_GEO_CACHE) return MINT_GEO_CACHE[canon];
-  if(!geoLayer) return null; // non cachare se il layer non è pronto
+  if(!geoLayer) return null;
 
   var lat=null, lng=null;
   if(allMintsData.length){
@@ -1547,19 +1547,6 @@ function updateMap(){
 
 /* =====================================================================
    CLASSIFICAZIONE ZECCHE — MULTI-TIPO
-   =====================================================================
-   Ogni zecca può appartenere a più categorie (prov/imp/rep).
-   Costruiamo un indice MINT_TYPES: canon -> Set di tipi.
-   Fonti di verità:
-     1. REP_CITIES  -> tutte repubblicane (e possono essere anche imp/prov)
-     2. IMP_CITIES  -> tutte imperiali (e possono essere anche rep/prov)
-     3. PDB.cities  -> tutte provinciali (dal CSV)
-     4. mints.json  -> se ha campo type, aggiunge quel tipo
-   In questo modo:
-     - Rome sarà {rep, imp, prov} -> appare in tutti i filtri
-     - Una zecca solo repubblicana apparirà solo in rep
-     - Una zecca solo imperiale apparirà solo in imp
-     - Una zecca solo provinciale apparirà solo in prov
    ===================================================================== */
 var MINT_TYPES = {}; // canon -> { rep:true, imp:true, prov:true }
 
@@ -1572,47 +1559,54 @@ function addMintType(name, type){
 
 function rebuildMintTypeIndex(){
   MINT_TYPES = {};
-  // Repubblicane
   REP_CITIES.forEach(function(n){ addMintType(n, 'rep'); });
-  // Imperiali
   IMP_CITIES.forEach(function(n){ addMintType(n, 'imp'); });
-  // Provinciali (dal CSV)
   if(PDB.ready){
     PDB.cities.forEach(function(c){ addMintType(c.name, 'prov'); });
   }
-  // Da mints.json: se ha type esplicito, rispettalo
   allMintsData.forEach(function(m){
     if(m.type && ['prov','imp','rep'].indexOf(m.type) >= 0){
       addMintType(m.name, m.type);
     }
   });
-  // Override: le zecche con coordinate override che non sono in nessuna lista
-  // non vengono classificate automaticamente (restano fuori dall'indice)
 }
 
-/* Restituisce l'insieme dei tipi di una zecca */
 function getMintTypes(name){
   var canon = canonicalMint(name);
   return MINT_TYPES[canon] || null;
 }
 
-/* Restituisce true se la zecca deve essere visibile con il filtro corrente */
+/* =====================================================================
+   VISIBILITÀ ZECCHE — COMBINAZIONE MINT MODE × COIN FILTER
+   =====================================================================
+   Regole:
+   - "none": nessuna zecca visibile.
+   - "mine": solo le zecche possedute.
+       * filtro "all"  → tutte le possedute
+       * filtro tipo   → solo le possedute che hanno quel tipo
+   - "all": tutte le zecche.
+       * filtro "all"  → tutte
+       * filtro tipo   → tutte quelle che hanno quel tipo (possedute o no)
+   ===================================================================== */
 function mintVisible(mintName, ownedSet){
   var canon = canonicalMint(mintName);
   var isOwned = ownedSet.has(canon);
 
-  // Mine: solo owned
-  if (currentMintMode === 'mine') return isOwned;
+  // In "mine" le zecche non possedute non si mostrano mai
+  if (currentMintMode === 'mine' && !isOwned) return false;
 
-  // All coins: tutte
+  // Se il filtro tipo è "all", la visibilità dipende solo dalla modalità
   if (currentCoinFilter === 'all') return true;
 
+  // Filtro tipo attivo
   var types = getMintTypes(mintName);
 
-  // Se non classificata: mostrala solo se owned (non possiamo sapere il tipo)
+  // Zecca non classificata:
+  //  - in "all"  → la mostriamo solo se posseduta (non possiamo sapere il tipo)
+  //  - in "mine" → la mostriamo (è posseduta)
   if (!types) return isOwned;
 
-  // Se classificata: mostrala se il tipo corrisponde al filtro
+  // Zecca classificata: deve avere il tipo richiesto
   return !!types[currentCoinFilter];
 }
 
@@ -1649,7 +1643,6 @@ function renderMints() {
     }
   });
 
-  // Zecche da mints.json
   let mintsToDraw = allMintsData.slice().sort((a, b) => {
     let oa = ownedMints.has(canonicalMint(a.name)) ? 1 : 0;
     let ob = ownedMints.has(canonicalMint(b.name)) ? 1 : 0;
@@ -1680,7 +1673,6 @@ function renderMints() {
     mintsLayer.addLayer(marker);
   });
 
-  // Zecche con override non presenti in mints.json
   Object.keys(MINT_COORD_OVERRIDES).forEach(name => {
     if(allMintsData.some(m => canonicalMint(m.name) === canonicalMint(name))) return;
     if (!mintVisible(name, ownedMints)) return;

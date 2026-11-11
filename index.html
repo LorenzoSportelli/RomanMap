@@ -702,7 +702,7 @@ var REIGN_ORDER = ["Roman Republic","Augustus","Tiberius","Caligula","Claudius",
 function slug(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
 function norm(s){ return String(s||'').trim().replace(/\s+/g,' ').toLowerCase(); }
 
-/* === NUOVA FUNZIONE: normalizzazione nomi zecche === */
+/* === Normalizzazione nomi zecche === */
 function normMint(s){
   return String(s||'')
     .toLowerCase()
@@ -712,7 +712,6 @@ function normMint(s){
     .trim();
 }
 
-/* Tabella alias: chiave = forma canonica, valore = varianti accettate */
 var MINT_ALIASES = {
   'laodicea ad lycum': ['laodiceia ad lycum','laodicea ad mare','laodiceia ad mare'],
   'antioch':           ['antioch syria','antiochia','antioch on the orontes'],
@@ -739,7 +738,7 @@ function canonicalMint(name){
   return n;
 }
 
-/* === COORDINATE MANCANTI per zecche repubblicane === */
+/* === Coordinate zecche non presenti in mints.json === */
 var MINT_COORD_OVERRIDES = {
   'Apollonia, Illyria':      [40.720583, 19.470413],
   'Canusium':                [41.2167, 16.0667],
@@ -751,7 +750,7 @@ var MINT_COORD_OVERRIDES = {
   'Metapontum':              [40.383641, 16.824332],
   'Neapolis':                [40.8514, 14.2628],
   'Osca':                    [42.1397, -0.4085],
-  'Salpesa':                 [-5.781536, 37.181512],
+  'Salpesa':                 [37.181512, -5.781536],
   'Narbo':                   [43.183, 3.0],
   'Antioch, Syria':          [36.2, 36.15]
 };
@@ -1170,12 +1169,6 @@ function provsForSub(id){
   if(s.provs && s.provs.length) return s.provs.slice();
   return provsForRegion(s.region);
 }
-function provsForCity(id){
-  var c = cityById(id); if(!c) return [];
-  if(c.provs && c.provs.length) return c.provs.slice();
-  if(c.sub){ var sp = provsForSub(c.sub); if(sp.length) return sp; }
-  return provsForRegion(c.region);
-}
 function emptyGeo(){
   return { provs:[], provExclusions:[], regions:[], subs:[], cities:[] };
 }
@@ -1190,19 +1183,6 @@ function normGeo(g){
     subs:subs,
     cities:Array.isArray(g.cities)?g.cities.slice():[]
   };
-}
-
-function resolveProvinces(geo, primary){
-  var set = {};
-  function add(arr){ arr.forEach(function(p){ if(p) set[p]=true; }); }
-  geo = normGeo(geo);
-  if(primary) set[primary]=true;
-  add(geo.provs);
-  geo.regions.forEach(function(r){ add(provsForRegion(r)); });
-  geo.subs.forEach(function(s){ add(provsForSub(s)); });
-  geo.cities.forEach(function(c){ add(provsForCity(c)); });
-  geo.provExclusions.forEach(function(p){ delete set[p]; });
-  return Object.keys(set);
 }
 
 const STEPS = [
@@ -1275,30 +1255,78 @@ function geoToOur(geoName){
   return null;
 }
 
-/* === NUOVA FUNZIONE: calcola provincia dalle coordinate === */
+/* === Calcolo provincia da coordinate: una e una sola === */
 var MINT_GEO_CACHE = {};
 
 function provinceOfMint(mintName){
   if(!mintName) return null;
   var canon = canonicalMint(mintName);
-  if(MINT_GEO_CACHE[canon]) return MINT_GEO_CACHE[canon];
-  if(!allMintsData.length || !geoLayer) return null;
-  
-  var m = allMintsData.find(x => canonicalMint(x.name) === canon);
-  var lat, lng;
-  if(m){ lat = m.lat; lng = m.lng; }
-  else if(MINT_COORD_OVERRIDES[mintName]){ lat = MINT_COORD_OVERRIDES[mintName][0]; lng = MINT_COORD_OVERRIDES[mintName][1]; }
-  else return null;
-  
-  var pt = turf.point([lng, lat]);
-  var found = null;
-  geoLayer.eachLayer(l => {
-    if(!found && l.feature && l.feature.geometry && turf.booleanPointInPolygon(pt, l.feature)){
-      found = geoToOur(l.feature.properties.name);
+  if(canon in MINT_GEO_CACHE) return MINT_GEO_CACHE[canon];
+  if(!geoLayer) return null; // non cachare se il layer non è pronto
+
+  // coordinate: prima mints.json, poi override
+  var lat=null, lng=null;
+  if(allMintsData.length){
+    var m = allMintsData.find(x => canonicalMint(x.name) === canon);
+    if(m){ lat = m.lat; lng = m.lng; }
+  }
+  if(lat==null){
+    for(var k in MINT_COORD_OVERRIDES){
+      if(canonicalMint(k) === canon){ lat = MINT_COORD_OVERRIDES[k][0]; lng = MINT_COORD_OVERRIDES[k][1]; break; }
     }
+  }
+  if(lat==null || lng==null){ MINT_GEO_CACHE[canon] = null; return null; }
+
+  var pt = turf.point([lng, lat]);
+  var hits = [];
+  geoLayer.eachLayer(l => {
+    if(l.feature && l.feature.geometry && turf.booleanPointInPolygon(pt, l.feature)) hits.push(l.feature);
   });
-  MINT_GEO_CACHE[canon] = found;
-  return found;
+  // scelta deterministica: area minore, poi nome
+  hits.sort((a,b) => (turf.area(a)-turf.area(b)) || String(a.properties.name||'').localeCompare(String(b.properties.name||'')));
+  var result = hits[0] ? geoToOur(hits[0].properties.name) : null;
+  MINT_GEO_CACHE[canon] = result;
+  return result;
+}
+
+function provsForCity(id){
+  var c = cityById(id); if(!c) return [];
+  // priorità 1: coordinate
+  var p = provinceOfMint(c.name);
+  if(p) return [p];
+  // fallback
+  if(c.provs && c.provs.length) return c.provs.slice();
+  if(c.sub){ var sp = provsForSub(c.sub); if(sp.length) return sp; }
+  return provsForRegion(c.region);
+}
+
+function resolveProvinces(geo, primary){
+  var set = {};
+  function add(arr){ arr.forEach(function(p){ if(p) set[p]=true; }); }
+  geo = normGeo(geo);
+  if(primary) set[primary]=true;
+  add(geo.provs);
+
+  // priorità 1: città con coordinate
+  var cityResolved = false;
+  geo.cities.forEach(function(cid){
+    var obj = cityById(cid);
+    var name = obj ? obj.name : cid;
+    var p = provinceOfMint(name);
+    if(p){ set[p]=true; cityResolved = true; }
+  });
+  // città senza coordinate: fallback catena
+  if(!cityResolved){
+    geo.cities.forEach(function(c){ add(provsForCity(c)); });
+  }
+  // sub / regioni solo se non c'è una città con coordinate
+  if(!cityResolved){
+    geo.subs.forEach(function(s){ add(provsForSub(s)); });
+    geo.regions.forEach(function(r){ add(provsForRegion(r)); });
+  }
+
+  geo.provExclusions.forEach(function(p){ delete set[p]; });
+  return Object.keys(set);
 }
 
 function coinInMapProvince(c, ourName){
@@ -1307,37 +1335,19 @@ function coinInMapProvince(c, ourName){
 
   if (c.period === 'prov') {
     provinces = resolveProvinces(c.geo, '');
-  } else if (c.period === 'imp') {
+  } else if (c.period === 'imp' || c.period === 'rep') {
     var fromMint = provinceOfMint(c.mint);
-    if(fromMint){ provinces = [fromMint]; }
-    else {
-      var hasDetail = false;
-      if (c.mint && IMP_MAP_TO_PROVS[c.mint]) { provinces = IMP_MAP_TO_PROVS[c.mint]; hasDetail = true; }
-      if (!hasDetail && c.impSubsubs && c.impSubsubs.length > 0) {
-        provinces = c.impSubsubs.reduce((acc, ss) => acc.concat(IMP_MAP_TO_PROVS[ss] || []), []); hasDetail = true;
-      }
-      if (!hasDetail && c.impSubs && c.impSubs.length > 0) {
-        provinces = c.impSubs.reduce((acc, s) => acc.concat(IMP_MAP_TO_PROVS[s] || []), []); hasDetail = true;
-      }
-      if (!hasDetail && c.impRegions && c.impRegions.length > 0) {
-        provinces = c.impRegions.reduce((acc, r) => acc.concat(IMP_MAP_TO_PROVS[r] || []), []);
-      }
-    }
-  } else if (c.period === 'rep') {
-    var fromMint = provinceOfMint(c.mint);
-    if(fromMint){ provinces = [fromMint]; }
-    else {
-      var hasDetail = false;
-      if (c.mint && REP_MAP_TO_PROVS[c.mint]) { provinces = REP_MAP_TO_PROVS[c.mint]; hasDetail = true; }
-      if (!hasDetail && c.repSubsubs && c.repSubsubs.length > 0) {
-        provinces = c.repSubsubs.reduce((acc, ss) => acc.concat(REP_MAP_TO_PROVS[ss] || []), []); hasDetail = true;
-      }
-      if (!hasDetail && c.repSubs && c.repSubs.length > 0) {
-        provinces = c.repSubs.reduce((acc, s) => acc.concat(REP_MAP_TO_PROVS[s] || []), []); hasDetail = true;
-      }
-      if (!hasDetail && c.repRegions && c.repRegions.length > 0) {
-        provinces = c.repRegions.reduce((acc, r) => acc.concat(REP_MAP_TO_PROVS[r] || []), []);
-      }
+    if(fromMint){
+      provinces = [fromMint];
+    } else {
+      var map = (c.period === 'imp') ? IMP_MAP_TO_PROVS : REP_MAP_TO_PROVS;
+      var subsubs = (c.period === 'imp') ? c.impSubsubs : c.repSubsubs;
+      var subs    = (c.period === 'imp') ? c.impSubs    : c.repSubs;
+      var regions = (c.period === 'imp') ? c.impRegions : c.repRegions;
+      if (c.mint && map[c.mint]) provinces = map[c.mint];
+      else if (subsubs && subsubs.length) provinces = subsubs.reduce((a,ss)=>a.concat(map[ss]||[]),[]);
+      else if (subs && subs.length) provinces = subs.reduce((a,s)=>a.concat(map[s]||[]),[]);
+      else if (regions && regions.length) provinces = regions.reduce((a,r)=>a.concat(map[r]||[]),[]);
     }
   }
 
@@ -1421,6 +1431,7 @@ fetch("https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces
     map.setMaxBounds(b);
     map.options.maxBoundsViscosity = 1.0;
     document.getElementById("loading").style.display="none";
+    MINT_GEO_CACHE = {};
     updateMap();
   })
   .catch(function(e){ document.getElementById("loading").innerHTML="<b style='color:#c0392b'>Error: "+e.message+"</b>"; });
@@ -1479,6 +1490,7 @@ fetch('mints.json')
   .then(r => r.json())
   .then(data => {
     allMintsData = data;
+    MINT_GEO_CACHE = {};
     setMintMode('none');
     setCoinFilter('all');
   })
@@ -1525,9 +1537,7 @@ function renderMints() {
 
   mintsToDraw.forEach(m => {
     let isOwned = ownedMints.has(canonicalMint(m.name));
-    
     if (currentMintMode === 'mine' && !isOwned) return;
-
     if (currentCoinFilter !== 'all') {
       let mintType = getMintType(m.name);
       if (mintType === 'all' && !isOwned) return;
@@ -1554,7 +1564,7 @@ function renderMints() {
     mintsLayer.addLayer(marker);
   });
 
-  // Aggiungi marker per zecche con override che non sono in allMintsData
+  // marker per zecche con override non presenti in mints.json
   Object.keys(MINT_COORD_OVERRIDES).forEach(name => {
     if(allMintsData.some(m => canonicalMint(m.name) === canonicalMint(name))) return;
     let isOwned = ownedMints.has(canonicalMint(name));
@@ -2221,49 +2231,32 @@ function previewHighlight(){
   var provinces = [];
   if (currentPeriod === 'prov') {
     provinces = resolveProvinces(geoSel, '');
-  } else if (currentPeriod === 'rep') {
-    var raw = [];
-    var hasDetail = false;
-    if (repGeoSel.cities.length > 0) {
-      repGeoSel.cities.forEach(c => { if (REP_MAP_TO_PROVS[c]) raw = raw.concat(REP_MAP_TO_PROVS[c]); });
-      hasDetail = true;
+  } else if (currentPeriod === 'rep' || currentPeriod === 'imp') {
+    var geo = (currentPeriod === 'imp') ? impGeoSel : repGeoSel;
+    var map = (currentPeriod === 'imp') ? IMP_MAP_TO_PROVS : REP_MAP_TO_PROVS;
+
+    // priorità 1: città con coordinate
+    if (geo.cities.length > 0) {
+      geo.cities.forEach(c => {
+        var p = provinceOfMint(c);
+        if (p && provinces.indexOf(p) < 0) provinces.push(p);
+      });
     }
-    if (!hasDetail && repGeoSel.subsubs.length > 0) {
-      repGeoSel.subsubs.forEach(ss => { if (REP_MAP_TO_PROVS[ss]) raw = raw.concat(REP_MAP_TO_PROVS[ss]); });
-      hasDetail = true;
+    // fallback a un solo livello
+    if (!provinces.length && geo.subsubs.length > 0) {
+      geo.subsubs.forEach(ss => { (map[ss]||[]).forEach(p => { if(provinces.indexOf(p)<0) provinces.push(p); }); });
     }
-    if (!hasDetail && repGeoSel.subs.length > 0) {
-      repGeoSel.subs.forEach(s => { if (REP_MAP_TO_PROVS[s]) raw = raw.concat(REP_MAP_TO_PROVS[s]); });
-      hasDetail = true;
+    if (!provinces.length && geo.subs.length > 0) {
+      geo.subs.forEach(s => { (map[s]||[]).forEach(p => { if(provinces.indexOf(p)<0) provinces.push(p); }); });
     }
-    if (!hasDetail && repGeoSel.regions.length > 0) {
-      repGeoSel.regions.forEach(r => { if (REP_MAP_TO_PROVS[r]) raw = raw.concat(REP_MAP_TO_PROVS[r]); });
+    if (!provinces.length && geo.regions.length > 0) {
+      geo.regions.forEach(r => { (map[r]||[]).forEach(p => { if(provinces.indexOf(p)<0) provinces.push(p); }); });
     }
-    provinces = raw;
-  } else if (currentPeriod === 'imp') {
-    var raw = [];
-    var hasDetail = false;
-    if (impGeoSel.cities.length > 0) {
-      impGeoSel.cities.forEach(c => { if (IMP_MAP_TO_PROVS[c]) raw = raw.concat(IMP_MAP_TO_PROVS[c]); });
-      hasDetail = true;
-    }
-    if (!hasDetail && impGeoSel.subsubs.length > 0) {
-      impGeoSel.subsubs.forEach(ss => { if (IMP_MAP_TO_PROVS[ss]) raw = raw.concat(IMP_MAP_TO_PROVS[ss]); });
-      hasDetail = true;
-    }
-    if (!hasDetail && impGeoSel.subs.length > 0) {
-      impGeoSel.subs.forEach(s => { if (IMP_MAP_TO_PROVS[s]) raw = raw.concat(IMP_MAP_TO_PROVS[s]); });
-      hasDetail = true;
-    }
-    if (!hasDetail && impGeoSel.regions.length > 0) {
-      impGeoSel.regions.forEach(r => { if (IMP_MAP_TO_PROVS[r]) raw = raw.concat(IMP_MAP_TO_PROVS[r]); });
-    }
-    provinces = raw;
   }
-  provinces = provinces.filter(function(item, pos) { return provinces.indexOf(item) === pos; });
   setHighlight(provinces);
   updateGeoHint();
 }
+
 function resetForm(){
   ['f-ref','f-prov-imp','f-prov-auth','f-rep-auth','f-denom','f-date','f-desc','f-notes'].forEach(function(id){ $set(id,''); });
   $set('f-metal','');
@@ -2274,6 +2267,7 @@ function resetForm(){
   repIssuerSel = [];
   document.querySelectorAll('.pk-in').forEach(function(i){ i.value=''; });
 }
+
 function openModal(id){
   editId = id==null ? null : id;
   resetForm();
@@ -2358,34 +2352,25 @@ function saveCoin(){
     period: currentPeriod,
     ref:$v('f-ref'),
     prov: (isProv ? '' : (isImp ? impGeoSel.regions[0] || '' : repGeoSel.regions[0] || '')),
-
     mint: isProv ? provMint : (isImp ? impGeoSel.cities.join('; ') : repGeoSel.cities.join('; ')),
-
     mag: isRep ? repIssuerSel.join('; ') : '',
     auth: isRep ? $v('f-rep-auth') : '',
-
     imp: isImp ? (impAuthSel[0] || '') : (isProv ? $v('f-prov-imp') : ''),
     impAuth: isImp ? (impIssuerSel[0] || '') : '',
-
     provImp: isProv ? $v('f-prov-imp') : '',
     provAuth: isProv ? $v('f-prov-auth') : '',
-
     reign: isProv ? $v('f-reign') : '',
     mags: isProv ? magSel.slice() : [],
     magNames: isProv ? magSel.map(id => magLabel(PDB.magById[id])) : [],
-
     metal:$v('f-metal'),
     denom:$v('f-denom'),
     date:$v('f-date'),
     desc:$v('f-desc'),
     notes:$v('f-notes'),
-
     geo: isProv ? normGeo(geoSel) : emptyGeo(),
-    
     impRegions: isImp ? impGeoSel.regions.slice() : [],
     impSubs: isImp ? impGeoSel.subs.slice() : [],
     impSubsubs: isImp ? impGeoSel.subsubs.slice() : [],
-    
     repRegions: isRep ? repGeoSel.regions.slice() : [],
     repSubs: isRep ? repGeoSel.subs.slice() : [],
     repSubsubs: isRep ? repGeoSel.subsubs.slice() : []
@@ -2430,13 +2415,15 @@ function coinMagNames(c){
 function coinGeoNames(c){
   var g=normGeo(c.geo), gn=c.geoNames||{};
   if (c.period === 'imp') {
-    var provs = (c.impSubsubs || []).slice();
+    var p = provinceOfMint(c.mint);
+    var provs = p ? [p] : (c.impSubsubs || []).slice();
     var regions = c.impRegions || [];
     var cities = c.mint ? c.mint.split('; ').map(s=>s.trim()) : [];
     return { provs: provs, regions: regions, subs: [], cities: cities };
   }
   if (c.period === 'rep') {
-    var provs = (c.repSubsubs || []).slice();
+    var p = provinceOfMint(c.mint);
+    var provs = p ? [p] : (c.repSubsubs || []).slice();
     var regions = c.repRegions || [];
     var cities = c.mint ? c.mint.split('; ').map(s=>s.trim()) : [];
     return { provs: provs, regions: regions, subs: [], cities: cities };
@@ -2557,52 +2544,25 @@ function openDetail(id){
   document.getElementById('detail-body').innerHTML=h;
   document.getElementById('detail').classList.add('open');
   
-  if(c.period==='rep' || c.period==='prov') {
-    setHighlight(resolveProvinces(c.geo,c.prov));
-  } else if (c.period==='imp') {
-    var provs = [];
-    var fromMint = provinceOfMint(c.mint);
-    if(fromMint){ provs = [fromMint]; }
+  if(c.period === 'imp' || c.period === 'rep'){
+    var p = provinceOfMint(c.mint);
+    if(p){ setHighlight([p]); }
     else {
-      var hasDetail = false;
-      if (c.mint && IMP_MAP_TO_PROVS[c.mint]) { provs = IMP_MAP_TO_PROVS[c.mint]; hasDetail = true; }
-      if (!hasDetail && c.impSubsubs && c.impSubsubs.length > 0) {
-        provs = c.impSubsubs.reduce(function(acc, ss) { return acc.concat(IMP_MAP_TO_PROVS[ss] || []); }, []);
-        hasDetail = true;
-      }
-      if (!hasDetail && c.impSubs && c.impSubs.length > 0) {
-        provs = c.impSubs.reduce(function(acc, s) { return acc.concat(IMP_MAP_TO_PROVS[s] || []); }, []);
-        hasDetail = true;
-      }
-      if (!hasDetail && c.impRegions && c.impRegions.length > 0) {
-        provs = c.impRegions.reduce(function(acc, r) { return acc.concat(IMP_MAP_TO_PROVS[r] || []); }, []);
-      }
+      var map2 = (c.period === 'imp') ? IMP_MAP_TO_PROVS : REP_MAP_TO_PROVS;
+      var subsubs2 = (c.period === 'imp') ? c.impSubsubs : c.repSubsubs;
+      var subs2 = (c.period === 'imp') ? c.impSubs : c.repSubs;
+      var regions2 = (c.period === 'imp') ? c.impRegions : c.repRegions;
+      var provs2 = [];
+      if (c.mint && map2[c.mint]) provs2 = map2[c.mint];
+      else if (subsubs2 && subsubs2.length) provs2 = subsubs2.reduce((a,ss)=>a.concat(map2[ss]||[]),[]);
+      else if (subs2 && subs2.length) provs2 = subs2.reduce((a,s)=>a.concat(map2[s]||[]),[]);
+      else if (regions2 && regions2.length) provs2 = regions2.reduce((a,r)=>a.concat(map2[r]||[]),[]);
+      setHighlight(provs2);
     }
-    provs = provs.filter(function(item, pos) { return provs.indexOf(item) === pos; });
-    setHighlight(provs);
-  } else if (c.period==='rep') {
-    var provs = [];
-    var fromMint = provinceOfMint(c.mint);
-    if(fromMint){ provs = [fromMint]; }
-    else {
-      var hasDetail = false;
-      if (c.mint && REP_MAP_TO_PROVS[c.mint]) { provs = REP_MAP_TO_PROVS[c.mint]; hasDetail = true; }
-      if (!hasDetail && c.repSubsubs && c.repSubsubs.length > 0) {
-        provs = c.repSubsubs.reduce(function(acc, ss) { return acc.concat(REP_MAP_TO_PROVS[ss] || []); }, []);
-        hasDetail = true;
-      }
-      if (!hasDetail && c.repSubs && c.repSubs.length > 0) {
-        provs = c.repSubs.reduce(function(acc, s) { return acc.concat(REP_MAP_TO_PROVS[s] || []); }, []);
-        hasDetail = true;
-      }
-      if (!hasDetail && c.repRegions && c.repRegions.length > 0) {
-        provs = c.repRegions.reduce(function(acc, r) { return acc.concat(REP_MAP_TO_PROVS[r] || []); }, []);
-      }
-    }
-    provs = provs.filter(function(item, pos) { return provs.indexOf(item) === pos; });
-    setHighlight(provs);
+  } else if (c.period === 'prov') {
+    setHighlight(resolveProvinces(c.geo, c.prov));
   } else {
-    setHighlight([]); 
+    setHighlight([]);
   }
 }
 function closeDetail(){ document.getElementById('detail').classList.remove('open'); detailId=null; clearHighlight(); }

@@ -1234,7 +1234,7 @@ function geoToOur(geoName){
   if(GEO_MAP[geoName])return GEO_MAP[geoName];
   var low=geoName.toLowerCase();
   for(var k in GEO_MAP){
-    if(k.toLowerCase() === low) return GEO_MAP[k]; // Exact case-insensitive match
+    if(k.toLowerCase() === low) return GEO_MAP[k];
   }
   return null;
 }
@@ -1416,7 +1416,6 @@ fetch('mints.json')
   .catch(err => console.error("Errore caricamento mints.json:", err));
 
 function getMintType(name) {
-  // Cerca dinamicamente se ci sono monete di un certo periodo legate a questa zecca
   const hasRep = coins.some(c => c.period === 'rep' && c.mint && c.mint.toLowerCase().includes(name.toLowerCase()));
   const hasImp = coins.some(c => c.period === 'imp' && c.mint && c.mint.toLowerCase().includes(name.toLowerCase()));
   const hasProv = coins.some(c => c.period === 'prov' && c.mint && c.mint.toLowerCase().includes(name.toLowerCase()));

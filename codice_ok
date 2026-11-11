@@ -268,7 +268,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 <div id="hdr">
   <div id="hdr-left">
     <div id="hdr-title">ROMAN EMPIRE · NUMISMATIC COLLECTION</div>
-    <div id="hdr-sub">Provinces at 117 AD</div>
+    <div id="hdr-sub">Provinces at AD 117</div>
   </div>
   <div id="hdr-sep"></div>
   <div id="hdr-right">
@@ -280,7 +280,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 <div id="body">
   <div id="mapwrap">
     <div id="map"></div>
-    <div id="loading"><b>Loading map…</b><small>Roman provinces at 117 AD</small></div>
+    <div id="loading"><b>Loading map…</b><small>Roman provinces at AD 117</small></div>
     <div id="tt"></div>
     <div id="legend"><span>0</span><div id="legbar"></div><span id="legmax">0</span><div class="leg-hl"><i></i><span>SELECTION</span></div></div>
     
@@ -1151,6 +1151,10 @@ map.getPane('provincesPane').style.zIndex = 400;
 map.createPane('mintsPane');
 map.getPane('mintsPane').style.zIndex = 650;
 
+// Pane dedicato ai tooltip delle zecche (sopra i marker)
+map.createPane('mintsTooltipPane');
+map.getPane('mintsTooltipPane').style.zIndex = 700;
+
 var tt=document.getElementById("tt");
 var mw=document.getElementById("mapwrap");
 var geoLayer=null;
@@ -1272,16 +1276,20 @@ function renderMints() {
   if (allMintsData.length === 0 || currentMintMode === 'none') return;
 
   let ownedMints = new Set();
-  if (currentMintMode === 'mine') {
-    coins.forEach(c => {
-      let cMint = c.mint || (c.geoNames && c.geoNames.cities && c.geoNames.cities[0]);
-      if (cMint) ownedMints.add(cMint.toLowerCase().trim());
-    });
-    
-    if (ownedMints.size === 0) return;
-  }
+  coins.forEach(c => {
+    let cMint = c.mint || (c.geoNames && c.geoNames.cities && c.geoNames.cities[0]);
+    if (cMint) ownedMints.add(cMint.toLowerCase().trim());
+  });
+  if (currentMintMode === 'mine' && ownedMints.size === 0) return;
 
-  allMintsData.forEach(m => {
+  // Le zecche possedute vengono disegnate per ultime, così restano sopra le altre
+  let mintsToDraw = allMintsData.slice().sort((a, b) => {
+    let oa = ownedMints.has(a.name.toLowerCase().trim()) ? 1 : 0;
+    let ob = ownedMints.has(b.name.toLowerCase().trim()) ? 1 : 0;
+    return oa - ob;
+  });
+
+  mintsToDraw.forEach(m => {
     let isOwned = ownedMints.has(m.name.toLowerCase().trim());
     
     if (currentMintMode === 'mine' && !isOwned) return;
@@ -1292,7 +1300,7 @@ function renderMints() {
     let marker = L.circleMarker([m.lat, m.lng], {
       pane: 'mintsPane',
       radius: 5,
-      fillColor: isOwned ? '#2a7a4a' : '#8a6612',
+      fillColor: isOwned ? '#2a7a4a' : '#9a9a94',
       color: '#ffffff',
       weight: 1.5,
       opacity: 1,
@@ -1302,7 +1310,8 @@ function renderMints() {
 
     marker.bindTooltip(`<strong>${m.name}</strong><br><span style="font-size:10px;">${isOwned ? 'In collection' : 'Not owned'}</span>`, {
       direction: 'top',
-      offset: [0, -8]
+      offset: [0, -8],
+      pane: 'mintsTooltipPane'
     });
 
     mintsLayer.addLayer(marker);
@@ -1494,16 +1503,30 @@ function impEnforce(){
   }
 }
 
+/* --- Helper geografici Imperial (cascata + filtri di compatibilità) --- */
+function impRegionOfSub(s){ for(var r in IDB.tree){ if(IDB.tree[r][s]) return r; } return ''; }
+function impCityPath(c){
+  var s=IDB.cityToSub[c]||'', ss=IDB.cityToSubsub[c]||'';
+  return {r:s?impRegionOfSub(s):'', s:s, ss:ss};
+}
+function impCityAllowed(){
+  var a={r:{},s:{},ss:{}};
+  impGeoSel.cities.forEach(function(c){
+    var p=impCityPath(c);
+    if(p.r) a.r[p.r]=1;
+    if(p.s) a.s[p.s]=1;
+    if(p.ss) a.ss[p.ss]=1;
+  });
+  return a;
+}
+
 function impGeoAdd(key, id) {
   if (key === 'regions') {
     if (impGeoSel.regions.indexOf(id) < 0) impGeoSel.regions.push(id);
   } else if (key === 'subs') {
     if (impGeoSel.subs.indexOf(id) < 0) impGeoSel.subs.push(id);
-    for (var r in IDB.tree) {
-      if (IDB.tree[r][id] && impGeoSel.regions.indexOf(r) < 0) {
-        impGeoSel.regions.push(r); break;
-      }
-    }
+    var rr = impRegionOfSub(id);
+    if (rr && impGeoSel.regions.indexOf(rr) < 0) impGeoSel.regions.push(rr);
   } else if (key === 'subsubs') {
     if (impGeoSel.subsubs.indexOf(id) < 0) impGeoSel.subsubs.push(id);
     for (var r in IDB.tree) {
@@ -1518,48 +1541,33 @@ function impGeoAdd(key, id) {
   } else if (key === 'cities') {
     if (impGeoSel.cities.indexOf(id) < 0) impGeoSel.cities.push(id);
     // Cascata: città -> subsub -> sub -> region
-    var subsub = IDB.cityToSubsub[id];
-    if (subsub) {
-      if (impGeoSel.subsubs.indexOf(subsub) < 0) impGeoSel.subsubs.push(subsub);
-    }
-    var s = IDB.cityToSub[id];
-    if (s) {
-      if (impGeoSel.subs.indexOf(s) < 0) impGeoSel.subs.push(s);
-      for (var r in IDB.tree) {
-        if (IDB.tree[r][s] && impGeoSel.regions.indexOf(r) < 0) {
-          impGeoSel.regions.push(r); break;
-        }
-      }
-    }
+    var p = impCityPath(id);
+    if (p.ss && impGeoSel.subsubs.indexOf(p.ss) < 0) impGeoSel.subsubs.push(p.ss);
+    if (p.s && impGeoSel.subs.indexOf(p.s) < 0) impGeoSel.subs.push(p.s);
+    if (p.r && impGeoSel.regions.indexOf(p.r) < 0) impGeoSel.regions.push(p.r);
   }
 }
 
 function impGeoRemove(key, id) {
+  var g = impGeoSel;
   if (key === 'cities') {
-    impGeoSel.cities = impGeoSel.cities.filter(function(x){ return x !== id; });
+    g.cities = g.cities.filter(function(x){ return x !== id; });
   } else if (key === 'subsubs') {
-    impGeoSel.subsubs = impGeoSel.subsubs.filter(function(x){ return x !== id; });
+    g.subsubs = g.subsubs.filter(function(x){ return x !== id; });
+    g.cities = g.cities.filter(function(c){ return IDB.cityToSubsub[c] !== id; });
   } else if (key === 'subs') {
-    impGeoSel.subs = impGeoSel.subs.filter(function(x){ return x !== id; });
-    var stillUsed = impGeoSel.cities.some(function(c){ return IDB.cityToSub[c] === id; });
-    if (!stillUsed) {
-      impGeoSel.subsubs = impGeoSel.subsubs.filter(function(ss){
-        for (var r in IDB.tree) {
-          if (IDB.tree[r][id] && IDB.tree[r][id].indexOf(ss) >= 0) return false;
-        }
-        return true;
-      });
-    }
+    var ssOfSub = [];
+    for (var r in IDB.tree) if (IDB.tree[r][id]) ssOfSub = ssOfSub.concat(IDB.tree[r][id]);
+    g.subs = g.subs.filter(function(x){ return x !== id; });
+    g.subsubs = g.subsubs.filter(function(ss){ return ssOfSub.indexOf(ss) < 0; });
+    g.cities = g.cities.filter(function(c){ return IDB.cityToSub[c] !== id; });
   } else if (key === 'regions') {
-    impGeoSel.regions = impGeoSel.regions.filter(function(x){ return x !== id; });
-    var subsInRegion = Object.keys(IDB.tree[id] || {});
-    impGeoSel.subs = impGeoSel.subs.filter(function(s){ return subsInRegion.indexOf(s) < 0; });
-    impGeoSel.subsubs = impGeoSel.subsubs.filter(function(ss){
-      for (var s in (IDB.tree[id] || {})) {
-        if (IDB.tree[id][s].indexOf(ss) >= 0) return false;
-      }
-      return true;
-    });
+    var subsIn = Object.keys(IDB.tree[id] || {}), ssIn = [];
+    subsIn.forEach(function(s){ ssIn = ssIn.concat(IDB.tree[id][s]); });
+    g.regions = g.regions.filter(function(x){ return x !== id; });
+    g.subs = g.subs.filter(function(s){ return subsIn.indexOf(s) < 0; });
+    g.subsubs = g.subsubs.filter(function(ss){ return ssIn.indexOf(ss) < 0; });
+    g.cities = g.cities.filter(function(c){ return subsIn.indexOf(IDB.cityToSub[c]) < 0; });
   }
 }
 
@@ -1567,6 +1575,8 @@ function impGeoRemove(key, id) {
    PICKERS
    ===================================================================== */
 function byLabel(a,b){ return a.label.localeCompare(b.label); }
+var IMP_KEY_MAP = {impregions:'regions', impsubs:'subs', impsubsubs:'subsubs', impcities:'cities'};
+
 var PICKERS = {
   provs:{
       el:'pk-provs',
@@ -1616,61 +1626,63 @@ var PICKERS = {
     label:function(id){ return magLabel(PDB.magById[id])||id; }
   },
   impregions: {
-    el: 'pk-imp-regions',
-    items: function() {
-      return Object.keys(IDB.tree).sort().map(function(r){ return {id:r, label:r}; });
+    el:'pk-imp-regions',
+    items:function(){
+      var ok=impCityAllowed().r, has=impGeoSel.cities.length;
+      return Object.keys(IDB.tree).filter(function(r){ return !has||ok[r]; })
+        .sort().map(function(r){ return {id:r,label:r}; });
     },
-    get: function(){ return impGeoSel.regions; },
-    set: function(v){ impGeoSel.regions = v; },
-    label: function(id){ return id; }
+    get:function(){ return impGeoSel.regions; }, set:function(v){ impGeoSel.regions=v; },
+    label:function(id){ return id; }
   },
   impsubs: {
-    el: 'pk-imp-subs',
-    items: function() {
-      var list = [];
-      impGeoSel.regions.forEach(function(r){
-        var subs = Object.keys(IDB.tree[r] || {});
-        subs.forEach(function(s){ list.push({id:s, label:s, small:r}); });
+    el:'pk-imp-subs',
+    items:function(){
+      var ok=impCityAllowed().s, has=impGeoSel.cities.length, seen={}, list=[];
+      var regs=impGeoSel.regions.length?impGeoSel.regions:Object.keys(IDB.tree);
+      regs.forEach(function(r){
+        Object.keys(IDB.tree[r]||{}).forEach(function(s){
+          if(seen[s]||(has&&!ok[s])) return;
+          seen[s]=1; list.push({id:s,label:s,small:r});
+        });
       });
       return list.sort(byLabel);
     },
-    get: function(){ return impGeoSel.subs; },
-    set: function(v){ impGeoSel.subs = v; },
-    label: function(id){ return id; }
+    get:function(){ return impGeoSel.subs; }, set:function(v){ impGeoSel.subs=v; },
+    label:function(id){ return id; }
   },
   impsubsubs: {
-    el: 'pk-imp-subsubs',
-    items: function() {
-      var list = [];
-      impGeoSel.subs.forEach(function(s){
-        var parentRegion = "";
-        for(var r in IDB.tree) {
-          if(IDB.tree[r][s]) { parentRegion = r; break; }
+    el:'pk-imp-subsubs',
+    items:function(){
+      var ok=impCityAllowed().ss, has=impGeoSel.cities.length, seen={}, list=[];
+      for(var r in IDB.tree){
+        for(var s in IDB.tree[r]){
+          if(impGeoSel.subs.length && impGeoSel.subs.indexOf(s)<0) continue;
+          IDB.tree[r][s].forEach(function(ss){
+            if(seen[ss]||(has&&!ok[ss])) return;
+            seen[ss]=1; list.push({id:ss,label:ss,small:s});
+          });
         }
-        var subsubs = (IDB.tree[parentRegion] && IDB.tree[parentRegion][s]) || [];
-        subsubs.forEach(function(ss){ list.push({id:ss, label:ss, small:s}); });
-      });
+      }
       return list.sort(byLabel);
     },
-    get: function(){ return impGeoSel.subsubs; },
-    set: function(v){ impGeoSel.subsubs = v; },
-    label: function(id){ return id; }
+    get:function(){ return impGeoSel.subsubs; }, set:function(v){ impGeoSel.subsubs=v; },
+    label:function(id){ return id; }
   },
   impcities: {
-    el: 'pk-imp-cities',
-    items: function() {
-      var pool = IDB.cities.slice();
-      if (impGeoSel.subs.length > 0) {
-        pool = pool.filter(function(city) {
-          var sub = IDB.cityToSub[city];
-          return impGeoSel.subs.indexOf(sub) >= 0;
-        });
-      }
-      return pool.map(function(c){ return {id:c, label:c}; }).sort(byLabel);
+    el:'pk-imp-cities',
+    items:function(){
+      var g=impGeoSel;
+      return IDB.cities.filter(function(c){
+        var p=impCityPath(c);
+        if(g.regions.length && g.regions.indexOf(p.r)<0) return false;
+        if(g.subs.length && g.subs.indexOf(p.s)<0) return false;
+        if(g.subsubs.length && p.ss && g.subsubs.indexOf(p.ss)<0) return false;
+        return true;
+      }).map(function(c){ return {id:c,label:c}; }).sort(byLabel);
     },
-    get: function(){ return impGeoSel.cities; },
-    set: function(v){ impGeoSel.cities = v; },
-    label: function(id){ return id; }
+    get:function(){ return impGeoSel.cities; }, set:function(v){ impGeoSel.cities=v; },
+    label:function(id){ return id; }
   },
   authorities: {
     el: 'pk-authorities',
@@ -1714,12 +1726,7 @@ function pkRender(key){
 }
 function pkRenderAll(){ Object.keys(PICKERS).forEach(pkRender); updateGeoHint(); }
 function pkAdd(key,id){
-  if (currentPeriod === 'imp' && (key === 'regions' || key === 'subs' || key === 'subsubs' || key === 'cities')) {
-    impGeoAdd(key, id);
-    pkAfterChange(key);
-    return;
-  }
-  
+  if (IMP_KEY_MAP[key]) { impGeoAdd(IMP_KEY_MAP[key], id); pkAfterChange(key); return; }
   var P=PICKERS[key];
   if(key==='provs'){
     if(geoSel.provs.indexOf(id)<0){ geoSel.provs.push(id); }
@@ -1733,23 +1740,13 @@ function pkAdd(key,id){
 }
 
 function pkRemove(key,id){
-  if (currentPeriod === 'imp' && (key === 'regions' || key === 'subs' || key === 'subsubs' || key === 'cities')) {
-    impGeoRemove(key, id);
-    pkAfterChange(key);
-    return;
-  }
-
+  if (IMP_KEY_MAP[key]) { impGeoRemove(IMP_KEY_MAP[key], id); pkAfterChange(key); return; }
   var P=PICKERS[key];
   if(key==='provs'){
-    var derived=resolveProvinces({
-      provs:[], regions:geoSel.regions, subs:geoSel.subs, cities:geoSel.cities
-    },'').indexOf(id)>=0;
+    var derived=resolveProvinces({provs:[], regions:geoSel.regions, subs:geoSel.subs, cities:geoSel.cities},'').indexOf(id)>=0;
     geoSel.provs=geoSel.provs.filter(function(p){ return p!==id; });
-    if(derived){
-      if(geoSel.provExclusions.indexOf(id)<0){ geoSel.provExclusions.push(id); }
-    } else {
-      geoSel.provExclusions=geoSel.provExclusions.filter(function(p){ return p!==id; });
-    }
+    if(derived){ if(geoSel.provExclusions.indexOf(id)<0){ geoSel.provExclusions.push(id); } }
+    else { geoSel.provExclusions=geoSel.provExclusions.filter(function(p){ return p!==id; }); }
   } else {
     P.set(P.get().filter(function(x){ return x!==id; }));
   }

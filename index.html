@@ -411,6 +411,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           </div>
         </div>
       </div>
+      <div class="pk-hint" id="reign-legend" style="display:none;margin-top:2px;">* Client king (not a Roman emperor)</div>
       <div class="pk-hint" id="prov-hint"></div>
     </div>
 
@@ -687,17 +688,14 @@ var PDB = {
   ready:false, error:null,
   cities:[], cityById:{}, cityByKey:{}, cityByName:{},
   subs:[], subById:{},
-  regions:[], reigns:[],
+  regions:[], reigns:[], reignInfo:{},
   mags:[], magById:{},
   tuples:[]
 };
 
-var REIGN_ORDER = ["Roman Republic","Augustus","Tiberius","Caligula","Claudius","Nero","Galba","Otho","Vitellius",
-  "Vespasian","Titus","Domitian","Nerva","Trajan","Hadrian","Antoninus Pius","Marcus Aurelius","Lucius Verus","Commodus",
-  "Pertinax","Didius Julianus","Septimius Severus","Caracalla","Geta","Macrinus","Elagabalus","Severus Alexander",
-  "Maximinus","Gordian I","Gordian II","Balbinus","Pupienus","Gordian III","Philip I","Philip II","Trajan Decius",
-  "Trebonianus Gallus","Volusian","Aemilian","Valerian","Valerian and Gallienus","Gallienus","Gallienus (sole reign)",
-  "Claudius Gothicus","Quintillus","Aurelian","Tacitus","Florian","Probus","Carus","Carinus","Numerian","Diocletian"];
+/* REIGN_ORDER viene ricostruito dinamicamente da reigns.csv (cronologico).
+   Fallback: lista statica usata solo se reigns.csv non è disponibile. */
+var REIGN_ORDER = [];
 
 function slug(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
 function norm(s){ return String(s||'').trim().replace(/\s+/g,' ').toLowerCase(); }
@@ -797,31 +795,47 @@ function splitMulti(s){
   return out.map(function(x){ return x.trim().replace(/\s+/g,' '); }).filter(Boolean);
 }
 
-function pdbAddCity(name, region, sub, rpc){
-  var key=norm(name)+'|'+norm(region);
-  if(PDB.cityByKey[key]) return PDB.cityByKey[key];
-  var subId='';
-  if(sub){
-    subId='sub-'+slug(region)+'-'+slug(sub);
-    if(!PDB.subById[subId]){ var s={id:subId,name:sub,region:region}; PDB.subs.push(s); PDB.subById[subId]=s; }
-  }
-  var base='city-'+slug(name)+'-'+slug(region), id=base, n=2;
-  while(PDB.cityById[id]) id=base+'-'+(n++);
-  var c={id:id,name:name,region:region,sub:subId,key:key,rpc:rpc||''};
-  PDB.cities.push(c); PDB.cityById[id]=c; PDB.cityByKey[key]=c;
-  (PDB.cityByName[norm(name)]=PDB.cityByName[norm(name)]||[]).push(c);
-  return c;
+/* =====================================================================
+   REIGNS.CSV — fonte di verità per i regni provinciali
+   ===================================================================== */
+function buildReignDB(rows){
+  if(!rows || !rows.length) return;
+  var r0 = rows[0];
+  var cKind  = pickCol(r0, ['kind']);
+  var cReign = pickCol(r0, ['reign']);
+  var cStart = pickCol(r0, ['start date','start']);
+  var cEnd   = pickCol(r0, ['end date','end']);
+  if(!cReign) return;
+
+  var entries = [];
+  rows.forEach(function(row){
+    var name = (row[cReign]||'').replace(/\s+/g,' ').trim();
+    if(!name) return;
+    var kind = cKind ? (row[cKind]||'').trim() : '';
+    var start = parseInt((row[cStart]||'').replace(/[^\-0-9]/g,''), 10);
+    var end   = parseInt((row[cEnd]||'').replace(/[^\-0-9]/g,''), 10);
+    if(isNaN(start)) start = 9999;
+    if(isNaN(end))   end   = 9999;
+    PDB.reignInfo[name] = { kind: kind, start: start, end: end };
+    entries.push({ name: name, start: start, end: end });
+  });
+
+  // Ordina cronologicamente per Start date, poi per End date, poi alfabetico
+  entries.sort(function(a,b){
+    if(a.start !== b.start) return a.start - b.start;
+    if(a.end   !== b.end)   return a.end - b.end;
+    return a.name.localeCompare(b.name);
+  });
+  REIGN_ORDER = entries.map(function(e){ return e.name; });
 }
-function resolveCityRef(ref){
-  var m=/^(.*?)\s*\(([^()]*)\)\s*$/.exec(ref);
-  var name=m?m[1].trim():ref.trim(), region=m?m[2].trim():'';
-  if(!name) return null;
-  if(region){
-    var c=PDB.cityByKey[norm(name)+'|'+norm(region)];
-    return c || pdbAddCity(name, region, '', '');
-  }
-  var list=PDB.cityByName[norm(name)]||[];
-  return list.length===1 ? list[0] : null;
+
+function isClientKing(reign){
+  var info = PDB.reignInfo[reign];
+  return !!(info && info.kind && /client king/i.test(info.kind));
+}
+
+function reignLabel(reign){
+  return isClientKing(reign) ? reign + ' *' : reign;
 }
 
 function buildProvDB(magRows, cityRows){
@@ -854,6 +868,9 @@ function buildProvDB(magRows, cityRows){
   var regSet={}, reignSet={};
   PDB.cities.forEach(function(c){ if(c.region) regSet[c.region]=true; });
   PDB.mags.forEach(function(m){ m.reigns.forEach(function(r){ reignSet[r]=true; }); });
+  // Aggiungi anche tutti i regni da reigns.csv (così una città senza magistrati
+  // non resta con 0 regni compatibili)
+  Object.keys(PDB.reignInfo).forEach(function(r){ reignSet[r]=true; });
   PDB.regions=Object.keys(regSet).sort();
   PDB.reigns=Object.keys(reignSet).sort(function(a,b){
     var ia=REIGN_ORDER.indexOf(a), ib=REIGN_ORDER.indexOf(b);
@@ -894,9 +911,13 @@ function fetchFirst(paths){
 setProvHint('Loading CSV data…');
 Promise.all([
   fetchFirst(['magistrati.csv','magistrates.csv']),
-  fetchFirst(['città.csv','citta.csv','cities.csv'])
-]).then(function(res){ buildProvDB(parseCSV(res[0]), parseCSV(res[1])); })
-  .catch(function(e){ PDB.error=e; setProvHint('CSV not loaded ('+e.message+'). Open the page through a local web server.'); });
+  fetchFirst(['città.csv','citta.csv','cities.csv']),
+  fetchFirst(['reigns.csv']).catch(function(){ return ''; }) // opzionale
+]).then(function(res){
+  buildReignDB(parseCSV(res[2]));
+  buildProvDB(parseCSV(res[0]), parseCSV(res[1]));
+})
+.catch(function(e){ PDB.error=e; setProvHint('CSV not loaded ('+e.message+'). Open the page through a local web server.'); });
 
 
 /* =====================================================================
@@ -1327,7 +1348,7 @@ function geoToOur(geoName){
   return null;
 }
 
-/* === Calcolo provincia da coordinate: una e una sola === */
+/* === Calcolo provincia da coordinate === */
 var MINT_GEO_CACHE = {};
 
 function provinceOfMint(mintName){
@@ -1804,9 +1825,22 @@ function rebuildReignSelect(){
   }
   sel.innerHTML='';
   var o0=document.createElement('option'); o0.value=''; o0.textContent='— select —'; sel.appendChild(o0);
-  list.forEach(function(r){ var o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
+  list.forEach(function(r){
+    var o=document.createElement('option');
+    o.value=r;
+    o.textContent=reignLabel(r);
+    if(isClientKing(r)) o.title='Client king (not a Roman emperor)';
+    sel.appendChild(o);
+  });
   if(cur && list.indexOf(cur)>=0) sel.value = cur;
   else sel.value = '';
+
+  // Legenda "* Client king": mostra solo se almeno un regno visibile è client king
+  var leg = document.getElementById('reign-legend');
+  if(leg){
+    var anyCK = list.some(isClientKing);
+    leg.style.display = anyCK ? '' : 'none';
+  }
 }
 function onReignChange(){ provEnforce(); pkRenderAll(); previewHighlight(); }
 function updateProvHint(){
@@ -1874,7 +1908,6 @@ function provGeoRemove(key, id){
   }
 }
 
-/* Materializza in geoSel.provs le province derivate */
 function provSyncProvinces(){
   var derived = resolveProvinces({
     provs: [],
@@ -1888,11 +1921,7 @@ function provSyncProvinces(){
   });
 }
 
-/* Ripristina i genitori (sub, region) di ogni city/sub selezionata.
-   Va chiamata DOPO provEnforce, perché provEnforce può averli rimossi
-   per motivi di compatibilità con reign/magistrate. */
 function provSyncHierarchy(){
-  // Per ogni city: garantisci sub e region
   geoSel.cities.forEach(function(cid){
     var c = cityById(cid); if(!c) return;
     if (c.sub && geoSel.subs.indexOf(c.sub) < 0) geoSel.subs.push(c.sub);
@@ -1900,7 +1929,6 @@ function provSyncHierarchy(){
     var reg = (s && s.region) || c.region;
     if (reg && geoSel.regions.indexOf(reg) < 0) geoSel.regions.push(reg);
   });
-  // Per ogni sub: garantisci region
   geoSel.subs.forEach(function(sid){
     var s = subById(sid); if(!s) return;
     if (s.region && geoSel.regions.indexOf(s.region) < 0) geoSel.regions.push(s.region);
@@ -2335,7 +2363,6 @@ function pkRender(key){
 }
 function pkRenderAll(){ Object.keys(PICKERS).forEach(pkRender); updateGeoHint(); }
 
-/* === PK ADD === */
 function pkAdd(key,id){
   if (IMP_KEY_MAP[key]) { impGeoAdd(IMP_KEY_MAP[key], id); pkAfterChange(key); return; }
   if (REP_KEY_MAP[key]) { repGeoAdd(REP_KEY_MAP[key], id); pkAfterChange(key); return; }
@@ -2357,7 +2384,6 @@ function pkAdd(key,id){
   pkAfterChange(key);
 }
 
-/* === PK REMOVE === */
 function pkRemove(key,id){
   if (IMP_KEY_MAP[key]) { impGeoRemove(IMP_KEY_MAP[key], id); pkAfterChange(key); return; }
   if (REP_KEY_MAP[key]) { repGeoRemove(REP_KEY_MAP[key], id); pkAfterChange(key); return; }
@@ -2377,13 +2403,6 @@ function pkRemove(key,id){
   pkAfterChange(key);
 }
 
-/* === PK AFTER CHANGE === 
-   Ordine fondamentale:
-   1) provEnforce()        → filtra le selezioni in base alla compatibilità
-   2) provSyncHierarchy()  → RIPRISTINA i genitori (sub/region) delle city/sub
-   3) provSyncProvinces()  → materializza le province derivate nei chip
-   In questo modo, anche se provEnforce rimuove una region/sub perché "incompatibile"
-   con un reign/magistrate, provSyncHierarchy la rimette se serve a una city/sub selezionata. */
 function pkAfterChange(key){
   var root=document.getElementById(PICKERS[key].el); if(root) root.querySelector('.pk-in').value='';
   if(currentPeriod==='imp'){ impEnforce(); }
@@ -2489,7 +2508,7 @@ function openModal(id){
         magSel=Array.isArray(c.mags)?c.mags.slice():[];
         rebuildReignSelect(); $set('f-reign',c.reign||'');
         if(c.reign && document.getElementById('f-reign').value!==c.reign){
-          var o=document.createElement('option'); o.value=c.reign; o.textContent=c.reign; document.getElementById('f-reign').appendChild(o); $set('f-reign',c.reign);
+          var o=document.createElement('option'); o.value=c.reign; o.textContent=reignLabel(c.reign); document.getElementById('f-reign').appendChild(o); $set('f-reign',c.reign);
         }
       } else if(currentPeriod === 'imp'){
         impGeoSel = {

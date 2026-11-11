@@ -191,6 +191,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 #pk-subs .pk-chip{color:#7a5a2a}
 #pk-cities .pk-chip{color:#8a6612}
 #pk-mag .pk-chip{color:#5a3f6b}
+#pk-reign .pk-chip{color:#7a5a2a}
 #pk-imp-regions .pk-chip{color:#2c6b3b}
 #pk-imp-subs .pk-chip{color:#1f4f80}
 #pk-imp-subsubs .pk-chip{color:#5a3f6b}
@@ -400,7 +401,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="fgrid">
         <div class="frow">
           <label>REIGN</label>
-          <select id="f-reign" onchange="onReignChange()"><option value="">— select —</option></select>
+          <div class="picker" id="pk-reign">
+            <div class="pk-chips"></div>
+            <input class="pk-in" type="text" placeholder="Search reign…" autocomplete="off">
+            <div class="pk-list"></div>
+          </div>
         </div>
         <div class="frow">
           <label>MAGISTRATE</label>
@@ -921,12 +926,8 @@ function buildProvDB(magRows, cityRows){
   });
   PDB.cities.forEach(function(c){ if(!withMag[c.id]) PDB.tuples.push({r:null,m:null,c:c.id,g:c.region,s:c.sub||null}); });
 
-  /* === AGGIUNTA FONDAMENTALE ===
-     Per ogni città, aggiungi un tuple per OGNI reign di reigns.csv
-     (anche se la città non ha magistrati per quel reign).
-     Così facet('r') restituisce tutti i reign disponibili per la città
-     e la tendina si popola correttamente.
-     Evita duplicati: se esiste già un tuple (r,c) lo salta. */
+  /* Per ogni città, aggiungi un tuple per OGNI reign di reigns.csv
+     (anche se la città non ha magistrati per quel reign). */
   var existRC = {};
   PDB.tuples.forEach(function(t){ if(t.r && t.c) existRC[t.r+'|'+t.c]=true; });
   PDB.cities.forEach(function(c){
@@ -940,7 +941,6 @@ function buildProvDB(magRows, cityRows){
   applyProvDB();
 }
 
-/* Chiamata dopo che PDB è pronto. Safe rispetto alle variabili mints. */
 function applyProvDB(){
   CITIES=PDB.cities; SUBREGIONS=PDB.subs;
   var set={}; Object.keys(REGION_PROVINCES).forEach(function(r){ set[r]=true; }); PDB.regions.forEach(function(r){ set[r]=true; });
@@ -948,7 +948,6 @@ function applyProvDB(){
   setProvHint('');
   if(document.getElementById('overlay').classList.contains('open')){ provEnforce(); pkRenderAll(); previewHighlight(); }
   renderList();
-  /* Le mints potrebbero non essere ancora caricate: proteggiamo */
   try { rebuildMintTypeIndex(); } catch(e){}
   try { if (mintsLayer && currentMintMode !== 'none') renderMints(); } catch(e){}
 }
@@ -1482,6 +1481,7 @@ function setPeriod(p){
     if(isProv) provEnforce();
     if(isImp) impEnforce();
     if(isRep) repEnforce();
+    if(isProv) rebuildReignPicker();
     pkRenderAll();
     previewHighlight();
   }
@@ -1493,14 +1493,15 @@ function setPeriod(p){
    Dimensioni filtrate: r (reign), m (magistrate), c (city).
    geoSel.regions e geoSel.subs sono VINCOLI DI APPARTENENZA (non filtri
    sui tuple). provEnforce non li tocca mai.
+   reignSel: stringa singola (il reign selezionato).
    ===================================================================== */
 var geoSel = emptyGeo();
 var magSel = [];
+var reignSel = '';
 var DIMS = ['r','m','c'];
 
 function provSelection(){
-  var r=document.getElementById('f-reign').value;
-  return { r: r?[r]:[], m: magSel.slice(), c: geoSel.cities.slice() };
+  return { r: reignSel ? [reignSel] : [], m: magSel.slice(), c: geoSel.cities.slice() };
 }
 function tupleOk(t, sel, skip){
   if(skip!=='r' && sel.r.length && sel.r.indexOf(t.r)<0) return false;
@@ -1522,12 +1523,12 @@ function facet(k, sel){
   return out;
 }
 function writeDim(k, vals){
-  if(k==='r') document.getElementById('f-reign').value=vals[0]||'';
+  if(k==='r') reignSel=vals[0]||'';
   else if(k==='m') magSel=vals;
   else if(k==='c') geoSel.cities=vals;
 }
 function provEnforce(){
-  if(!isProvMode()){ rebuildReignSelect(); return; }
+  if(!isProvMode()){ rebuildReignPicker(); return; }
   var changed=true, guard=0;
   while(changed && guard++<10){
     changed=false;
@@ -1539,27 +1540,21 @@ function provEnforce(){
       if(kept.length!==sel[k].length){ writeDim(k,kept); sel=provSelection(); changed=true; }
     }
   }
-  rebuildReignSelect();
+  rebuildReignPicker();
   updateProvHint();
 }
 function reignSort(a,b){ return PDB.reigns.indexOf(a)-PDB.reigns.indexOf(b); }
-function rebuildReignSelect(){
-  var sel=document.getElementById('f-reign'); if(!sel) return;
-  var cur=sel.value;
-  var list = PDB.ready ? (isProvMode() ? facet('r',provSelection()).sort(reignSort) : PDB.reigns.slice()) : [];
-  if(cur && list.indexOf(cur)<0 && PDB.reigns.indexOf(cur)>=0) { list.push(cur); list.sort(reignSort); }
-  sel.innerHTML='';
-  var o0=document.createElement('option'); o0.value=''; o0.textContent='— select —'; sel.appendChild(o0);
-  list.forEach(function(r){
-    var o=document.createElement('option');
-    o.value=r;
-    o.textContent=reignLabel(r);
-    if(isClientKing(r)) o.title='Client king (not a Roman emperor)';
-    sel.appendChild(o);
-  });
-  if(cur && list.indexOf(cur)>=0) sel.value = cur; else sel.value = '';
-  var leg = document.getElementById('reign-legend');
-  if(leg){ leg.style.display = list.some(isClientKing) ? '' : 'none'; }
+function rebuildReignPicker(){
+  if(PDB.ready && isProvMode()){
+    var compatible = facet('r', provSelection());
+    /* Se il reign selezionato non è più compatibile, deseleziona */
+    if(reignSel && compatible.indexOf(reignSel) < 0 && PDB.reigns.indexOf(reignSel) >= 0){
+      reignSel = '';
+    }
+    var leg = document.getElementById('reign-legend');
+    if(leg){ leg.style.display = compatible.some(isClientKing) ? '' : 'none'; }
+  }
+  pkRender('reign');
 }
 function onReignChange(){ provEnforce(); pkRenderAll(); previewHighlight(); }
 function updateProvHint(){
@@ -1828,6 +1823,16 @@ var IMP_KEY_MAP = {impregions:'regions', impsubs:'subs', impsubsubs:'subsubs', i
 var REP_KEY_MAP = {repregions:'regions', repsubs:'subs', repsubsubs:'subsubs', repcities:'cities'};
 
 var PICKERS = {
+  reign:{ el:'pk-reign',
+    single:true,
+    items:function(){
+      if(!PDB.ready) return [];
+      var list = isProvMode() ? facet('r',provSelection()) : PDB.reigns.slice();
+      return list.map(function(r){ return {id:r,label:reignLabel(r),small:isClientKing(r)?'client king':''}; }).sort(byLabel);
+    },
+    get:function(){ return reignSel ? [reignSel] : []; },
+    set:function(v){ reignSel = v.length ? v[v.length-1] : ''; },
+    label:function(id){ return reignLabel(id); } },
   provs:{ el:'pk-provs',
     items:function(){ return PROVS.map(function(p){ return {id:p,label:p}; }); },
     get:function(){ return resolveProvinces(geoSel, ''); },
@@ -2004,12 +2009,17 @@ function pkRenderAll(){ Object.keys(PICKERS).forEach(pkRender); updateGeoHint();
 function pkAdd(key,id){
   if (IMP_KEY_MAP[key]) { impGeoAdd(IMP_KEY_MAP[key], id); pkAfterChange(key); return; }
   if (REP_KEY_MAP[key]) { repGeoAdd(REP_KEY_MAP[key], id); pkAfterChange(key); return; }
+  var P = PICKERS[key];
+  if(P && P.single){
+    P.set([id]);
+    pkAfterChange(key);
+    return;
+  }
   if (key === 'provs') { provGeoAdd('provs', id); }
   else if (key === 'regions') { provGeoAdd('regions', id); }
   else if (key === 'subs') { provGeoAdd('subs', id); }
   else if (key === 'cities') { provGeoAdd('cities', id); }
   else {
-    var P = PICKERS[key];
     var v = P.get().slice();
     if (v.indexOf(id) < 0) v.push(id);
     P.set(v);
@@ -2019,12 +2029,17 @@ function pkAdd(key,id){
 function pkRemove(key,id){
   if (IMP_KEY_MAP[key]) { impGeoRemove(IMP_KEY_MAP[key], id); pkAfterChange(key); return; }
   if (REP_KEY_MAP[key]) { repGeoRemove(REP_KEY_MAP[key], id); pkAfterChange(key); return; }
+  var P = PICKERS[key];
+  if(P && P.single){
+    P.set([]);
+    pkAfterChange(key);
+    return;
+  }
   if (key === 'provs') { provGeoRemove('provs', id); }
   else if (key === 'regions') { provGeoRemove('regions', id); }
   else if (key === 'subs') { provGeoRemove('subs', id); }
   else if (key === 'cities') { provGeoRemove('cities', id); }
   else {
-    var P = PICKERS[key];
     P.set(P.get().filter(function(x){ return x !== id; }));
   }
   pkAfterChange(key);
@@ -2103,7 +2118,7 @@ function previewHighlight(){
 function resetForm(){
   ['f-ref','f-prov-imp','f-prov-auth','f-rep-auth','f-denom','f-date','f-desc','f-notes'].forEach(function(id){ $set(id,''); });
   $set('f-metal','');
-  geoSel=emptyGeo(); magSel=[]; $set('f-reign','');
+  geoSel=emptyGeo(); magSel=[]; reignSel='';
   impGeoSel = { regions: [], subs: [], subsubs: [], cities: [] };
   impAuthSel = []; impIssuerSel = [];
   repGeoSel = { regions: [], subs: [], subsubs: [], cities: [] };
@@ -2125,10 +2140,8 @@ function openModal(id){
       if(currentPeriod === 'prov'){
         geoSel=normGeo(c.geo);
         magSel=Array.isArray(c.mags)?c.mags.slice():[];
-        rebuildReignSelect(); $set('f-reign',c.reign||'');
-        if(c.reign && document.getElementById('f-reign').value!==c.reign){
-          var o=document.createElement('option'); o.value=c.reign; o.textContent=reignLabel(c.reign); document.getElementById('f-reign').appendChild(o); $set('f-reign',c.reign);
-        }
+        reignSel = c.reign || '';
+        rebuildReignPicker();
       } else if(currentPeriod === 'imp'){
         impGeoSel = { regions: c.impRegions || [], subs: c.impSubs || [], subsubs: c.impSubsubs || [], cities: c.mint ? c.mint.split(';').map(s=>s.trim()).filter(Boolean) : [] };
         impAuthSel = c.imp ? [c.imp] : [];
@@ -2185,7 +2198,7 @@ function saveCoin(){
     impAuth: isImp ? (impIssuerSel[0] || '') : '',
     provImp: isProv ? $v('f-prov-imp') : '',
     provAuth: isProv ? $v('f-prov-auth') : '',
-    reign: isProv ? $v('f-reign') : '',
+    reign: isProv ? reignSel : '',
     mags: isProv ? magSel.slice() : [],
     magNames: isProv ? magSel.map(id => magLabel(PDB.magById[id])) : [],
     metal:$v('f-metal'), denom:$v('f-denom'), date:$v('f-date'), desc:$v('f-desc'), notes:$v('f-notes'),

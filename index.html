@@ -755,21 +755,6 @@ var MINT_COORD_OVERRIDES = {
   'Antioch, Syria':          [36.2, 36.15]
 };
 
-/* === Classificazione intrinseca delle zecche (per il filtro ALL THE MINTS) === */
-/* Basata su liste statiche di fallback; se mints.json ha campo `type`, quello ha priorità */
-var MINT_TYPE_STATIC = {};
-
-function classifyMintType(name){
-  var canon = canonicalMint(name);
-  // 1. se presente in mints.json con campo type
-  var m = allMintsData.find(x => canonicalMint(x.name) === canon);
-  if (m && m.type) return m.type; // 'prov' | 'imp' | 'rep'
-  // 2. fallback statico
-  if (MINT_TYPE_STATIC[canon]) return MINT_TYPE_STATIC[canon];
-  // 3. default: 'all'
-  return 'all';
-}
-
 function parseCSV(text){
   if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
   var firstLine=text.split(/\r?\n/)[0]||'';
@@ -896,6 +881,9 @@ function applyProvDB(){
   setProvHint('');
   if(document.getElementById('overlay').classList.contains('open')){ provEnforce(); pkRenderAll(); previewHighlight(); }
   renderList();
+  // Ricalcola la classificazione delle zecche ora che PDB è pronto
+  rebuildMintTypeIndex();
+  if (currentMintMode !== 'none') renderMints();
 }
 function setProvHint(t){ document.getElementById('prov-hint').textContent=t; }
 
@@ -1235,6 +1223,7 @@ fetchFirst(['issuer.csv'])
         REP_ISSUERS.forEach(i => RDB.tuples.push({ i: i }));
       }
     }
+    rebuildMintTypeIndex();
   })
   .catch(e => console.warn("Impossibile caricare issuer.csv per le repubblicane.", e));
 
@@ -1348,7 +1337,6 @@ function provinceOfMint(mintName){
   if(canon in MINT_GEO_CACHE) return MINT_GEO_CACHE[canon];
   if(!geoLayer) return null; // non cachare se il layer non è pronto
 
-  // coordinate: prima mints.json, poi override
   var lat=null, lng=null;
   if(allMintsData.length){
     var m = allMintsData.find(x => canonicalMint(x.name) === canon);
@@ -1366,7 +1354,6 @@ function provinceOfMint(mintName){
   geoLayer.eachLayer(l => {
     if(l.feature && l.feature.geometry && turf.booleanPointInPolygon(pt, l.feature)) hits.push(l.feature);
   });
-  // scelta deterministica: area minore, poi nome
   hits.sort((a,b) => (turf.area(a)-turf.area(b)) || String(a.properties.name||'').localeCompare(String(b.properties.name||'')));
   var result = hits[0] ? geoToOur(hits[0].properties.name) : null;
   MINT_GEO_CACHE[canon] = result;
@@ -1375,10 +1362,8 @@ function provinceOfMint(mintName){
 
 function provsForCity(id){
   var c = cityById(id); if(!c) return [];
-  // priorità 1: coordinate
   var p = provinceOfMint(c.name);
   if(p) return [p];
-  // fallback
   if(c.provs && c.provs.length) return c.provs.slice();
   if(c.sub){ var sp = provsForSub(c.sub); if(sp.length) return sp; }
   return provsForRegion(c.region);
@@ -1391,7 +1376,6 @@ function resolveProvinces(geo, primary){
   if(primary) set[primary]=true;
   add(geo.provs);
 
-  // priorità 1: città con coordinate
   var cityResolved = false;
   geo.cities.forEach(function(cid){
     var obj = cityById(cid);
@@ -1399,11 +1383,9 @@ function resolveProvinces(geo, primary){
     var p = provinceOfMint(name);
     if(p){ set[p]=true; cityResolved = true; }
   });
-  // città senza coordinate: fallback catena
   if(!cityResolved){
     geo.cities.forEach(function(c){ add(provsForCity(c)); });
   }
-  // sub / regioni solo se non c'è una città con coordinate
   if(!cityResolved){
     geo.subs.forEach(function(s){ add(provsForSub(s)); });
     geo.regions.forEach(function(r){ add(provsForRegion(r)); });
@@ -1564,7 +1546,78 @@ function updateMap(){
 }
 
 /* =====================================================================
-   LOGICA ZECCHE (MINTS) & FILTRI  — CORRETTA
+   CLASSIFICAZIONE ZECCHE — MULTI-TIPO
+   =====================================================================
+   Ogni zecca può appartenere a più categorie (prov/imp/rep).
+   Costruiamo un indice MINT_TYPES: canon -> Set di tipi.
+   Fonti di verità:
+     1. REP_CITIES  -> tutte repubblicane (e possono essere anche imp/prov)
+     2. IMP_CITIES  -> tutte imperiali (e possono essere anche rep/prov)
+     3. PDB.cities  -> tutte provinciali (dal CSV)
+     4. mints.json  -> se ha campo type, aggiunge quel tipo
+   In questo modo:
+     - Rome sarà {rep, imp, prov} -> appare in tutti i filtri
+     - Una zecca solo repubblicana apparirà solo in rep
+     - Una zecca solo imperiale apparirà solo in imp
+     - Una zecca solo provinciale apparirà solo in prov
+   ===================================================================== */
+var MINT_TYPES = {}; // canon -> { rep:true, imp:true, prov:true }
+
+function addMintType(name, type){
+  if(!name) return;
+  var canon = canonicalMint(name);
+  if(!MINT_TYPES[canon]) MINT_TYPES[canon] = {};
+  MINT_TYPES[canon][type] = true;
+}
+
+function rebuildMintTypeIndex(){
+  MINT_TYPES = {};
+  // Repubblicane
+  REP_CITIES.forEach(function(n){ addMintType(n, 'rep'); });
+  // Imperiali
+  IMP_CITIES.forEach(function(n){ addMintType(n, 'imp'); });
+  // Provinciali (dal CSV)
+  if(PDB.ready){
+    PDB.cities.forEach(function(c){ addMintType(c.name, 'prov'); });
+  }
+  // Da mints.json: se ha type esplicito, rispettalo
+  allMintsData.forEach(function(m){
+    if(m.type && ['prov','imp','rep'].indexOf(m.type) >= 0){
+      addMintType(m.name, m.type);
+    }
+  });
+  // Override: le zecche con coordinate override che non sono in nessuna lista
+  // non vengono classificate automaticamente (restano fuori dall'indice)
+}
+
+/* Restituisce l'insieme dei tipi di una zecca */
+function getMintTypes(name){
+  var canon = canonicalMint(name);
+  return MINT_TYPES[canon] || null;
+}
+
+/* Restituisce true se la zecca deve essere visibile con il filtro corrente */
+function mintVisible(mintName, ownedSet){
+  var canon = canonicalMint(mintName);
+  var isOwned = ownedSet.has(canon);
+
+  // Mine: solo owned
+  if (currentMintMode === 'mine') return isOwned;
+
+  // All coins: tutte
+  if (currentCoinFilter === 'all') return true;
+
+  var types = getMintTypes(mintName);
+
+  // Se non classificata: mostrala solo se owned (non possiamo sapere il tipo)
+  if (!types) return isOwned;
+
+  // Se classificata: mostrala se il tipo corrisponde al filtro
+  return !!types[currentCoinFilter];
+}
+
+/* =====================================================================
+   LOGICA ZECCHE (MINTS) & FILTRI
    ===================================================================== */
 let allMintsData = [];
 let currentMintMode = 'none';
@@ -1575,55 +1628,11 @@ fetch('mints.json')
   .then(data => {
     allMintsData = data;
     MINT_GEO_CACHE = {};
-    // costruisci la mappa statica di classificazione dai dati (se hanno campo type)
-    allMintsData.forEach(m => {
-      var canon = canonicalMint(m.name);
-      if (m.type && ['prov','imp','rep'].includes(m.type)) {
-        MINT_TYPE_STATIC[canon] = m.type;
-      }
-    });
+    rebuildMintTypeIndex();
     setMintMode('none');
     setCoinFilter('all');
   })
   .catch(err => console.error("Errore caricamento mints.json:", err));
-
-/* Restituisce il tipo intrinseco della zecca: 'prov' | 'imp' | 'rep' | 'all' */
-function getMintTypeIntrinsic(name) {
-  var canon = canonicalMint(name);
-  // 1. da mints.json (campo type) — già copiato in MINT_TYPE_STATIC
-  if (MINT_TYPE_STATIC[canon]) return MINT_TYPE_STATIC[canon];
-  // 2. dall'ID in mints.json (prefisso)
-  var m = allMintsData.find(x => canonicalMint(x.name) === canon);
-  if (m && m.id) {
-    if (m.id.startsWith('imp-')) return 'imp';
-    if (m.id.startsWith('prov-')) return 'prov';
-  }
-  // 3. fallback: 'all' (non classificata)
-  return 'all';
-}
-
-/* Restituisce true se la zecca deve essere visibile con il filtro corrente */
-function mintVisible(mintName, ownedSet) {
-  var canon = canonicalMint(mintName);
-  var isOwned = ownedSet.has(canon);
-
-  // In modalità 'mine' mostriamo solo le owned
-  if (currentMintMode === 'mine') return isOwned;
-
-  // In modalità 'all' applichiamo il filtro per tipo
-  if (currentCoinFilter === 'all') return true;
-
-  var type = getMintTypeIntrinsic(mintName);
-
-  // Se la zecca è classificata e il tipo non corrisponde al filtro, escludila
-  if (type !== 'all' && type !== currentCoinFilter) return false;
-
-  // Se la zecca non è classificata ('all'), mostrala solo se è in collezione
-  // (altrimenti non possiamo sapere se appartiene al filtro)
-  if (type === 'all' && !isOwned) return false;
-
-  return true;
-}
 
 function renderMints() {
   if (!mintsLayer) return;
@@ -1631,7 +1640,6 @@ function renderMints() {
   
   if (allMintsData.length === 0 || currentMintMode === 'none') return;
 
-  // Costruisci set delle zecche possedute
   let ownedMints = new Set();
   coins.forEach(c => {
     if (c.mint) {
@@ -1821,7 +1829,6 @@ function reignSort(a,b){ return PDB.reigns.indexOf(a)-PDB.reigns.indexOf(b); }
 function rebuildReignSelect(){
   var sel=document.getElementById('f-reign'), cur=sel.value;
   var list = PDB.ready ? (isProvMode() ? facet('r',provSelection()).sort(reignSort) : PDB.reigns.slice()) : [];
-  // se il valore corrente non è nella lista ma è valido, mantienilo in cima
   if(cur && list.indexOf(cur)<0 && PDB.reigns.indexOf(cur)>=0) {
     list.push(cur);
     list.sort(reignSort);
@@ -1829,7 +1836,6 @@ function rebuildReignSelect(){
   sel.innerHTML='';
   var o0=document.createElement('option'); o0.value=''; o0.textContent='— select —'; sel.appendChild(o0);
   list.forEach(function(r){ var o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
-  // ripristina la selezione se ancora valida
   if(cur && list.indexOf(cur)>=0) sel.value = cur;
   else sel.value = '';
 }
@@ -2349,14 +2355,12 @@ function previewHighlight(){
     var geo = (currentPeriod === 'imp') ? impGeoSel : repGeoSel;
     var map = (currentPeriod === 'imp') ? IMP_MAP_TO_PROVS : REP_MAP_TO_PROVS;
 
-    // priorità 1: città con coordinate
     if (geo.cities.length > 0) {
       geo.cities.forEach(c => {
         var p = provinceOfMint(c);
         if (p && provinces.indexOf(p) < 0) provinces.push(p);
       });
     }
-    // fallback a un solo livello
     if (!provinces.length && geo.subsubs.length > 0) {
       geo.subsubs.forEach(ss => { (map[ss]||[]).forEach(p => { if(provinces.indexOf(p)<0) provinces.push(p); }); });
     }

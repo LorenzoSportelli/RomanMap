@@ -755,6 +755,21 @@ var MINT_COORD_OVERRIDES = {
   'Antioch, Syria':          [36.2, 36.15]
 };
 
+/* === Classificazione intrinseca delle zecche (per il filtro ALL THE MINTS) === */
+/* Basata su liste statiche di fallback; se mints.json ha campo `type`, quello ha priorità */
+var MINT_TYPE_STATIC = {};
+
+function classifyMintType(name){
+  var canon = canonicalMint(name);
+  // 1. se presente in mints.json con campo type
+  var m = allMintsData.find(x => canonicalMint(x.name) === canon);
+  if (m && m.type) return m.type; // 'prov' | 'imp' | 'rep'
+  // 2. fallback statico
+  if (MINT_TYPE_STATIC[canon]) return MINT_TYPE_STATIC[canon];
+  // 3. default: 'all'
+  return 'all';
+}
+
 function parseCSV(text){
   if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
   var firstLine=text.split(/\r?\n/)[0]||'';
@@ -1549,7 +1564,7 @@ function updateMap(){
 }
 
 /* =====================================================================
-   LOGICA ZECCHE (MINTS) & FILTRI
+   LOGICA ZECCHE (MINTS) & FILTRI  — CORRETTA
    ===================================================================== */
 let allMintsData = [];
 let currentMintMode = 'none';
@@ -1560,25 +1575,54 @@ fetch('mints.json')
   .then(data => {
     allMintsData = data;
     MINT_GEO_CACHE = {};
+    // costruisci la mappa statica di classificazione dai dati (se hanno campo type)
+    allMintsData.forEach(m => {
+      var canon = canonicalMint(m.name);
+      if (m.type && ['prov','imp','rep'].includes(m.type)) {
+        MINT_TYPE_STATIC[canon] = m.type;
+      }
+    });
     setMintMode('none');
     setCoinFilter('all');
   })
   .catch(err => console.error("Errore caricamento mints.json:", err));
 
-function getMintType(name) {
-  var target = canonicalMint(name);
-  const hasRep = coins.some(c => c.period === 'rep' && c.mint && canonicalMint(c.mint) === target);
-  const hasImp = coins.some(c => c.period === 'imp' && c.mint && canonicalMint(c.mint) === target);
-  const hasProv = coins.some(c => c.period === 'prov' && c.mint && canonicalMint(c.mint) === target);
-
-  if (hasRep) return 'rep';
-  if (hasImp) return 'imp';
-  if (hasProv) return 'prov';
-
-  const m = allMintsData.find(x => canonicalMint(x.name) === target);
-  if (m && m.id.startsWith('imp-')) return 'imp';
-  if (m && m.id.startsWith('prov-')) return 'prov';
+/* Restituisce il tipo intrinseco della zecca: 'prov' | 'imp' | 'rep' | 'all' */
+function getMintTypeIntrinsic(name) {
+  var canon = canonicalMint(name);
+  // 1. da mints.json (campo type) — già copiato in MINT_TYPE_STATIC
+  if (MINT_TYPE_STATIC[canon]) return MINT_TYPE_STATIC[canon];
+  // 2. dall'ID in mints.json (prefisso)
+  var m = allMintsData.find(x => canonicalMint(x.name) === canon);
+  if (m && m.id) {
+    if (m.id.startsWith('imp-')) return 'imp';
+    if (m.id.startsWith('prov-')) return 'prov';
+  }
+  // 3. fallback: 'all' (non classificata)
   return 'all';
+}
+
+/* Restituisce true se la zecca deve essere visibile con il filtro corrente */
+function mintVisible(mintName, ownedSet) {
+  var canon = canonicalMint(mintName);
+  var isOwned = ownedSet.has(canon);
+
+  // In modalità 'mine' mostriamo solo le owned
+  if (currentMintMode === 'mine') return isOwned;
+
+  // In modalità 'all' applichiamo il filtro per tipo
+  if (currentCoinFilter === 'all') return true;
+
+  var type = getMintTypeIntrinsic(mintName);
+
+  // Se la zecca è classificata e il tipo non corrisponde al filtro, escludila
+  if (type !== 'all' && type !== currentCoinFilter) return false;
+
+  // Se la zecca non è classificata ('all'), mostrala solo se è in collezione
+  // (altrimenti non possiamo sapere se appartiene al filtro)
+  if (type === 'all' && !isOwned) return false;
+
+  return true;
 }
 
 function renderMints() {
@@ -1587,6 +1631,7 @@ function renderMints() {
   
   if (allMintsData.length === 0 || currentMintMode === 'none') return;
 
+  // Costruisci set delle zecche possedute
   let ownedMints = new Set();
   coins.forEach(c => {
     if (c.mint) {
@@ -1596,8 +1641,7 @@ function renderMints() {
     }
   });
 
-  if (currentMintMode === 'mine' && ownedMints.size === 0) return;
-
+  // Zecche da mints.json
   let mintsToDraw = allMintsData.slice().sort((a, b) => {
     let oa = ownedMints.has(canonicalMint(a.name)) ? 1 : 0;
     let ob = ownedMints.has(canonicalMint(b.name)) ? 1 : 0;
@@ -1605,13 +1649,8 @@ function renderMints() {
   });
 
   mintsToDraw.forEach(m => {
+    if (!mintVisible(m.name, ownedMints)) return;
     let isOwned = ownedMints.has(canonicalMint(m.name));
-    if (currentMintMode === 'mine' && !isOwned) return;
-    if (currentCoinFilter !== 'all') {
-      let mintType = getMintType(m.name);
-      if (mintType === 'all' && !isOwned) return;
-      if (mintType !== currentCoinFilter && mintType !== 'all') return;
-    }
 
     let marker = L.circleMarker([m.lat, m.lng], {
       pane: 'mintsPane',
@@ -1633,11 +1672,11 @@ function renderMints() {
     mintsLayer.addLayer(marker);
   });
 
-  // marker per zecche con override non presenti in mints.json
+  // Zecche con override non presenti in mints.json
   Object.keys(MINT_COORD_OVERRIDES).forEach(name => {
     if(allMintsData.some(m => canonicalMint(m.name) === canonicalMint(name))) return;
+    if (!mintVisible(name, ownedMints)) return;
     let isOwned = ownedMints.has(canonicalMint(name));
-    if (currentMintMode === 'mine' && !isOwned) return;
     let coords = MINT_COORD_OVERRIDES[name];
     let marker = L.circleMarker(coords, {
       pane: 'mintsPane',
@@ -1782,11 +1821,17 @@ function reignSort(a,b){ return PDB.reigns.indexOf(a)-PDB.reigns.indexOf(b); }
 function rebuildReignSelect(){
   var sel=document.getElementById('f-reign'), cur=sel.value;
   var list = PDB.ready ? (isProvMode() ? facet('r',provSelection()).sort(reignSort) : PDB.reigns.slice()) : [];
-  if(cur && list.indexOf(cur)<0) list.push(cur), list.sort(reignSort);
+  // se il valore corrente non è nella lista ma è valido, mantienilo in cima
+  if(cur && list.indexOf(cur)<0 && PDB.reigns.indexOf(cur)>=0) {
+    list.push(cur);
+    list.sort(reignSort);
+  }
   sel.innerHTML='';
   var o0=document.createElement('option'); o0.value=''; o0.textContent='— select —'; sel.appendChild(o0);
   list.forEach(function(r){ var o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
-  sel.value=cur && list.indexOf(cur)>=0 ? cur : '';
+  // ripristina la selezione se ancora valida
+  if(cur && list.indexOf(cur)>=0) sel.value = cur;
+  else sel.value = '';
 }
 function onReignChange(){ provEnforce(); pkRenderAll(); previewHighlight(); }
 function updateProvHint(){

@@ -195,6 +195,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 #pk-imp-subs .pk-chip{color:#1f4f80}
 #pk-imp-subsubs .pk-chip{color:#5a3f6b}
 #pk-imp-cities .pk-chip{color:#8a6612}
+#pk-rep-regions .pk-chip{color:#2c6b3b}
+#pk-rep-subs .pk-chip{color:#1f4f80}
+#pk-rep-subsubs .pk-chip{color:#5a3f6b}
+#pk-rep-cities .pk-chip{color:#8a6612}
+#pk-rep-issuers .pk-chip{color:#6f5028}
 #pk-authorities .pk-chip{color:#6f5028}
 #pk-issuers .pk-chip{color:#5a3f6b}
 
@@ -248,7 +253,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 #modal-head, #detail-head{cursor:grab;user-select:none;-webkit-user-select:none}
 #modal-head:active, #detail-head:active{cursor:grabbing}
 
-/* Stili per i marker delle zecche (colore gestito via JS) */
 .mint-marker {
   border-radius: 50%;
   box-shadow: 0 2px 5px rgba(0,0,0,0.4);
@@ -284,24 +288,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div id="tt"></div>
     <div id="legend"><span>0</span><div id="legbar"></div><span id="legmax">0</span><div class="leg-hl"><i></i><span>SELECTION</span></div></div>
     
-    <!-- Controlli Mappa (Zecche + Filtri Monete) -->
     <div id="map-controls" style="position:absolute; top:15px; right:15px; z-index:1000; display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
-      
-      <!-- Pulsanti Zecche -->
       <div style="display:flex; gap:6px;">
         <button id="btn-mints-none" class="btn" onclick="setMintMode('none')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">NO MINTS</button>
         <button id="btn-mints-mine" class="btn" onclick="setMintMode('mine')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">MY MINTS</button>
         <button id="btn-mints-all" class="btn" onclick="setMintMode('all')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">ALL THE MINTS</button>
       </div>
-
-      <!-- Pulsanti Filtro Monete (sotto) -->
       <div style="display:flex; gap:6px;">
         <button id="btn-filter-all" class="btn" onclick="setCoinFilter('all')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">ALL COINS</button>
         <button id="btn-filter-prov" class="btn" onclick="setCoinFilter('prov')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">PROVINCIAL</button>
         <button id="btn-filter-imp" class="btn" onclick="setCoinFilter('imp')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">IMPERIAL</button>
         <button id="btn-filter-rep" class="btn" onclick="setCoinFilter('rep')" style="background:var(--bg2); font-size:0.6rem; padding:5px 10px;">REPUBLICAN</button>
       </div>
-
     </div>
   </div>
 
@@ -357,20 +355,46 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <input id="f-ref" type="text" placeholder="RIC 207">
     </div>
     
-    <!-- REPUBLICAN ONLY: Geography -->
     <div id="block-main-geography" style="display:none">
       <div class="fsep"><div class="fsep-label">GEOGRAPHY</div></div>
-      <div class="frow">
-        <label>PROVINCE / REGION <span>*</span></label>
-        <select id="f-prov" onchange="previewHighlight()"></select>
+      <div class="fgrid">
+        <div class="frow">
+          <label>REGION</label>
+          <div class="picker" id="pk-rep-regions">
+            <div class="pk-chips"></div>
+            <input class="pk-in" type="text" placeholder="Search region…" autocomplete="off">
+            <div class="pk-list"></div>
+          </div>
+        </div>
+        <div class="frow">
+          <label>SUBREGION</label>
+          <div class="picker" id="pk-rep-subs">
+            <div class="pk-chips"></div>
+            <input class="pk-in" type="text" placeholder="Search subregion…" autocomplete="off">
+            <div class="pk-list"></div>
+          </div>
+        </div>
       </div>
-      <div class="frow">
-        <label>CITY / MINT</label>
-        <input id="f-mint" type="text" placeholder="Roma, Lugdunum, moving mint…">
+      <div class="fgrid">
+        <div class="frow">
+          <label>SUBSUBREGION</label>
+          <div class="picker" id="pk-rep-subsubs">
+            <div class="pk-chips"></div>
+            <input class="pk-in" type="text" placeholder="Search subsubregion…" autocomplete="off">
+            <div class="pk-list"></div>
+          </div>
+        </div>
+        <div class="frow">
+          <label>CITY / MINT</label>
+          <div class="picker" id="pk-rep-cities">
+            <div class="pk-chips"></div>
+            <input class="pk-in" type="text" placeholder="Search city / mint…" autocomplete="off">
+            <div class="pk-list"></div>
+          </div>
+        </div>
       </div>
     </div>
-    
-    <!-- PROVINCIAL ONLY: chronology -->
+
     <div id="block-prov-chrono" style="display:none">
       <div class="fsep"><div class="fsep-label">REIGN &amp; MAGISTRATE</div></div>
       <div class="fgrid">
@@ -390,7 +414,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="pk-hint" id="prov-hint"></div>
     </div>
 
-    <!-- PROVINCIAL ONLY: Geography -->
     <div id="block-prov-geography">
       <div class="fsep"><div class="fsep-label">GEOGRAPHY</div></div>
       <div class="frow">
@@ -430,7 +453,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       </div>
     </div>
 
-    <!-- IMPERIAL ONLY: Geography -->
     <div id="block-imp-geography" style="display:none">
       <div class="fsep"><div class="fsep-label">GEOGRAPHY</div></div>
       <div class="fgrid">
@@ -476,12 +498,16 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div id="block-rep" style="display:none">
       <div class="fgrid">
         <div class="frow">
-          <label>MAGISTRATE / TRESVIRI</label>
-          <input id="f-mag" type="text" placeholder="L. Aemilius Lepidus…">
+          <label>MONEYER / ISSUER</label>
+          <div class="picker" id="pk-rep-issuers">
+            <div class="pk-chips"></div>
+            <input class="pk-in" type="text" placeholder="Search moneyer…" autocomplete="off">
+            <div class="pk-list"></div>
+          </div>
         </div>
         <div class="frow">
           <label>ISSUED BY <span style="font-size:.5rem">(if different)</span></label>
-          <input id="f-auth" type="text" placeholder="General, authority…">
+          <input id="f-rep-auth" type="text" placeholder="General, authority…">
         </div>
       </div>
     </div>
@@ -551,7 +577,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     </div>
     <div class="frow">
       <label>NOTES</label>
-      <textarea id="f-notes" placeholder="Condition, provenance, purchase…" style="min-height:48px"></textarea>
+      <textarea id="f-notes" placeholder="Weight, diameter, condition, provenance…" style="min-height:48px"></textarea>
     </div>
 
   </div>
@@ -587,7 +613,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 <script>
+/* =====================================================================
+   DATI E VARIABILI GLOBALI
+   ===================================================================== */
 var PROVS = [
   "Achaia","Aegyptus","Africa Proconsularis","Alpes Cottiae","Alpes Graiae et Poeninae","Alpes Maritimae",
   "Aquitania","Arabia","Armenia Mesopotamia","Asia","Baetica","Belgica","Bithynia et Pontus","Britannia",
@@ -671,6 +701,59 @@ var REIGN_ORDER = ["Roman Republic","Augustus","Tiberius","Caligula","Claudius",
 
 function slug(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
 function norm(s){ return String(s||'').trim().replace(/\s+/g,' ').toLowerCase(); }
+
+/* === Normalizzazione nomi zecche === */
+function normMint(s){
+  return String(s||'')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,' ')
+    .replace(/[.,;:()]/g,'')
+    .trim();
+}
+
+var MINT_ALIASES = {
+  'laodicea ad lycum': ['laodiceia ad lycum','laodicea ad mare','laodiceia ad mare'],
+  'antioch':           ['antioch syria','antiochia','antioch on the orontes'],
+  'rome':              ['roma'],
+  'lugdunum':          ['lyon'],
+  'massalia':          ['massilia','marseille'],
+  'osca':              ['huesca'],
+  'corcyra':           ['corfu','kerkyra'],
+  'messana':           ['messina','zancla'],
+  'neapolis':          ['napoli','naples'],
+  'metapontum':        ['metaponto'],
+  'canusium':          ['canosa','canosa di puglia'],
+  'luceria':           ['lucera'],
+  'narbo':             ['narbo martius','narbonne'],
+  'apollonia':         ['apollonia illyria','apollonia, illyria','apollonia, illyricum','apollonia illyricum','apollonia pojani'],
+  'salpesa':           ['salpensa']
+};
+
+function canonicalMint(name){
+  var n = normMint(name);
+  for (var canon in MINT_ALIASES){
+    if (n === canon || MINT_ALIASES[canon].indexOf(n) >= 0) return canon;
+  }
+  return n;
+}
+
+/* === Coordinate zecche non presenti in mints.json === */
+var MINT_COORD_OVERRIDES = {
+  'Apollonia, Illyria':      [40.720583, 19.470413],
+  'Canusium':                [41.2167, 16.0667],
+  'Corcyra':                 [39.6072, 19.9183],
+  'Laodiceia ad Lycum':      [37.83686, 29.10797],
+  'Luceria':                 [41.508065, 15.335065],
+  'Massalia':                [43.3, 5.367],
+  'Messana':                 [38.189444, 15.55],
+  'Metapontum':              [40.383641, 16.824332],
+  'Neapolis':                [40.8514, 14.2628],
+  'Osca':                    [42.1397, -0.4085],
+  'Salpesa':                 [37.181512, -5.781536],
+  'Narbo':                   [43.183, 3.0],
+  'Antioch, Syria':          [36.2, 36.15]
+};
 
 function parseCSV(text){
   if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
@@ -798,6 +881,9 @@ function applyProvDB(){
   setProvHint('');
   if(document.getElementById('overlay').classList.contains('open')){ provEnforce(); pkRenderAll(); previewHighlight(); }
   renderList();
+  // Ricalcola la classificazione delle zecche ora che PDB è pronto
+  rebuildMintTypeIndex();
+  if (currentMintMode !== 'none') renderMints();
 }
 function setProvHint(t){ document.getElementById('prov-hint').textContent=t; }
 
@@ -815,7 +901,7 @@ Promise.all([
 
 
 /* =====================================================================
-   IMPERIAL DATA (IDB) — FOUR GENERATIONS
+   IMPERIAL DATA (IDB)
    ===================================================================== */
 var IMP_AUTHORITIES = ["Aemilian","Allectus","Amandus","Anonymous","Anthemius","Antoninus Pius","Arcadius","Augustus","Aurelian","Aureolus","Avitus","Balbinus","Basiliscus","Bonosus","Burgundians or Franks","Caracalla","Carausius","Carinus","Carus","Claudius","Claudius II Gothicus","Clodius Albinus","Clodius Macer","Commodus","Constans","Constantine I","Constantine II","Constantine III","Constantius Chlorus","Constantius II","Diadumenian","Didius Julianus","Diocletian","Domitian","Domitian II","Domitius Alexander","Dryantilla","Elagabalus","Eugenius","Flavius Marcus","Florianus","Gaius/Caligula","Galba","Galerius","Gallienus","Geta","Glycerius","Gordian I","Gordian II","Gordian III","Gratian","Hadrian","Honorius","Hostilian","Joannes","Jotapianus","Jovianus","Jovinus","Julian of Pannonia","Julian the Apostate","Julius Nepos","Laelianus","Leo I","Leo II","Leontius","Libius Severus","Licinius","Macrianus Minor","Macrinus","Magnentius","Magnus Maximus","Majorian","Mar. Silbannacus","Marcian","Marcus Aurelius","Marius","Maxentius","Maximian","Maximinus Daia","Maximinus Thrax","Maximus","Maximus of Barcelona","Nero","Nerva","Non-imperial African coinages","Numerian","Odoacer","Olybrius","Otho","Pacatianus","Pertinax","Pescennius Niger","Petronius Maximus","Philip the Arab","Postumus","Priscus Attalus","Probus","Procopius","Pupienus","Quietus","Quintillus","Regalianus","Romulus Augustulus","Saturninus","Septimius Severus","Severus Alexander","Severus II","Sponsianus","Suevi","Tacitus","Tetricus I","Theodosius I","Theodosius II","Tiberius","Titus","Trajan","Trajan Decius","Trebonianus Gallus","Uranius Antoninus","Vabalathus","Valens","Valentinian I","Valentinian II","Valentinian III","Valerian","Vespasian","Victorinus","Visigoths","Vitellius","Volusian","Zeno","Zenobia"];
 
@@ -844,14 +930,23 @@ var IMP_GEO_TREE = {
     "Gallia": ["Gallia", "Gallia Cisalpina", "Gallia Transalpina"],
     "Germania": ["Germania"],
     "Hispania": ["Hispania", "Hispania Citerior", "Hispania Ulterior"],
-    "Italy": ["Italy", "Latium"],
+    "Italy": [
+      "Italia — Regio I — Latium et Campania",
+      "Italia — Regio II — Apulia et Calabria",
+      "Italia — Regio III — Lucania et Bruttii",
+      "Italia — Regio IV — Samnium",
+      "Italia — Regio V — Picenum",
+      "Italia — Regio VI — Umbria et Ager Gallicus",
+      "Italia — Regio VII — Etruria",
+      "Italia — Regio VIII — Aemilia",
+      "Italia — Regio IX — Liguria",
+      "Italia — Regio X — Venetia et Histria",
+      "Italia — Regio XI — Transpadana"
+    ],
     "Macedon": ["Macedon", "Bisaltian District"],
     "Pannonia": ["Pannonia"],
     "Peloponnesus": ["Peloponnesus", "Achaea"],
     "Thrace": ["Thrace", "Inland Cities of Thrace", "Moesia Superior", "Moesia", "The European Coast of the Propontis"]
-  },
-  "Italy": {
-    "Italy": ["Latium", "Campania", "Etruria", "Umbria"]
   }
 };
 
@@ -874,10 +969,15 @@ var IMP_CITY_TO_SUB = {
   "Barcino": "Hispania", "Caesaraugusta": "Hispania"
 };
 
-// Mappa Città -> Subsubregion per cascata automatica completa
 var IMP_CITY_TO_SUBSUB = {
-  "Rome": "Latium", "Ostia": "Latium",
-  "Mediolanum": "Gallia Cisalpina", "Aquileia": "Gallia Cisalpina", "Ticinum": "Gallia Cisalpina",
+  "Rome": "Italia — Regio I — Latium et Campania", 
+  "Ostia": "Italia — Regio I — Latium et Campania",
+  "Mediolanum": "Italia — Regio XI — Transpadana", 
+  "Aquileia": "Italia — Regio X — Venetia et Histria", 
+  "Ticinum": "Italia — Regio XI — Transpadana",
+  "Ravenna": "Italia — Regio VIII — Aemilia",
+  "Ravenna comitatensian mint": "Italia — Regio VIII — Aemilia",
+  
   "Lugdunum": "Gallia Transalpina", "Arelate": "Gallia Transalpina", "Arelate comitatensian mint": "Gallia Transalpina",
   "Narbo": "Gallia Transalpina", "Vienne": "Gallia Transalpina", "Nemausus": "Gallia Transalpina", "Nicaea (Gallia)": "Gallia Transalpina",
   "Tarraco": "Hispania Citerior", "Barcino": "Hispania Citerior", "Caesaraugusta": "Hispania Citerior",
@@ -888,13 +988,11 @@ var IMP_CITY_TO_SUBSUB = {
 };
 
 var IMP_MAP_TO_PROVS = {
-  // REGIONI
   "Europe": ["Britannia","Dalmatia","Lugdunensis","Belgica","Aquitania","Narbonensis","Germania Superior","Germania Inferior","Tarraconensis","Baetica","Lusitania","Italia","Macedonia","Pannonia Superior","Pannonia Inferior","Achaia","Thracia","Moesia Superior","Moesia Inferior"],
   "Italy": ["Italia"],
   "Asia": ["Asia","Bithynia et Pontus","Galatia et Cappadocia","Syria","Iudaea"],
   "Africa": ["Africa Proconsularis","Creta et Cyrene","Aegyptus"],
 
-  // SUBREGIONI
   "Britannia": ["Britannia"],
   "Dalmatia": ["Dalmatia"],
   "Gallia": ["Lugdunensis","Belgica","Aquitania","Narbonensis"],
@@ -914,12 +1012,21 @@ var IMP_MAP_TO_PROVS = {
   "Cyrenaica": ["Creta et Cyrene"],
   "Egypt": ["Aegyptus"],
 
-  // SUBSUBREGIONI
   "Gallia Cisalpina": ["Italia"],
   "Gallia Transalpina": ["Narbonensis","Lugdunensis"],
   "Hispania Citerior": ["Tarraconensis"],
   "Hispania Ulterior": ["Baetica","Lusitania"],
-  "Italy": ["Italia"], "Latium": ["Italia"], "Campania": ["Italia"], "Etruria": ["Italia"], "Umbria": ["Italia"],
+  "Italia — Regio I — Latium et Campania": ["Italia"],
+  "Italia — Regio II — Apulia et Calabria": ["Italia"],
+  "Italia — Regio III — Lucania et Bruttii": ["Italia"],
+  "Italia — Regio IV — Samnium": ["Italia"],
+  "Italia — Regio V — Picenum": ["Italia"],
+  "Italia — Regio VI — Umbria et Ager Gallicus": ["Italia"],
+  "Italia — Regio VII — Etruria": ["Italia"],
+  "Italia — Regio VIII — Aemilia": ["Italia"],
+  "Italia — Regio IX — Liguria": ["Italia"],
+  "Italia — Regio X — Venetia et Histria": ["Italia"],
+  "Italia — Regio XI — Transpadana": ["Italia"],
   "Bisaltian District": ["Macedonia"],
   "Inland Cities of Thrace": ["Thracia"],
   "The European Coast of the Propontis": ["Thracia"],
@@ -931,7 +1038,6 @@ var IMP_MAP_TO_PROVS = {
   "Seleucis and Pieria": ["Syria"],
   "Zeugitana": ["Africa Proconsularis"],
 
-  // CITTA'
   "Rome": ["Italia"], "Ostia": ["Italia"], "Ravenna": ["Italia"], "Ravenna comitatensian mint": ["Italia"],
   "Mediolanum": ["Italia"], "Aquileia": ["Italia"], "Ticinum": ["Italia"],
   "Constantinople": ["Thracia"], "Serdica": ["Thracia"], "Thessalonica": ["Macedonia"],
@@ -967,6 +1073,160 @@ IMP_AUTHORITIES.forEach(function(a) {
   });
 });
 
+/* =====================================================================
+   REPUBLICAN DATA (RDB)
+   ===================================================================== */
+var REP_CITIES = [
+  "Antioch, Syria","Apollonia, Illyria","Canusium","Corcyra","Eastern Roman Mint",
+  "Italy (Central)","Italy (North)","Italy (South)","Italy (Southeast)",
+  "Laodiceia ad Lycum","Luceria","Lugdunum","Massalia","Messana","Metapontum",
+  "Narbo","Neapolis","Osca","Rome","Salpesa","Sicily 1","Sicily 2","Uncertain value"
+];
+
+var REP_GEO_TREE = {
+  "Africa": {
+    "Africa": ["Africa", "Zeugitana"],
+    "Cyrenaica": ["Cyrenaica"],
+    "Egypt": ["Egypt"]
+  },
+  "Asia": {
+    "Asia": ["Asia", "Asia Minor"],
+    "Bithynia": ["Bithynia"],
+    "Cappadocia": ["Cappadocia"],
+    "Ionia": ["Ionia", "Islands off Ionia"],
+    "Mysia": ["Mysia"],
+    "Pisidia": ["Pisidia"],
+    "Syria": ["Syria", "Commagene", "Judaea", "Phoenicia", "Seleucis and Pieria"]
+  },
+  "Europe": {
+    "Britannia": ["Britannia"],
+    "Dalmatia": ["Dalmatia"],
+    "Gallia": ["Gallia", "Gallia Cisalpina", "Gallia Transalpina"],
+    "Germania": ["Germania"],
+    "Hispania": ["Hispania", "Hispania Citerior", "Hispania Ulterior"],
+    "Italy": [
+      "Italia — Regio I — Latium et Campania",
+      "Italia — Regio II — Apulia et Calabria",
+      "Italia — Regio III — Lucania et Bruttii",
+      "Italia — Regio IV — Samnium",
+      "Italia — Regio V — Picenum",
+      "Italia — Regio VI — Umbria et Ager Gallicus",
+      "Italia — Regio VII — Etruria",
+      "Italia — Regio VIII — Aemilia",
+      "Italia — Regio IX — Liguria",
+      "Italia — Regio X — Venetia et Histria",
+      "Italia — Regio XI — Transpadana",
+      "Sardinia", "Sicily"
+    ],
+    "Macedon": ["Macedon", "Bisaltian District"],
+    "Pannonia": ["Pannonia"],
+    "Peloponnesus": ["Peloponnesus", "Achaea"],
+    "Thrace": ["Thrace", "Inland Cities of Thrace", "Moesia Superior", "Moesia", "The European Coast of the Propontis"]
+  }
+};
+
+var REP_CITY_TO_SUB = {
+  "Rome": "Italy", "Canusium": "Italy", "Luceria": "Italy", "Neapolis": "Italy",
+  "Osca": "Hispania", "Massalia": "Gallia", "Lugdunum": "Gallia", "Narbo": "Gallia",
+  "Antioch, Syria": "Syria", "Laodiceia ad Lycum": "Asia",
+  "Apollonia, Illyria": "Macedon", "Corcyra": "Macedon",
+  "Messana": "Sicily", "Metapontum": "Italy", "Salpesa": "Hispania",
+  "Sicily 1": "Sicily", "Sicily 2": "Sicily",
+  "Italy (Central)": "Italy", "Italy (North)": "Italy", "Italy (South)": "Italy", "Italy (Southeast)": "Italy",
+  "Eastern Roman Mint": "Asia", "Uncertain value": "Italy"
+};
+
+var REP_CITY_TO_SUBSUB = {
+  "Rome": "Italia — Regio I — Latium et Campania", 
+  "Canusium": "Italia — Regio II — Apulia et Calabria", 
+  "Luceria": "Italia — Regio II — Apulia et Calabria", 
+  "Neapolis": "Italia — Regio I — Latium et Campania",
+  "Metapontum": "Italia — Regio III — Lucania et Bruttii",
+  
+  "Osca": "Hispania Citerior", 
+  "Salpesa": "Hispania Ulterior",
+  "Massalia": "Gallia Transalpina", 
+  "Lugdunum": "Gallia Transalpina", 
+  "Narbo": "Gallia Transalpina",
+  "Antioch, Syria": "Seleucis and Pieria", 
+  "Laodiceia ad Lycum": "Asia Minor",
+  "Apollonia, Illyria": "Macedon", 
+  "Corcyra": "Macedon",
+  "Messana": "Sicily", 
+  "Sicily 1": "Sicily", 
+  "Sicily 2": "Sicily",
+  
+  "Italy (Central)": "Italia — Regio I — Latium et Campania", 
+  "Italy (North)": "Italia — Regio VIII — Aemilia", 
+  "Italy (South)": "Italia — Regio II — Apulia et Calabria", 
+  "Italy (Southeast)": "Italia — Regio II — Apulia et Calabria",
+  
+  "Eastern Roman Mint": "Asia Minor", 
+  "Uncertain value": "Italia — Regio I — Latium et Campania"
+};
+
+var REP_MAP_TO_PROVS = {
+  "Europe": ["Britannia","Dalmatia","Lugdunensis","Belgica","Aquitania","Narbonensis","Germania Superior","Germania Inferior","Tarraconensis","Baetica","Lusitania","Italia","Macedonia","Pannonia Superior","Pannonia Inferior","Achaia","Thracia","Moesia Superior","Moesia Inferior"],
+  "Africa": ["Africa Proconsularis","Creta et Cyrene","Aegyptus"],
+  "Asia": ["Asia","Bithynia et Pontus","Galatia et Cappadocia","Syria","Iudaea"],
+  "Britannia": ["Britannia"], "Dalmatia": ["Dalmatia"], "Gallia": ["Lugdunensis","Belgica","Aquitania","Narbonensis"],
+  "Germania": ["Germania Superior","Germania Inferior"], "Hispania": ["Tarraconensis","Baetica","Lusitania"],
+  "Macedon": ["Macedonia"], "Pannonia": ["Pannonia Superior","Pannonia Inferior"], "Peloponnesus": ["Achaia"],
+  "Thrace": ["Thracia","Moesia Superior","Moesia Inferior"], "Bithynia": ["Bithynia et Pontus"],
+  "Cappadocia": ["Galatia et Cappadocia"], "Ionia": ["Asia"], "Mysia": ["Asia"], "Pisidia": ["Galatia et Cappadocia"],
+  "Syria": ["Syria","Iudaea"], "Africa": ["Africa Proconsularis"], "Cyrenaica": ["Creta et Cyrene"], "Egypt": ["Aegyptus"],
+  
+  "Italia — Regio I — Latium et Campania": ["Italia"],
+  "Italia — Regio II — Apulia et Calabria": ["Italia"],
+  "Italia — Regio III — Lucania et Bruttii": ["Italia"],
+  "Italia — Regio IV — Samnium": ["Italia"],
+  "Italia — Regio V — Picenum": ["Italia"],
+  "Italia — Regio VI — Umbria et Ager Gallicus": ["Italia"],
+  "Italia — Regio VII — Etruria": ["Italia"],
+  "Italia — Regio VIII — Aemilia": ["Italia"],
+  "Italia — Regio IX — Liguria": ["Italia"],
+  "Italia — Regio X — Venetia et Histria": ["Italia"],
+  "Italia — Regio XI — Transpadana": ["Italia"],
+  "Sardinia": ["Sardinia et Corsica"], "Sicily": ["Sicilia"],
+  
+  "Gallia Cisalpina": ["Italia"], "Gallia Transalpina": ["Narbonensis","Lugdunensis"],
+  "Hispania Citerior": ["Tarraconensis"], "Hispania Ulterior": ["Baetica","Lusitania"],
+  "Bisaltian District": ["Macedonia"], "Inland Cities of Thrace": ["Thracia"], "The European Coast of the Propontis": ["Thracia"],
+  "Asia Minor": ["Asia"], "Islands off Ionia": ["Asia"], "Commagene": ["Syria"], "Judaea": ["Iudaea"], "Phoenicia": ["Syria"], "Seleucis and Pieria": ["Syria"], "Zeugitana": ["Africa Proconsularis"],
+  "Rome": ["Italia"], "Canusium": ["Italia"], "Luceria": ["Italia"], "Neapolis": ["Italia"], "Metapontum": ["Italia"], "Messana": ["Sicilia"],
+  "Osca": ["Tarraconensis"], "Salpesa": ["Baetica"], "Massalia": ["Narbonensis"], "Lugdunum": ["Lugdunensis"], "Narbo": ["Narbonensis"],
+  "Antioch, Syria": ["Syria"], "Laodiceia ad Lycum": ["Asia"], "Apollonia, Illyria": ["Macedonia"], "Corcyra": ["Macedonia"],
+  "Sicily 1": ["Sicilia"], "Sicily 2": ["Sicilia"],
+  "Italy (Central)": ["Italia"], "Italy (North)": ["Italia"], "Italy (South)": ["Italia"], "Italy (Southeast)": ["Italia"],
+  "Eastern Roman Mint": ["Asia"], "Uncertain value": ["Italia"]
+};
+
+var REP_ISSUERS = []; 
+var RDB = {
+  ready: true,
+  issuers: [],
+  cities: REP_CITIES,
+  tree: REP_GEO_TREE,
+  cityToSub: REP_CITY_TO_SUB,
+  cityToSubsub: REP_CITY_TO_SUBSUB,
+  tuples: []
+};
+
+fetchFirst(['issuer.csv'])
+  .then(text => {
+    const rows = parseCSV(text);
+    if(rows.length) {
+      const key = pickCol(rows[0], ['issuer', 'issuers']);
+      if(key) {
+        REP_ISSUERS = rows.map(r => r[key]).filter(Boolean).sort();
+        RDB.issuers = REP_ISSUERS;
+        REP_ISSUERS.forEach(i => RDB.tuples.push({ i: i }));
+      }
+    }
+    rebuildMintTypeIndex();
+  })
+  .catch(e => console.warn("Impossibile caricare issuer.csv per le repubblicane.", e));
+
 
 /* =====================================================================
    SHARED LOOKUPS & GEO
@@ -981,12 +1241,6 @@ function provsForSub(id){
   var s = subById(id); if(!s) return [];
   if(s.provs && s.provs.length) return s.provs.slice();
   return provsForRegion(s.region);
-}
-function provsForCity(id){
-  var c = cityById(id); if(!c) return [];
-  if(c.provs && c.provs.length) return c.provs.slice();
-  if(c.sub){ var sp = provsForSub(c.sub); if(sp.length) return sp; }
-  return provsForRegion(c.region);
 }
 function emptyGeo(){
   return { provs:[], provExclusions:[], regions:[], subs:[], cities:[] };
@@ -1004,19 +1258,6 @@ function normGeo(g){
   };
 }
 
-function resolveProvinces(geo, primary){
-  var set = {};
-  function add(arr){ arr.forEach(function(p){ if(p) set[p]=true; }); }
-  geo = normGeo(geo);
-  if(primary) set[primary]=true;
-  add(geo.provs);
-  geo.regions.forEach(function(r){ add(provsForRegion(r)); });
-  geo.subs.forEach(function(s){ add(provsForSub(s)); });
-  geo.cities.forEach(function(c){ add(provsForCity(c)); });
-  geo.provExclusions.forEach(function(p){ delete set[p]; });
-  return Object.keys(set);
-}
-
 const STEPS = [
   [207,207,207],[121,160,211],[128,172,160],[171,197,132],[236,213,120],[239,201,96],[243,184,75],[242,171,61],
   [241,157,52],[238,143,46],[234,127,41],[229,111,38],[223,96,35],[218,79,31],[214,61,28],[211,44,25]
@@ -1029,6 +1270,7 @@ var deleteId = null;
 var detailId = null;
 var filterMode = 'all';
 var currentPeriod = 'prov';
+var currentCoinFilter = 'all';
 
 var TAG_ORDER = ['province','region','city','authority','magistrate','metal'];
 var DEFAULT_TAGS = TAG_ORDER.slice();
@@ -1069,14 +1311,6 @@ function save(){
   localStorage.setItem('numismatica_nid', String(nextId));
 }
 
-(function(){
-  var sel = document.getElementById('f-prov');
-  PROVS.forEach(function(p){
-    var o = document.createElement('option');
-    o.value = p; o.textContent = p; sel.appendChild(o);
-  });
-})();
-
 function val2color(v, mx) {
   if (!v || !mx) return "rgb(" + STEPS[0].join(",") + ")";
   var idx = Math.ceil((v / mx) * (STEPS.length - 1));
@@ -1088,47 +1322,112 @@ function geoToOur(geoName){
   if(!geoName)return null;
   if(GEO_MAP[geoName])return GEO_MAP[geoName];
   var low=geoName.toLowerCase();
-  for(var k in GEO_MAP){if(k.toLowerCase()===low)return GEO_MAP[k];}
-  for(var k in GEO_MAP){if(low.indexOf(k.toLowerCase())>=0)return GEO_MAP[k];}
+  for(var k in GEO_MAP){
+    if(k.toLowerCase() === low) return GEO_MAP[k];
+  }
   return null;
+}
+
+/* === Calcolo provincia da coordinate: una e una sola === */
+var MINT_GEO_CACHE = {};
+
+function provinceOfMint(mintName){
+  if(!mintName) return null;
+  var canon = canonicalMint(mintName);
+  if(canon in MINT_GEO_CACHE) return MINT_GEO_CACHE[canon];
+  if(!geoLayer) return null;
+
+  var lat=null, lng=null;
+  if(allMintsData.length){
+    var m = allMintsData.find(x => canonicalMint(x.name) === canon);
+    if(m){ lat = m.lat; lng = m.lng; }
+  }
+  if(lat==null){
+    for(var k in MINT_COORD_OVERRIDES){
+      if(canonicalMint(k) === canon){ lat = MINT_COORD_OVERRIDES[k][0]; lng = MINT_COORD_OVERRIDES[k][1]; break; }
+    }
+  }
+  if(lat==null || lng==null){ MINT_GEO_CACHE[canon] = null; return null; }
+
+  var pt = turf.point([lng, lat]);
+  var hits = [];
+  geoLayer.eachLayer(l => {
+    if(l.feature && l.feature.geometry && turf.booleanPointInPolygon(pt, l.feature)) hits.push(l.feature);
+  });
+  hits.sort((a,b) => (turf.area(a)-turf.area(b)) || String(a.properties.name||'').localeCompare(String(b.properties.name||'')));
+  var result = hits[0] ? geoToOur(hits[0].properties.name) : null;
+  MINT_GEO_CACHE[canon] = result;
+  return result;
+}
+
+function provsForCity(id){
+  var c = cityById(id); if(!c) return [];
+  var p = provinceOfMint(c.name);
+  if(p) return [p];
+  if(c.provs && c.provs.length) return c.provs.slice();
+  if(c.sub){ var sp = provsForSub(c.sub); if(sp.length) return sp; }
+  return provsForRegion(c.region);
+}
+
+function resolveProvinces(geo, primary){
+  var set = {};
+  function add(arr){ arr.forEach(function(p){ if(p) set[p]=true; }); }
+  geo = normGeo(geo);
+  if(primary) set[primary]=true;
+  add(geo.provs);
+
+  var cityResolved = false;
+  geo.cities.forEach(function(cid){
+    var obj = cityById(cid);
+    var name = obj ? obj.name : cid;
+    var p = provinceOfMint(name);
+    if(p){ set[p]=true; cityResolved = true; }
+  });
+  if(!cityResolved){
+    geo.cities.forEach(function(c){ add(provsForCity(c)); });
+  }
+  if(!cityResolved){
+    geo.subs.forEach(function(s){ add(provsForSub(s)); });
+    geo.regions.forEach(function(r){ add(provsForRegion(r)); });
+  }
+
+  geo.provExclusions.forEach(function(p){ delete set[p]; });
+  return Object.keys(set);
 }
 
 function coinInMapProvince(c, ourName){
   if (currentCoinFilter !== 'all' && c.period !== currentCoinFilter) return false;
-
   var provinces = [];
+
   if (c.period === 'prov') {
     provinces = resolveProvinces(c.geo, '');
-  } else if (c.period === 'imp') {
-    // Priorità: Città > Subsub > Sub > Region (per un singolo record)
-    var hasDetail = false;
-    if (c.mint && IMP_MAP_TO_PROVS[c.mint]) { provinces = IMP_MAP_TO_PROVS[c.mint]; hasDetail = true; }
-    if (!hasDetail && c.impSubsubs && c.impSubsubs.length > 0) {
-      provinces = c.impSubsubs.reduce(function(acc, ss) { return acc.concat(IMP_MAP_TO_PROVS[ss] || []); }, []);
-      hasDetail = true;
+  } else if (c.period === 'imp' || c.period === 'rep') {
+    var fromMint = provinceOfMint(c.mint);
+    if(fromMint){
+      provinces = [fromMint];
+    } else {
+      var map = (c.period === 'imp') ? IMP_MAP_TO_PROVS : REP_MAP_TO_PROVS;
+      var subsubs = (c.period === 'imp') ? c.impSubsubs : c.repSubsubs;
+      var subs    = (c.period === 'imp') ? c.impSubs    : c.repSubs;
+      var regions = (c.period === 'imp') ? c.impRegions : c.repRegions;
+      if (c.mint && map[c.mint]) provinces = map[c.mint];
+      else if (subsubs && subsubs.length) provinces = subsubs.reduce((a,ss)=>a.concat(map[ss]||[]),[]);
+      else if (subs && subs.length) provinces = subs.reduce((a,s)=>a.concat(map[s]||[]),[]);
+      else if (regions && regions.length) provinces = regions.reduce((a,r)=>a.concat(map[r]||[]),[]);
     }
-    if (!hasDetail && c.impSubs && c.impSubs.length > 0) {
-      provinces = c.impSubs.reduce(function(acc, s) { return acc.concat(IMP_MAP_TO_PROVS[s] || []); }, []);
-      hasDetail = true;
-    }
-    if (!hasDetail && c.impRegions && c.impRegions.length > 0) {
-      provinces = c.impRegions.reduce(function(acc, r) { return acc.concat(IMP_MAP_TO_PROVS[r] || []); }, []);
-    }
-  } else {
-    provinces = c.prov ? [c.prov] : [];
   }
 
   if(provinces.indexOf('Italia') >= 0){
     return ourName === 'Italia' || (ourName && ourName.indexOf('Italia') === 0);
   }
   if(ourName === 'Italia'){
-    return provinces.some(function(p){ return p === 'Italia' || p.indexOf('Italia') === 0; });
+    return provinces.some(p => p === 'Italia' || p.indexOf('Italia') === 0);
   }
   return provinces.indexOf(ourName) >= 0;
 }
 
 function provCount(ourName){
-  return coins.filter(function(c){ return coinInMapProvince(c, ourName); }).length;
+  return coins.filter(c => coinInMapProvince(c, ourName)).length;
 }
 
 function getMax(gl){
@@ -1151,7 +1450,6 @@ map.getPane('provincesPane').style.zIndex = 400;
 map.createPane('mintsPane');
 map.getPane('mintsPane').style.zIndex = 650;
 
-// Pane dedicato ai tooltip delle zecche (sopra i marker)
 map.createPane('mintsTooltipPane');
 map.getPane('mintsTooltipPane').style.zIndex = 700;
 
@@ -1172,7 +1470,7 @@ fetch("https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces
           mouseover:function(e){
             lyr.setStyle({weight:2,color:"#e8c020",fillOpacity:.95});
             lyr.bringToFront();
-            var pc = ourName ? coins.filter(function(c){ return coinInMapProvince(c, ourName); }) : [];
+            var pc = ourName ? coins.filter(c => coinInMapProvince(c, ourName)) : [];
             var html="<strong>"+(ourName||geoName)+"</strong>";
             html+="<div class='tl'>Coins: <b>"+pc.length+"</b></div>";
             if(pc.length){
@@ -1199,6 +1497,7 @@ fetch("https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces
     map.setMaxBounds(b);
     map.options.maxBoundsViscosity = 1.0;
     document.getElementById("loading").style.display="none";
+    MINT_GEO_CACHE = {};
     updateMap();
   })
   .catch(function(e){ document.getElementById("loading").innerHTML="<b style='color:#c0392b'>Error: "+e.message+"</b>"; });
@@ -1247,27 +1546,87 @@ function updateMap(){
 }
 
 /* =====================================================================
+   CLASSIFICAZIONE ZECCHE — MULTI-TIPO
+   ===================================================================== */
+var MINT_TYPES = {}; // canon -> { rep:true, imp:true, prov:true }
+
+function addMintType(name, type){
+  if(!name) return;
+  var canon = canonicalMint(name);
+  if(!MINT_TYPES[canon]) MINT_TYPES[canon] = {};
+  MINT_TYPES[canon][type] = true;
+}
+
+function rebuildMintTypeIndex(){
+  MINT_TYPES = {};
+  REP_CITIES.forEach(function(n){ addMintType(n, 'rep'); });
+  IMP_CITIES.forEach(function(n){ addMintType(n, 'imp'); });
+  if(PDB.ready){
+    PDB.cities.forEach(function(c){ addMintType(c.name, 'prov'); });
+  }
+  allMintsData.forEach(function(m){
+    if(m.type && ['prov','imp','rep'].indexOf(m.type) >= 0){
+      addMintType(m.name, m.type);
+    }
+  });
+}
+
+function getMintTypes(name){
+  var canon = canonicalMint(name);
+  return MINT_TYPES[canon] || null;
+}
+
+/* =====================================================================
+   VISIBILITÀ ZECCHE — COMBINAZIONE MINT MODE × COIN FILTER
+   =====================================================================
+   Regole:
+   - "none": nessuna zecca visibile.
+   - "mine": solo le zecche possedute.
+       * filtro "all"  → tutte le possedute
+       * filtro tipo   → solo le possedute che hanno quel tipo
+   - "all": tutte le zecche.
+       * filtro "all"  → tutte
+       * filtro tipo   → tutte quelle che hanno quel tipo (possedute o no)
+   ===================================================================== */
+function mintVisible(mintName, ownedSet){
+  var canon = canonicalMint(mintName);
+  var isOwned = ownedSet.has(canon);
+
+  // In "mine" le zecche non possedute non si mostrano mai
+  if (currentMintMode === 'mine' && !isOwned) return false;
+
+  // Se il filtro tipo è "all", la visibilità dipende solo dalla modalità
+  if (currentCoinFilter === 'all') return true;
+
+  // Filtro tipo attivo
+  var types = getMintTypes(mintName);
+
+  // Zecca non classificata:
+  //  - in "all"  → la mostriamo solo se posseduta (non possiamo sapere il tipo)
+  //  - in "mine" → la mostriamo (è posseduta)
+  if (!types) return isOwned;
+
+  // Zecca classificata: deve avere il tipo richiesto
+  return !!types[currentCoinFilter];
+}
+
+/* =====================================================================
    LOGICA ZECCHE (MINTS) & FILTRI
    ===================================================================== */
 let allMintsData = [];
 let currentMintMode = 'none';
-let currentCoinFilter = 'all';
 let mintsLayer = L.layerGroup().addTo(map);
 
 fetch('mints.json')
   .then(r => r.json())
   .then(data => {
     allMintsData = data;
+    MINT_GEO_CACHE = {};
+    rebuildMintTypeIndex();
     setMintMode('none');
     setCoinFilter('all');
   })
   .catch(err => console.error("Errore caricamento mints.json:", err));
-
-function getMintType(name) {
-  const m = allMintsData.find(x => x.name === name);
-  if (m && m.id.startsWith('imp-')) return 'imp';
-  return 'prov';
-}
 
 function renderMints() {
   if (!mintsLayer) return;
@@ -1277,25 +1636,22 @@ function renderMints() {
 
   let ownedMints = new Set();
   coins.forEach(c => {
-    let cMint = c.mint || (c.geoNames && c.geoNames.cities && c.geoNames.cities[0]);
-    if (cMint) ownedMints.add(cMint.toLowerCase().trim());
+    if (c.mint) {
+      c.mint.split(';').forEach(m => {
+        if(m.trim()) ownedMints.add(canonicalMint(m.trim()));
+      });
+    }
   });
-  if (currentMintMode === 'mine' && ownedMints.size === 0) return;
 
-  // Le zecche possedute vengono disegnate per ultime, così restano sopra le altre
   let mintsToDraw = allMintsData.slice().sort((a, b) => {
-    let oa = ownedMints.has(a.name.toLowerCase().trim()) ? 1 : 0;
-    let ob = ownedMints.has(b.name.toLowerCase().trim()) ? 1 : 0;
+    let oa = ownedMints.has(canonicalMint(a.name)) ? 1 : 0;
+    let ob = ownedMints.has(canonicalMint(b.name)) ? 1 : 0;
     return oa - ob;
   });
 
   mintsToDraw.forEach(m => {
-    let isOwned = ownedMints.has(m.name.toLowerCase().trim());
-    
-    if (currentMintMode === 'mine' && !isOwned) return;
-
-    let mintType = getMintType(m.name);
-    if (currentCoinFilter !== 'all' && mintType !== currentCoinFilter) return;
+    if (!mintVisible(m.name, ownedMints)) return;
+    let isOwned = ownedMints.has(canonicalMint(m.name));
 
     let marker = L.circleMarker([m.lat, m.lng], {
       pane: 'mintsPane',
@@ -1316,11 +1672,33 @@ function renderMints() {
 
     mintsLayer.addLayer(marker);
   });
+
+  Object.keys(MINT_COORD_OVERRIDES).forEach(name => {
+    if(allMintsData.some(m => canonicalMint(m.name) === canonicalMint(name))) return;
+    if (!mintVisible(name, ownedMints)) return;
+    let isOwned = ownedMints.has(canonicalMint(name));
+    let coords = MINT_COORD_OVERRIDES[name];
+    let marker = L.circleMarker(coords, {
+      pane: 'mintsPane',
+      radius: 5,
+      fillColor: isOwned ? '#2a7a4a' : '#9a9a94',
+      color: '#ffffff',
+      weight: 1.5,
+      opacity: 1,
+      fillOpacity: 0.95,
+      className: 'mint-marker'
+    });
+    marker.bindTooltip(`<strong>${name}</strong><br><span style="font-size:10px;">${isOwned ? 'In collection' : 'Not owned'}</span>`, {
+      direction: 'top',
+      offset: [0, -8],
+      pane: 'mintsTooltipPane'
+    });
+    mintsLayer.addLayer(marker);
+  });
 }
 
 function setMintMode(mode) {
   currentMintMode = mode;
-  
   const bNone = document.getElementById('btn-mints-none');
   const bMine = document.getElementById('btn-mints-mine');
   const bAll = document.getElementById('btn-mints-all');
@@ -1336,7 +1714,6 @@ function setMintMode(mode) {
 
 function setCoinFilter(mode) {
   currentCoinFilter = mode;
-  
   const bAll = document.getElementById('btn-filter-all');
   const bProv = document.getElementById('btn-filter-prov');
   const bImp = document.getElementById('btn-filter-imp');
@@ -1358,6 +1735,7 @@ function setCoinFilter(mode) {
    ===================================================================== */
 function isProvMode(){ return currentPeriod==='prov' && PDB.ready; }
 function isImpMode(){ return currentPeriod==='imp' && IDB.ready; }
+function isRepMode(){ return currentPeriod==='rep' && RDB.ready; }
 function modalOpen(){ return document.getElementById('overlay').classList.contains('open'); }
 
 function setPeriod(p){
@@ -1381,8 +1759,9 @@ function setPeriod(p){
   document.getElementById('block-main-geography').style.display=isRep?'':'none';
 
   if(modalOpen()){
-    provEnforce();
+    if(isProv) provEnforce();
     if(isImp) impEnforce();
+    if(isRep) repEnforce();
     pkRenderAll();
     previewHighlight();
   }
@@ -1442,11 +1821,15 @@ function reignSort(a,b){ return PDB.reigns.indexOf(a)-PDB.reigns.indexOf(b); }
 function rebuildReignSelect(){
   var sel=document.getElementById('f-reign'), cur=sel.value;
   var list = PDB.ready ? (isProvMode() ? facet('r',provSelection()).sort(reignSort) : PDB.reigns.slice()) : [];
-  if(cur && list.indexOf(cur)<0) list.push(cur), list.sort(reignSort);
+  if(cur && list.indexOf(cur)<0 && PDB.reigns.indexOf(cur)>=0) {
+    list.push(cur);
+    list.sort(reignSort);
+  }
   sel.innerHTML='';
   var o0=document.createElement('option'); o0.value=''; o0.textContent='— select —'; sel.appendChild(o0);
   list.forEach(function(r){ var o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
-  sel.value=cur && list.indexOf(cur)>=0 ? cur : '';
+  if(cur && list.indexOf(cur)>=0) sel.value = cur;
+  else sel.value = '';
 }
 function onReignChange(){ provEnforce(); pkRenderAll(); previewHighlight(); }
 function updateProvHint(){
@@ -1459,7 +1842,7 @@ function updateProvHint(){
 }
 
 /* =====================================================================
-   IMPERIAL INTERSECTION FILTER & CASCADE
+   IMPERIAL FILTER & CASCADE
    ===================================================================== */
 var impGeoSel = { regions: [], subs: [], subsubs: [], cities: [] };
 var impAuthSel = [];
@@ -1503,7 +1886,6 @@ function impEnforce(){
   }
 }
 
-/* --- Helper geografici Imperial (cascata + filtri di compatibilità) --- */
 function impRegionOfSub(s){ for(var r in IDB.tree){ if(IDB.tree[r][s]) return r; } return ''; }
 function impCityPath(c){
   var s=IDB.cityToSub[c]||'', ss=IDB.cityToSubsub[c]||'';
@@ -1540,7 +1922,6 @@ function impGeoAdd(key, id) {
     }
   } else if (key === 'cities') {
     if (impGeoSel.cities.indexOf(id) < 0) impGeoSel.cities.push(id);
-    // Cascata: città -> subsub -> sub -> region
     var p = impCityPath(id);
     if (p.ss && impGeoSel.subsubs.indexOf(p.ss) < 0) impGeoSel.subsubs.push(p.ss);
     if (p.s && impGeoSel.subs.indexOf(p.s) < 0) impGeoSel.subs.push(p.s);
@@ -1572,10 +1953,104 @@ function impGeoRemove(key, id) {
 }
 
 /* =====================================================================
+   REPUBLICAN FILTER & CASCADE
+   ===================================================================== */
+var repGeoSel = { regions: [], subs: [], subsubs: [], cities: [] };
+var repIssuerSel = [];
+var RDIMS = ['i'];
+
+function repSelection(){ return { i: repIssuerSel.slice() }; }
+function repTupleOk(t, sel, skip){
+  for(var j=0;j<RDIMS.length;j++){
+    var k=RDIMS[j]; if(k===skip) continue;
+    if(sel[k].length && sel[k].indexOf(t[k])<0) return false;
+  }
+  return true;
+}
+function repFacet(k, sel){
+  var seen={}, out=[];
+  for(var j=0;j<RDB.tuples.length;j++){
+    var t=RDB.tuples[j];
+    if(t[k]==null || seen[t[k]]) continue;
+    if(repTupleOk(t,sel,k)){ seen[t[k]]=true; out.push(t[k]); }
+  }
+  return out;
+}
+function repEnforce(){}
+
+function repRegionOfSub(s){ for(var r in RDB.tree){ if(RDB.tree[r][s]) return r; } return ''; }
+function repCityPath(c){
+  var s=RDB.cityToSub[c]||'', ss=RDB.cityToSubsub[c]||'';
+  return {r:s?repRegionOfSub(s):'', s:s, ss:ss};
+}
+function repCityAllowed(){
+  var a={r:{},s:{},ss:{}};
+  repGeoSel.cities.forEach(c => {
+    var p=repCityPath(c);
+    if(p.r) a.r[p.r]=1;
+    if(p.s) a.s[p.s]=1;
+    if(p.ss) a.ss[p.ss]=1;
+  });
+  return a;
+}
+
+function repGeoAdd(key, id) {
+  if (key === 'regions') {
+    if (repGeoSel.regions.indexOf(id) < 0) repGeoSel.regions.push(id);
+  } else if (key === 'subs') {
+    if (repGeoSel.subs.indexOf(id) < 0) repGeoSel.subs.push(id);
+    var rr = repRegionOfSub(id);
+    if (rr && repGeoSel.regions.indexOf(rr) < 0) repGeoSel.regions.push(rr);
+  } else if (key === 'subsubs') {
+    if (repGeoSel.subsubs.indexOf(id) < 0) repGeoSel.subsubs.push(id);
+    for (var r in RDB.tree) {
+      for (var s in RDB.tree[r]) {
+        if (RDB.tree[r][s].indexOf(id) >= 0) {
+          if (repGeoSel.subs.indexOf(s) < 0) repGeoSel.subs.push(s);
+          if (repGeoSel.regions.indexOf(r) < 0) repGeoSel.regions.push(r);
+          return;
+        }
+      }
+    }
+  } else if (key === 'cities') {
+    if (repGeoSel.cities.indexOf(id) < 0) repGeoSel.cities.push(id);
+    var p = repCityPath(id);
+    if (p.ss && repGeoSel.subsubs.indexOf(p.ss) < 0) repGeoSel.subsubs.push(p.ss);
+    if (p.s && repGeoSel.subs.indexOf(p.s) < 0) repGeoSel.subs.push(p.s);
+    if (p.r && repGeoSel.regions.indexOf(p.r) < 0) repGeoSel.regions.push(p.r);
+  }
+}
+
+function repGeoRemove(key, id) {
+  var g = repGeoSel;
+  if (key === 'cities') {
+    g.cities = g.cities.filter(x => x !== id);
+  } else if (key === 'subsubs') {
+    g.subsubs = g.subsubs.filter(x => x !== id);
+    g.cities = g.cities.filter(c => RDB.cityToSubsub[c] !== id);
+  } else if (key === 'subs') {
+    var ssOfSub = [];
+    for (var r in RDB.tree) if (RDB.tree[r][id]) ssOfSub = ssOfSub.concat(RDB.tree[r][id]);
+    g.subs = g.subs.filter(x => x !== id);
+    g.subsubs = g.subsubs.filter(ss => ssOfSub.indexOf(ss) < 0);
+    g.cities = g.cities.filter(c => RDB.cityToSub[c] !== id);
+  } else if (key === 'regions') {
+    var subsIn = Object.keys(RDB.tree[id] || {}), ssIn = [];
+    subsIn.forEach(s => { ssIn = ssIn.concat(RDB.tree[id][s]); });
+    g.regions = g.regions.filter(x => x !== id);
+    g.subs = g.subs.filter(s => subsIn.indexOf(s) < 0);
+    g.subsubs = g.subsubs.filter(ss => ssIn.indexOf(ss) < 0);
+    g.cities = g.cities.filter(c => subsIn.indexOf(RDB.cityToSub[c]) < 0);
+  }
+}
+
+
+/* =====================================================================
    PICKERS
    ===================================================================== */
 function byLabel(a,b){ return a.label.localeCompare(b.label); }
 var IMP_KEY_MAP = {impregions:'regions', impsubs:'subs', impsubsubs:'subsubs', impcities:'cities'};
+var REP_KEY_MAP = {repregions:'regions', repsubs:'subs', repsubsubs:'subsubs', repcities:'cities'};
 
 var PICKERS = {
   provs:{
@@ -1705,6 +2180,74 @@ var PICKERS = {
     get: function(){ return impIssuerSel; },
     set: function(v){ impIssuerSel = v; },
     label: function(id){ return id; }
+  },
+  repregions: {
+    el:'pk-rep-regions',
+    items:function(){
+      var ok=repCityAllowed().r, has=repGeoSel.cities.length;
+      return Object.keys(RDB.tree).filter(r => !has||ok[r]).sort().map(r => ({id:r,label:r}));
+    },
+    get:() => repGeoSel.regions, set:v => { repGeoSel.regions=v; },
+    label:id => id
+  },
+  repsubs: {
+    el:'pk-rep-subs',
+    items:function(){
+      var ok=repCityAllowed().s, has=repGeoSel.cities.length, seen={}, list=[];
+      var regs=repGeoSel.regions.length?repGeoSel.regions:Object.keys(RDB.tree);
+      regs.forEach(r => {
+        Object.keys(RDB.tree[r]||{}).forEach(s => {
+          if(seen[s]||(has&&!ok[s])) return;
+          seen[s]=1; list.push({id:s,label:s,small:r});
+        });
+      });
+      return list.sort(byLabel);
+    },
+    get:() => repGeoSel.subs, set:v => { repGeoSel.subs=v; },
+    label:id => id
+  },
+  repsubsubs: {
+    el:'pk-rep-subsubs',
+    items:function(){
+      var ok=repCityAllowed().ss, has=repGeoSel.cities.length, seen={}, list=[];
+      for(var r in RDB.tree){
+        for(var s in RDB.tree[r]){
+          if(repGeoSel.subs.length && repGeoSel.subs.indexOf(s)<0) continue;
+          RDB.tree[r][s].forEach(ss => {
+            if(seen[ss]||(has&&!ok[ss])) return;
+            seen[ss]=1; list.push({id:ss,label:ss,small:s});
+          });
+        }
+      }
+      return list.sort(byLabel);
+    },
+    get:() => repGeoSel.subsubs, set:v => { repGeoSel.subsubs=v; },
+    label:id => id
+  },
+  repcities: {
+    el:'pk-rep-cities',
+    items:function(){
+      var g=repGeoSel;
+      return RDB.cities.filter(c => {
+        var p=repCityPath(c);
+        if(g.regions.length && g.regions.indexOf(p.r)<0) return false;
+        if(g.subs.length && g.subs.indexOf(p.s)<0) return false;
+        if(g.subsubs.length && p.ss && g.subsubs.indexOf(p.ss)<0) return false;
+        return true;
+      }).map(c => ({id:c,label:c})).sort(byLabel);
+    },
+    get:() => repGeoSel.cities, set:v => { repGeoSel.cities=v; },
+    label:id => id
+  },
+  repissuers: {
+    el: 'pk-rep-issuers',
+    items: function() {
+      if(!RDB.ready) return [];
+      return RDB.issuers.map(i => ({id:i, label:i})).sort(byLabel);
+    },
+    get:() => repIssuerSel,
+    set: v => { repIssuerSel = v; },
+    label: id => id
   }
 };
 
@@ -1727,6 +2270,7 @@ function pkRender(key){
 function pkRenderAll(){ Object.keys(PICKERS).forEach(pkRender); updateGeoHint(); }
 function pkAdd(key,id){
   if (IMP_KEY_MAP[key]) { impGeoAdd(IMP_KEY_MAP[key], id); pkAfterChange(key); return; }
+  if (REP_KEY_MAP[key]) { repGeoAdd(REP_KEY_MAP[key], id); pkAfterChange(key); return; }
   var P=PICKERS[key];
   if(key==='provs'){
     if(geoSel.provs.indexOf(id)<0){ geoSel.provs.push(id); }
@@ -1741,6 +2285,7 @@ function pkAdd(key,id){
 
 function pkRemove(key,id){
   if (IMP_KEY_MAP[key]) { impGeoRemove(IMP_KEY_MAP[key], id); pkAfterChange(key); return; }
+  if (REP_KEY_MAP[key]) { repGeoRemove(REP_KEY_MAP[key], id); pkAfterChange(key); return; }
   var P=PICKERS[key];
   if(key==='provs'){
     var derived=resolveProvinces({provs:[], regions:geoSel.regions, subs:geoSel.subs, cities:geoSel.cities},'').indexOf(id)>=0;
@@ -1755,6 +2300,7 @@ function pkRemove(key,id){
 function pkAfterChange(key){
   var root=document.getElementById(PICKERS[key].el); if(root) root.querySelector('.pk-in').value='';
   if(currentPeriod==='imp'){ impEnforce(); }
+  else if(currentPeriod==='rep'){ repEnforce(); }
   else { provEnforce(); }
   pkRenderAll(); previewHighlight();
 }
@@ -1797,43 +2343,41 @@ function previewHighlight(){
   var provinces = [];
   if (currentPeriod === 'prov') {
     provinces = resolveProvinces(geoSel, '');
-  } else if (currentPeriod === 'rep') {
-    provinces = resolveProvinces(emptyGeo(), document.getElementById('f-prov').value);
-  } else if (currentPeriod === 'imp') {
-    // Priorità geografica assoluta: Città > Subsub > Sub > Region
-    var raw = [];
-    var hasDetail = false;
-    
-    if (impGeoSel.cities.length > 0) {
-      impGeoSel.cities.forEach(function(c){ if (IMP_MAP_TO_PROVS[c]) raw = raw.concat(IMP_MAP_TO_PROVS[c]); });
-      hasDetail = true;
+  } else if (currentPeriod === 'rep' || currentPeriod === 'imp') {
+    var geo = (currentPeriod === 'imp') ? impGeoSel : repGeoSel;
+    var map = (currentPeriod === 'imp') ? IMP_MAP_TO_PROVS : REP_MAP_TO_PROVS;
+
+    if (geo.cities.length > 0) {
+      geo.cities.forEach(c => {
+        var p = provinceOfMint(c);
+        if (p && provinces.indexOf(p) < 0) provinces.push(p);
+      });
     }
-    if (!hasDetail && impGeoSel.subsubs.length > 0) {
-      impGeoSel.subsubs.forEach(function(ss){ if (IMP_MAP_TO_PROVS[ss]) raw = raw.concat(IMP_MAP_TO_PROVS[ss]); });
-      hasDetail = true;
+    if (!provinces.length && geo.subsubs.length > 0) {
+      geo.subsubs.forEach(ss => { (map[ss]||[]).forEach(p => { if(provinces.indexOf(p)<0) provinces.push(p); }); });
     }
-    if (!hasDetail && impGeoSel.subs.length > 0) {
-      impGeoSel.subs.forEach(function(s){ if (IMP_MAP_TO_PROVS[s]) raw = raw.concat(IMP_MAP_TO_PROVS[s]); });
-      hasDetail = true;
+    if (!provinces.length && geo.subs.length > 0) {
+      geo.subs.forEach(s => { (map[s]||[]).forEach(p => { if(provinces.indexOf(p)<0) provinces.push(p); }); });
     }
-    if (!hasDetail && impGeoSel.regions.length > 0) {
-      impGeoSel.regions.forEach(function(r){ if (IMP_MAP_TO_PROVS[r]) raw = raw.concat(IMP_MAP_TO_PROVS[r]); });
+    if (!provinces.length && geo.regions.length > 0) {
+      geo.regions.forEach(r => { (map[r]||[]).forEach(p => { if(provinces.indexOf(p)<0) provinces.push(p); }); });
     }
-    provinces = raw;
   }
-  // Rimuove duplicati
-  provinces = provinces.filter(function(item, pos) { return provinces.indexOf(item) === pos; });
   setHighlight(provinces);
   updateGeoHint();
 }
+
 function resetForm(){
-  ['f-ref','f-mint','f-mag','f-auth','f-prov-imp','f-prov-auth','f-denom','f-date','f-desc','f-notes'].forEach(function(id){ $set(id,''); });
-  $set('f-metal',''); document.getElementById('f-prov').selectedIndex=0;
+  ['f-ref','f-prov-imp','f-prov-auth','f-rep-auth','f-denom','f-date','f-desc','f-notes'].forEach(function(id){ $set(id,''); });
+  $set('f-metal','');
   geoSel=emptyGeo(); magSel=[]; $set('f-reign','');
   impGeoSel = { regions: [], subs: [], subsubs: [], cities: [] };
   impAuthSel = []; impIssuerSel = [];
+  repGeoSel = { regions: [], subs: [], subsubs: [], cities: [] };
+  repIssuerSel = [];
   document.querySelectorAll('.pk-in').forEach(function(i){ i.value=''; });
 }
+
 function openModal(id){
   editId = id==null ? null : id;
   resetForm();
@@ -1841,9 +2385,9 @@ function openModal(id){
   if(editId!=null){
     var c=coins.find(function(x){ return x.id===editId; });
     if(c){
-      $set('f-ref',c.ref); $set('f-mint',c.mint);
-      $set('f-mag',c.mag); $set('f-auth',c.auth);
+      $set('f-ref',c.ref);
       $set('f-prov-imp',c.provImp||c.imp); $set('f-prov-auth',c.provAuth||c.auth);
+      $set('f-rep-auth', c.auth);
       $set('f-metal',c.metal); $set('f-denom',c.denom); $set('f-date',c.date); $set('f-desc',c.desc); $set('f-notes',c.notes);
       
       currentPeriod=c.period||'rep';
@@ -1856,17 +2400,22 @@ function openModal(id){
           var o=document.createElement('option'); o.value=c.reign; o.textContent=c.reign; document.getElementById('f-reign').appendChild(o); $set('f-reign',c.reign);
         }
       } else if(currentPeriod === 'imp'){
-        $set('f-prov', c.prov||'');
         impGeoSel = {
           regions: c.impRegions || [],
           subs: c.impSubs || [],
           subsubs: c.impSubsubs || [],
-          cities: c.mint ? [c.mint] : []
+          cities: c.mint ? c.mint.split(';').map(s=>s.trim()).filter(Boolean) : []
         };
         impAuthSel = c.imp ? [c.imp] : [];
         impIssuerSel = c.impAuth ? [c.impAuth] : [];
-      } else {
-        $set('f-prov', c.prov||'');
+      } else if(currentPeriod === 'rep'){
+        repGeoSel = {
+          regions: c.repRegions || [],
+          subs: c.repSubs || [],
+          subsubs: c.repSubsubs || [],
+          cities: c.mint ? c.mint.split(';').map(s=>s.trim()).filter(Boolean) : []
+        };
+        repIssuerSel = c.mag ? c.mag.split(';').map(s=>s.trim()).filter(Boolean) : [];
       }
     }
   } else {
@@ -1885,14 +2434,22 @@ function saveCoin(){
   var isImp = currentPeriod === 'imp';
   var isRep = currentPeriod === 'rep';
 
-  var prov = isRep || isImp ? $v('f-prov') : '';
-  if(!isProv && !prov){
-    alert('Please select a province / region.');
-    return;
-  }
-
   if(isProv) provEnforce();
   if(isImp) impEnforce();
+  if(isRep) repEnforce();
+
+  if(isProv && !resolveProvinces(geoSel, '').length){
+    alert('Please select at least one province / region.');
+    return;
+  }
+  if(isImp && impGeoSel.regions.length === 0 && impGeoSel.subs.length === 0 && impGeoSel.subsubs.length === 0 && impGeoSel.cities.length === 0){
+    alert('Please select at least one geographical area.');
+    return;
+  }
+  if(isRep && repGeoSel.regions.length === 0 && repGeoSel.subs.length === 0 && repGeoSel.subsubs.length === 0 && repGeoSel.cities.length === 0){
+    alert('Please select at least one geographical area.');
+    return;
+  }
 
   var provMint = '';
   if (isProv && geoSel.cities.length) {
@@ -1904,49 +2461,35 @@ function saveCoin(){
     id: editId!=null ? editId : nextId++,
     period: currentPeriod,
     ref:$v('f-ref'),
-    prov:prov,
-    mint: isProv ? provMint : (isImp ? (impGeoSel.cities[0] || '') : $v('f-mint')),
-
-    mag: isRep ? $v('f-mag') : '',
-    auth: isRep ? $v('f-auth') : '',
-
+    prov: (isProv ? '' : (isImp ? impGeoSel.regions[0] || '' : repGeoSel.regions[0] || '')),
+    mint: isProv ? provMint : (isImp ? impGeoSel.cities.join('; ') : repGeoSel.cities.join('; ')),
+    mag: isRep ? repIssuerSel.join('; ') : '',
+    auth: isRep ? $v('f-rep-auth') : '',
     imp: isImp ? (impAuthSel[0] || '') : (isProv ? $v('f-prov-imp') : ''),
     impAuth: isImp ? (impIssuerSel[0] || '') : '',
-
     provImp: isProv ? $v('f-prov-imp') : '',
     provAuth: isProv ? $v('f-prov-auth') : '',
-
     reign: isProv ? $v('f-reign') : '',
     mags: isProv ? magSel.slice() : [],
-    magNames: isProv ? magSel.map(function(id){ return magLabel(PDB.magById[id]); }) : [],
-
+    magNames: isProv ? magSel.map(id => magLabel(PDB.magById[id])) : [],
     metal:$v('f-metal'),
     denom:$v('f-denom'),
     date:$v('f-date'),
     desc:$v('f-desc'),
     notes:$v('f-notes'),
-
     geo: isProv ? normGeo(geoSel) : emptyGeo(),
     impRegions: isImp ? impGeoSel.regions.slice() : [],
     impSubs: isImp ? impGeoSel.subs.slice() : [],
     impSubsubs: isImp ? impGeoSel.subsubs.slice() : [],
-
-    geoNames: isProv ? {
-      provs: geoSel.provs.slice(),
-      regions: geoSel.regions.slice(),
-      subs: geoSel.subs.map(function(s){ var o=subById(s); return o?o.name:s; }),
-      cities: geoSel.cities.map(function(x){ var o=cityById(x); return o?o.name:x; })
-    } : { provs:[], regions:[], subs:[], cities:[] }
+    repRegions: isRep ? repGeoSel.regions.slice() : [],
+    repSubs: isRep ? repGeoSel.subs.slice() : [],
+    repSubsubs: isRep ? repGeoSel.subsubs.slice() : []
   };
 
   if(editId!=null){
     var i=coins.findIndex(function(x){ return x.id===editId; });
-    if(i>=0){
-      c.created=coins[i].created;
-      coins[i]=c;
-    } else {
-      coins.push(c);
-    }
+    if(i>=0){ c.created=coins[i].created; coins[i]=c; }
+    else { coins.push(c); }
   } else {
     c.created=Date.now();
     coins.push(c);
@@ -1975,19 +2518,26 @@ function coinAuthority(c){
   return c.provImp||c.imp||'';
 }
 function coinMagNames(c){
+  if(c.period === 'rep') return c.mag ? c.mag.split(';').map(s=>s.trim()) : [];
   if(Array.isArray(c.mags)&&c.mags.length&&PDB.ready) return c.mags.map(function(id){ return magLabel(PDB.magById[id])||id; });
   return Array.isArray(c.magNames)?c.magNames:[];
 }
 function coinGeoNames(c){
   var g=normGeo(c.geo), gn=c.geoNames||{};
-  
   if (c.period === 'imp') {
-    var provs = (c.impSubsubs || []).slice();
+    var p = provinceOfMint(c.mint);
+    var provs = p ? [p] : (c.impSubsubs || []).slice();
     var regions = c.impRegions || [];
-    var cities = c.mint ? [c.mint] : [];
+    var cities = c.mint ? c.mint.split('; ').map(s=>s.trim()) : [];
     return { provs: provs, regions: regions, subs: [], cities: cities };
   }
-
+  if (c.period === 'rep') {
+    var p = provinceOfMint(c.mint);
+    var provs = p ? [p] : (c.repSubsubs || []).slice();
+    var regions = c.repRegions || [];
+    var cities = c.mint ? c.mint.split('; ').map(s=>s.trim()) : [];
+    return { provs: provs, regions: regions, subs: [], cities: cities };
+  }
   return {
     provs:c.period==='prov' ? resolveProvinces(g,'') : g.provs,
     regions:g.regions,
@@ -2013,17 +2563,17 @@ function renderList(){
     var gn = coinGeoNames(c);
 
     if(visibleTags.includes('province')){
-      var provinces = c.period === 'prov' ? gn.provs : (c.period === 'imp' ? gn.provs : (c.prov ? [c.prov] : []));
+      var provinces = c.period === 'prov' ? gn.provs : (c.period === 'imp' ? gn.provs : (c.period === 'rep' ? gn.provs : (c.prov ? [c.prov] : [])));
       provinces.forEach(function(p){ tags += '<span class="ctag ct-prov-name">'+esc(p)+'</span>'; });
     }
 
     if(visibleTags.includes('region')){
-      if(c.period === 'prov' || c.period === 'imp'){
+      if(c.period === 'prov' || c.period === 'imp' || c.period === 'rep'){
         gn.regions.forEach(function(r){ tags += '<span class="ctag ct-region">'+esc(r)+'</span>'; });
       }
     }
 
-    if(visibleTags.includes('city') && (c.period === 'prov' || c.period === 'imp')){
+    if(visibleTags.includes('city') && (c.period === 'prov' || c.period === 'imp' || c.period === 'rep')){
       gn.cities.forEach(function(city){ tags += '<span class="ctag ct-city">'+esc(city)+'</span>'; });
     }
 
@@ -2077,11 +2627,11 @@ function openDetail(id){
        drow('EMPEROR / AUTHORITY',c.provImp||c.imp)+drow('ISSUED BY',c.provAuth)+'</div>';
   } else if(c.period==='imp'){
     h+='<div class="dsep"></div><div class="dgrid">'+drow('AUTHORITY',c.imp)+drow('ISSUER',c.impAuth)+'</div>';
-  } else {
-    h+='<div class="dsep"></div><div class="dgrid">'+drow('MAGISTRATE / TRESVIRI',c.mag)+drow('ISSUED BY',c.auth)+'</div>';
+  } else if(c.period==='rep'){
+    h+='<div class="dsep"></div><div class="dgrid">'+drow('MAGISTRATE / ISSUER',c.mag)+drow('ISSUED BY',c.auth)+'</div>';
   }
   
-  var geoAny=c.period==='prov' && (gn.provs.length||gn.regions.length||gn.subs.length||gn.cities.length);
+  var geoAny=(c.period==='prov' || c.period==='rep') && (gn.provs.length||gn.regions.length||gn.subs.length||gn.cities.length);
   var geoAnyImp=c.period==='imp' && (gn.provs.length||gn.regions.length||gn.cities.length);
   
   if(geoAny){
@@ -2091,7 +2641,7 @@ function openDetail(id){
       drow('SUBREGION',gn.subs.join('\n'))+
       drow('CITY / MINT',gn.cities.join('\n'))+
       '</div>';
-  } else if (geoAnyImp) {
+  } else if (geoAnyImp || c.period==='rep') {
     h+='<div class="dsep"></div><div class="dgrid">'+
       drow('SUBSUBREGION',gn.provs.join('\n'))+
       drow('REGION',gn.regions.join('\n'))+
@@ -2104,28 +2654,25 @@ function openDetail(id){
   document.getElementById('detail-body').innerHTML=h;
   document.getElementById('detail').classList.add('open');
   
-  if(c.period==='rep' || c.period==='prov') {
-    setHighlight(resolveProvinces(c.geo,c.prov));
-  } else if (c.period==='imp') {
-    // Stessa logica di prioritizzazione: Città > Subsub > Sub > Region
-    var provs = [];
-    var hasDetail = false;
-    if (c.mint && IMP_MAP_TO_PROVS[c.mint]) { provs = IMP_MAP_TO_PROVS[c.mint]; hasDetail = true; }
-    if (!hasDetail && c.impSubsubs && c.impSubsubs.length > 0) {
-      provs = c.impSubsubs.reduce(function(acc, ss) { return acc.concat(IMP_MAP_TO_PROVS[ss] || []); }, []);
-      hasDetail = true;
+  if(c.period === 'imp' || c.period === 'rep'){
+    var p = provinceOfMint(c.mint);
+    if(p){ setHighlight([p]); }
+    else {
+      var map2 = (c.period === 'imp') ? IMP_MAP_TO_PROVS : REP_MAP_TO_PROVS;
+      var subsubs2 = (c.period === 'imp') ? c.impSubsubs : c.repSubsubs;
+      var subs2 = (c.period === 'imp') ? c.impSubs : c.repSubs;
+      var regions2 = (c.period === 'imp') ? c.impRegions : c.repRegions;
+      var provs2 = [];
+      if (c.mint && map2[c.mint]) provs2 = map2[c.mint];
+      else if (subsubs2 && subsubs2.length) provs2 = subsubs2.reduce((a,ss)=>a.concat(map2[ss]||[]),[]);
+      else if (subs2 && subs2.length) provs2 = subs2.reduce((a,s)=>a.concat(map2[s]||[]),[]);
+      else if (regions2 && regions2.length) provs2 = regions2.reduce((a,r)=>a.concat(map2[r]||[]),[]);
+      setHighlight(provs2);
     }
-    if (!hasDetail && c.impSubs && c.impSubs.length > 0) {
-      provs = c.impSubs.reduce(function(acc, s) { return acc.concat(IMP_MAP_TO_PROVS[s] || []); }, []);
-      hasDetail = true;
-    }
-    if (!hasDetail && c.impRegions && c.impRegions.length > 0) {
-      provs = c.impRegions.reduce(function(acc, r) { return acc.concat(IMP_MAP_TO_PROVS[r] || []); }, []);
-    }
-    provs = provs.filter(function(item, pos) { return provs.indexOf(item) === pos; });
-    setHighlight(provs);
+  } else if (c.period === 'prov') {
+    setHighlight(resolveProvinces(c.geo, c.prov));
   } else {
-    setHighlight([]); 
+    setHighlight([]);
   }
 }
 function closeDetail(){ document.getElementById('detail').classList.remove('open'); detailId=null; clearHighlight(); }

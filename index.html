@@ -920,6 +920,22 @@ function buildProvDB(magRows, cityRows){
     }); });
   });
   PDB.cities.forEach(function(c){ if(!withMag[c.id]) PDB.tuples.push({r:null,m:null,c:c.id,g:c.region,s:c.sub||null}); });
+
+  /* === AGGIUNTA FONDAMENTALE ===
+     Per ogni città, aggiungi un tuple per OGNI reign di reigns.csv
+     (anche se la città non ha magistrati per quel reign).
+     Così facet('r') restituisce tutti i reign disponibili per la città
+     e la tendina si popola correttamente.
+     Evita duplicati: se esiste già un tuple (r,c) lo salta. */
+  var existRC = {};
+  PDB.tuples.forEach(function(t){ if(t.r && t.c) existRC[t.r+'|'+t.c]=true; });
+  PDB.cities.forEach(function(c){
+    Object.keys(PDB.reignInfo).forEach(function(r){
+      if(existRC[r+'|'+c.id]) return;
+      PDB.tuples.push({r:r, m:null, c:c.id, g:c.region, s:c.sub||null});
+    });
+  });
+
   PDB.ready=true;
   applyProvDB();
 }

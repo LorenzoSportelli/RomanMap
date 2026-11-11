@@ -881,7 +881,6 @@ function applyProvDB(){
   setProvHint('');
   if(document.getElementById('overlay').classList.contains('open')){ provEnforce(); pkRenderAll(); previewHighlight(); }
   renderList();
-  // Ricalcola la classificazione delle zecche ora che PDB è pronto
   rebuildMintTypeIndex();
   if (currentMintMode !== 'none') renderMints();
 }
@@ -1548,7 +1547,7 @@ function updateMap(){
 /* =====================================================================
    CLASSIFICAZIONE ZECCHE — MULTI-TIPO
    ===================================================================== */
-var MINT_TYPES = {}; // canon -> { rep:true, imp:true, prov:true }
+var MINT_TYPES = {};
 
 function addMintType(name, type){
   if(!name) return;
@@ -1576,37 +1575,15 @@ function getMintTypes(name){
   return MINT_TYPES[canon] || null;
 }
 
-/* =====================================================================
-   VISIBILITÀ ZECCHE — COMBINAZIONE MINT MODE × COIN FILTER
-   =====================================================================
-   Regole:
-   - "none": nessuna zecca visibile.
-   - "mine": solo le zecche possedute.
-       * filtro "all"  → tutte le possedute
-       * filtro tipo   → solo le possedute che hanno quel tipo
-   - "all": tutte le zecche.
-       * filtro "all"  → tutte
-       * filtro tipo   → tutte quelle che hanno quel tipo (possedute o no)
-   ===================================================================== */
 function mintVisible(mintName, ownedSet){
   var canon = canonicalMint(mintName);
   var isOwned = ownedSet.has(canon);
 
-  // In "mine" le zecche non possedute non si mostrano mai
   if (currentMintMode === 'mine' && !isOwned) return false;
-
-  // Se il filtro tipo è "all", la visibilità dipende solo dalla modalità
   if (currentCoinFilter === 'all') return true;
 
-  // Filtro tipo attivo
   var types = getMintTypes(mintName);
-
-  // Zecca non classificata:
-  //  - in "all"  → la mostriamo solo se posseduta (non possiamo sapere il tipo)
-  //  - in "mine" → la mostriamo (è posseduta)
   if (!types) return isOwned;
-
-  // Zecca classificata: deve avere il tipo richiesto
   return !!types[currentCoinFilter];
 }
 
@@ -1839,6 +1816,86 @@ function updateProvHint(){
   var any=DIMS.some(function(k){ return sel[k].length; });
   if(!any){ setProvHint(PDB.reigns.length+' reigns · '+PDB.mags.length+' magistrates · '+PDB.cities.length+' cities'); return; }
   setProvHint('Compatible: '+facet('r',sel).length+' reigns · '+facet('m',sel).length+' magistrates · '+facet('c',sel).length+' cities');
+}
+
+/* =====================================================================
+   PROVINCIAL GEO ADD/REMOVE (cascata gerarchica)
+   =====================================================================
+   Struttura provinciale: region → subregion → city/mint
+   Le province sono derivate da REGION_PROVINCES + coordinate città.
+   - add city    → sub + region + province derivate
+   - add sub     → region + province derivate
+   - add region  → province derivate
+   - remove region → sub e city di quella region
+   - remove sub    → city di quella sub
+   - remove province derivata → provExclusions
+   ===================================================================== */
+function provGeoAdd(key, id){
+  if (key === 'regions') {
+    if (geoSel.regions.indexOf(id) < 0) geoSel.regions.push(id);
+  } else if (key === 'subs') {
+    if (geoSel.subs.indexOf(id) < 0) geoSel.subs.push(id);
+    var s = subById(id);
+    if (s && s.region && geoSel.regions.indexOf(s.region) < 0) {
+      geoSel.regions.push(s.region);
+    }
+  } else if (key === 'cities') {
+    if (geoSel.cities.indexOf(id) < 0) geoSel.cities.push(id);
+    var c = cityById(id);
+    if (c) {
+      if (c.sub && geoSel.subs.indexOf(c.sub) < 0) geoSel.subs.push(c.sub);
+      var sOfCity = c.sub ? subById(c.sub) : null;
+      var reg = (sOfCity && sOfCity.region) || c.region;
+      if (reg && geoSel.regions.indexOf(reg) < 0) geoSel.regions.push(reg);
+    }
+  } else if (key === 'provs') {
+    if (geoSel.provs.indexOf(id) < 0) geoSel.provs.push(id);
+    geoSel.provExclusions = geoSel.provExclusions.filter(function(p){ return p !== id; });
+  }
+}
+
+function provGeoRemove(key, id){
+  if (key === 'regions') {
+    geoSel.regions = geoSel.regions.filter(function(x){ return x !== id; });
+    geoSel.subs = geoSel.subs.filter(function(sid){
+      var s = subById(sid); return s && s.region !== id;
+    });
+    geoSel.cities = geoSel.cities.filter(function(cid){
+      var c = cityById(cid); return c && c.region !== id;
+    });
+  } else if (key === 'subs') {
+    geoSel.subs = geoSel.subs.filter(function(x){ return x !== id; });
+    geoSel.cities = geoSel.cities.filter(function(cid){
+      var c = cityById(cid); return c && c.sub !== id;
+    });
+  } else if (key === 'cities') {
+    geoSel.cities = geoSel.cities.filter(function(x){ return x !== id; });
+  } else if (key === 'provs') {
+    var derived = resolveProvinces({
+      provs: [], regions: geoSel.regions, subs: geoSel.subs, cities: geoSel.cities
+    }, '').indexOf(id) >= 0;
+    geoSel.provs = geoSel.provs.filter(function(p){ return p !== id; });
+    if (derived) {
+      if (geoSel.provExclusions.indexOf(id) < 0) geoSel.provExclusions.push(id);
+    } else {
+      geoSel.provExclusions = geoSel.provExclusions.filter(function(p){ return p !== id; });
+    }
+  }
+}
+
+/* Materializza in geoSel.provs le province derivate da region/sub/city,
+   così i chip del picker "PROVINCES / REGIONS" le mostrano subito. */
+function provSyncProvinces(){
+  var derived = resolveProvinces({
+    provs: [],
+    regions: geoSel.regions,
+    subs: geoSel.subs,
+    cities: geoSel.cities
+  }, '');
+  derived.forEach(function(p){
+    if (geoSel.provs.indexOf(p) < 0) geoSel.provs.push(p);
+    geoSel.provExclusions = geoSel.provExclusions.filter(function(x){ return x !== p; });
+  });
 }
 
 /* =====================================================================
@@ -2268,16 +2325,28 @@ function pkRender(key){
   }).join('')+(items.length>300?'<div class="pk-none">…'+(items.length-300)+' more — refine the search</div>':'');
 }
 function pkRenderAll(){ Object.keys(PICKERS).forEach(pkRender); updateGeoHint(); }
+
+/* === PK ADD / REMOVE con cascata gerarchica === */
 function pkAdd(key,id){
   if (IMP_KEY_MAP[key]) { impGeoAdd(IMP_KEY_MAP[key], id); pkAfterChange(key); return; }
   if (REP_KEY_MAP[key]) { repGeoAdd(REP_KEY_MAP[key], id); pkAfterChange(key); return; }
-  var P=PICKERS[key];
-  if(key==='provs'){
-    if(geoSel.provs.indexOf(id)<0){ geoSel.provs.push(id); }
-    geoSel.provExclusions=geoSel.provExclusions.filter(function(p){ return p!==id; });
+
+  if (key === 'provs') {
+    provGeoAdd('provs', id);
+  } else if (key === 'regions') {
+    provGeoAdd('regions', id);
+    provSyncProvinces();
+  } else if (key === 'subs') {
+    provGeoAdd('subs', id);
+    provSyncProvinces();
+  } else if (key === 'cities') {
+    provGeoAdd('cities', id);
+    provSyncProvinces();
   } else {
-    var v=P.get().slice();
-    if(v.indexOf(id)<0){ v.push(id); }
+    // mag: nessuna propagazione geografica
+    var P = PICKERS[key];
+    var v = P.get().slice();
+    if (v.indexOf(id) < 0) v.push(id);
     P.set(v);
   }
   pkAfterChange(key);
@@ -2286,17 +2355,22 @@ function pkAdd(key,id){
 function pkRemove(key,id){
   if (IMP_KEY_MAP[key]) { impGeoRemove(IMP_KEY_MAP[key], id); pkAfterChange(key); return; }
   if (REP_KEY_MAP[key]) { repGeoRemove(REP_KEY_MAP[key], id); pkAfterChange(key); return; }
-  var P=PICKERS[key];
-  if(key==='provs'){
-    var derived=resolveProvinces({provs:[], regions:geoSel.regions, subs:geoSel.subs, cities:geoSel.cities},'').indexOf(id)>=0;
-    geoSel.provs=geoSel.provs.filter(function(p){ return p!==id; });
-    if(derived){ if(geoSel.provExclusions.indexOf(id)<0){ geoSel.provExclusions.push(id); } }
-    else { geoSel.provExclusions=geoSel.provExclusions.filter(function(p){ return p!==id; }); }
+
+  if (key === 'provs') {
+    provGeoRemove('provs', id);
+  } else if (key === 'regions') {
+    provGeoRemove('regions', id);
+  } else if (key === 'subs') {
+    provGeoRemove('subs', id);
+  } else if (key === 'cities') {
+    provGeoRemove('cities', id);
   } else {
-    P.set(P.get().filter(function(x){ return x!==id; }));
+    var P = PICKERS[key];
+    P.set(P.get().filter(function(x){ return x !== id; }));
   }
   pkAfterChange(key);
 }
+
 function pkAfterChange(key){
   var root=document.getElementById(PICKERS[key].el); if(root) root.querySelector('.pk-in').value='';
   if(currentPeriod==='imp'){ impEnforce(); }

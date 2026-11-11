@@ -416,7 +416,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           </div>
         </div>
       </div>
-      <div class="pk-hint" id="reign-legend" style="display:none;margin-top:2px;">* Client king (not a Roman emperor)</div>
       <div class="pk-hint" id="prov-hint"></div>
     </div>
 
@@ -1551,8 +1550,6 @@ function rebuildReignPicker(){
     if(reignSel && compatible.indexOf(reignSel) < 0 && PDB.reigns.indexOf(reignSel) >= 0){
       reignSel = '';
     }
-    var leg = document.getElementById('reign-legend');
-    if(leg){ leg.style.display = compatible.some(isClientKing) ? '' : 'none'; }
   }
   pkRender('reign');
 }

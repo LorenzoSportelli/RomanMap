@@ -702,7 +702,6 @@ var REIGN_ORDER = ["Roman Republic","Augustus","Tiberius","Caligula","Claudius",
 function slug(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
 function norm(s){ return String(s||'').trim().replace(/\s+/g,' ').toLowerCase(); }
 
-/* === Normalizzazione nomi zecche === */
 function normMint(s){
   return String(s||'')
     .toLowerCase()
@@ -738,7 +737,6 @@ function canonicalMint(name){
   return n;
 }
 
-/* === Coordinate zecche non presenti in mints.json === */
 var MINT_COORD_OVERRIDES = {
   'Apollonia, Illyria':      [40.720583, 19.470413],
   'Canusium':                [41.2167, 16.0667],
@@ -1267,6 +1265,10 @@ var detailId = null;
 var filterMode = 'all';
 var currentPeriod = 'prov';
 
+/* === UNICHE dichiarazioni globali per zecche (NON duplicare altrove!) === */
+var currentCoinFilter = 'all';   // 'all' | 'prov' | 'imp' | 'rep'
+var currentMintMode = 'none';    // 'none' | 'mine' | 'all'
+
 var TAG_ORDER = ['province','region','city','authority','magistrate','metal'];
 var DEFAULT_TAGS = TAG_ORDER.slice();
 
@@ -1323,7 +1325,6 @@ function geoToOur(geoName){
   return null;
 }
 
-/* === Calcolo provincia da coordinate === */
 var MINT_GEO_CACHE = {};
 
 function provinceOfMint(mintName){
@@ -1543,17 +1544,13 @@ function updateMap(){
 /* =====================================================================
    LOGICA ZECCHE (MINTS) & FILTRI
    ---------------------------------------------------------------------
-   Una zecca può appartenere a più periodi contemporaneamente:
-   es. Rome può essere rep, imp e prov.
-   getMintTypes() restituisce un Set di tipi.
+   Le variabili currentCoinFilter e currentMintMode sono dichiarate
+   UNA SOLA VOLTA qui sopra, nella sezione "variabili globali".
+   getMintTypes() restituisce un Set di tipi per gestire zecche condivise.
    ===================================================================== */
-let allMintsData = [];
-let currentMintMode = 'none';
-let currentCoinFilter = 'all';
-let mintsLayer = L.layerGroup().addTo(map);
-
-// Cache: canonicalMint -> Set di tipi ('rep','imp','prov')
-let MINT_TYPES_CACHE = null;
+var allMintsData = [];
+var mintsLayer = L.layerGroup().addTo(map);
+var MINT_TYPES_CACHE = null;
 
 fetch('mints.json')
   .then(function(r){ return r.json(); })
@@ -1561,16 +1558,15 @@ fetch('mints.json')
     allMintsData = data;
     MINT_GEO_CACHE = {};
     MINT_TYPES_CACHE = null;
-    setMintMode('none');
-    setCoinFilter('all');
+    renderMints();
   })
   .catch(function(err){ console.error("Errore caricamento mints.json:", err); });
 
 /**
- * Restituisce l'insieme dei tipi ('rep','imp','prov') a cui appartiene una zecca.
- * - Se la zecca è usata da monete in collezione, i tipi derivano dai periodi di quelle monete.
- * - Se non è usata, si usa mints.json come fallback.
- * - Se non si sa nulla, restituisce un Set vuoto (trattata come 'all').
+ * Set dei tipi ('rep','imp','prov') a cui appartiene una zecca.
+ * - Se ci sono monete in collezione con quella zecca → tipi = periodi di quelle monete.
+ * - Altrimenti fallback su mints.json (id 'imp-' → 'imp', 'prov-' → 'prov').
+ * - Se non si sa nulla → Set vuoto.
  */
 function getMintTypes(name) {
   var target = canonicalMint(name);
@@ -1582,7 +1578,6 @@ function getMintTypes(name) {
 
   var types = new Set();
 
-  // 1) Tipi derivati dalle monete in collezione
   coins.forEach(function(c){
     if (!c.mint || !c.period) return;
     var match = String(c.mint).split(';').some(function(m){
@@ -1591,7 +1586,6 @@ function getMintTypes(name) {
     if (match) types.add(c.period);
   });
 
-  // 2) Fallback su mints.json se non ci sono monete in collezione per questa zecca
   if (types.size === 0 && allMintsData.length) {
     var m = allMintsData.find(function(x){
       return canonicalMint(x.name) === target;
@@ -1607,37 +1601,30 @@ function getMintTypes(name) {
   return types;
 }
 
-/** True se la zecca è presente in collezione (in qualsiasi periodo). */
 function isMintOwned(name, ownedSet) {
   return ownedSet.has(canonicalMint(name));
 }
 
 /**
- * True se la zecca deve essere visibile con il filtro corrente.
- * Regole:
- * - Se il filtro è 'all' → visibile.
- * - Se la zecca è owned → visibile (l'utente la possiede, va mostrata).
- * - Altrimenti visibile solo se il Set dei tipi contiene il filtro.
- * - Se il Set è vuoto (tipo sconosciuto) → visibile.
+ * Visibilità della zecca col filtro corrente:
+ *  - 'all' → visibile
+ *  - altrimenti solo se il Set contiene il filtro corrente
  */
-function mintPassesFilter(name, ownedSet) {
+function mintPassesFilter(name) {
   if (currentCoinFilter === 'all') return true;
-  if (isMintOwned(name, ownedSet)) return true;
-  var types = getMintTypes(name);
-  if (types.size === 0) return true;
-  return types.has(currentCoinFilter);
+  return getMintTypes(name).has(currentCoinFilter);
 }
 
 function renderMints() {
   if (!mintsLayer) return;
   mintsLayer.clearLayers();
 
-  // Ricalcola la cache dei tipi a ogni render (dipende dalle monete)
+  // La cache dipende dalle monete: invalidala SEMPRE.
   MINT_TYPES_CACHE = null;
 
-  if (allMintsData.length === 0 || currentMintMode === 'none') return;
+  if (currentMintMode === 'none') return;
+  if (allMintsData.length === 0) return;
 
-  // Set delle zecche possedute
   var ownedMints = new Set();
   coins.forEach(function(c){
     if (!c.mint) return;
@@ -1649,19 +1636,16 @@ function renderMints() {
 
   if (currentMintMode === 'mine' && ownedMints.size === 0) return;
 
-  // Ordina: owned in cima
   var mintsToDraw = allMintsData.slice().sort(function(a, b){
     var oa = ownedMints.has(canonicalMint(a.name)) ? 1 : 0;
     var ob = ownedMints.has(canonicalMint(b.name)) ? 1 : 0;
     return oa - ob;
   });
 
-  // Marker da mints.json
   mintsToDraw.forEach(function(m){
     var isOwned = ownedMints.has(canonicalMint(m.name));
-
     if (currentMintMode === 'mine' && !isOwned) return;
-    if (!mintPassesFilter(m.name, ownedMints)) return;
+    if (!mintPassesFilter(m.name)) return;
 
     var marker = L.circleMarker([m.lat, m.lng], {
       pane: 'mintsPane',
@@ -1683,13 +1667,12 @@ function renderMints() {
     mintsLayer.addLayer(marker);
   });
 
-  // Marker per zecche con override non presenti in mints.json
   Object.keys(MINT_COORD_OVERRIDES).forEach(function(name){
     if (allMintsData.some(function(m){ return canonicalMint(m.name) === canonicalMint(name); })) return;
 
     var isOwned = ownedMints.has(canonicalMint(name));
     if (currentMintMode === 'mine' && !isOwned) return;
-    if (!mintPassesFilter(name, ownedMints)) return;
+    if (!mintPassesFilter(name)) return;
 
     var coords = MINT_COORD_OVERRIDES[name];
     var marker = L.circleMarker(coords, {
@@ -1718,27 +1701,17 @@ function setMintMode(mode) {
   var bNone = document.getElementById('btn-mints-none');
   var bMine = document.getElementById('btn-mints-mine');
   var bAll  = document.getElementById('btn-mints-all');
-
   [bNone, bMine, bAll].forEach(function(b){
     b.style.borderColor = 'var(--border2)';
     b.style.color = 'var(--text2)';
     b.style.background = 'var(--bg2)';
   });
-
-  if (mode === 'none') {
-    bNone.style.borderColor = 'var(--text)';
-    bNone.style.color = 'var(--text)';
-    bNone.style.background = 'var(--bg3)';
-  } else if (mode === 'mine') {
-    bMine.style.borderColor = 'var(--text)';
-    bMine.style.color = 'var(--text)';
-    bMine.style.background = 'var(--bg3)';
-  } else if (mode === 'all') {
-    bAll.style.borderColor = 'var(--text)';
-    bAll.style.color = 'var(--text)';
-    bAll.style.background = 'var(--bg3)';
+  var active = mode === 'none' ? bNone : mode === 'mine' ? bMine : bAll;
+  if (active) {
+    active.style.borderColor = 'var(--text)';
+    active.style.color = 'var(--text)';
+    active.style.background = 'var(--bg3)';
   }
-
   renderMints();
 }
 
@@ -1748,31 +1721,17 @@ function setCoinFilter(mode) {
   var bProv = document.getElementById('btn-filter-prov');
   var bImp  = document.getElementById('btn-filter-imp');
   var bRep  = document.getElementById('btn-filter-rep');
-
   [bAll, bProv, bImp, bRep].forEach(function(b){
     b.style.borderColor = 'var(--border2)';
     b.style.color = 'var(--text2)';
     b.style.background = 'var(--bg2)';
   });
-
-  if (mode === 'all') {
-    bAll.style.borderColor = 'var(--text)';
-    bAll.style.color = 'var(--text)';
-    bAll.style.background = 'var(--bg3)';
-  } else if (mode === 'prov') {
-    bProv.style.borderColor = 'var(--text)';
-    bProv.style.color = 'var(--text)';
-    bProv.style.background = 'var(--bg3)';
-  } else if (mode === 'imp') {
-    bImp.style.borderColor = 'var(--text)';
-    bImp.style.color = 'var(--text)';
-    bImp.style.background = 'var(--bg3)';
-  } else if (mode === 'rep') {
-    bRep.style.borderColor = 'var(--text)';
-    bRep.style.color = 'var(--text)';
-    bRep.style.background = 'var(--bg3)';
+  var active = mode === 'all' ? bAll : mode === 'prov' ? bProv : mode === 'imp' ? bImp : bRep;
+  if (active) {
+    active.style.borderColor = 'var(--text)';
+    active.style.color = 'var(--text)';
+    active.style.background = 'var(--bg3)';
   }
-
   renderMints();
   updateMap();
 }
@@ -2542,7 +2501,7 @@ function saveCoin(){
   closeModal();
   renderList();
   updateMap();
-  if (typeof renderMints === 'function') renderMints();
+  renderMints();
 }
 
 /* =====================================================================
@@ -2554,6 +2513,7 @@ function setFilter(m,btn){
   if(btn) btn.classList.add('on');
   renderList();
   updateMap();
+  renderMints();
 }
 function periodName(p){ return p==='rep'?'Republican':p==='imp'?'Imperial':'Provincial'; }
 function coinAuthority(c){
@@ -2731,8 +2691,7 @@ function doDelete(){
   if(deleteId!=null){
     coins=coins.filter(function(c){ return c.id!==deleteId; });
     if(detailId===deleteId) closeDetail();
-    save(); renderList(); updateMap();
-    if (typeof renderMints === 'function') renderMints();
+    save(); renderList(); updateMap(); renderMints();
   }
   closeConfirm();
 }

@@ -1230,7 +1230,16 @@ function cityById(id){ if(!id) return null; return PDB.cityById[id]||null; }
 function subLabel(s){ return s ? s.name+' ('+s.region+')' : ''; }
 function cityLabel(c){ if(!c) return ''; return c.name; }
 function magLabel(m){ return m ? m.name+(m.title?' ('+m.title+')':'') : ''; }
-function provsForRegion(r){ return (REGION_PROVINCES[r]||[]).slice(); }
+
+function provsForRegion(r){
+  if(!r) return [];
+  if(REGION_PROVINCES[r]) return REGION_PROVINCES[r].slice();
+  var low = String(r).toLowerCase();
+  for(var k in REGION_PROVINCES){
+    if(k.toLowerCase() === low) return REGION_PROVINCES[k].slice();
+  }
+  return [];
+}
 function provsForSub(id){
   var s = subById(id); if(!s) return [];
   if(s.provs && s.provs.length) return s.provs.slice();
@@ -1265,9 +1274,9 @@ var detailId = null;
 var filterMode = 'all';
 var currentPeriod = 'prov';
 
-/* === UNICHE dichiarazioni globali per zecche (NON duplicare altrove!) === */
-var currentCoinFilter = 'all';   // 'all' | 'prov' | 'imp' | 'rep'
-var currentMintMode = 'none';    // 'none' | 'mine' | 'all'
+/* Variabili globali uniche per le zecche */
+var currentCoinFilter = 'all';
+var currentMintMode = 'none';
 
 var TAG_ORDER = ['province','region','city','authority','magistrate','metal'];
 var DEFAULT_TAGS = TAG_ORDER.slice();
@@ -1453,6 +1462,9 @@ var tt=document.getElementById("tt");
 var mw=document.getElementById("mapwrap");
 var geoLayer=null;
 
+/* === DICHIARAZIONE ANTICIPATA DI allMintsData PER EVITARE TDZ === */
+var allMintsData = [];
+
 fetch("https://cdn.jsdelivr.net/gh/klokantech/roman-empire@master/data/provinces.geojson")
   .then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
   .then(function(data){
@@ -1543,12 +1555,7 @@ function updateMap(){
 
 /* =====================================================================
    LOGICA ZECCHE (MINTS) & FILTRI
-   ---------------------------------------------------------------------
-   Le variabili currentCoinFilter e currentMintMode sono dichiarate
-   UNA SOLA VOLTA qui sopra, nella sezione "variabili globali".
-   getMintTypes() restituisce un Set di tipi per gestire zecche condivise.
    ===================================================================== */
-var allMintsData = [];
 var mintsLayer = L.layerGroup().addTo(map);
 var MINT_TYPES_CACHE = null;
 
@@ -1562,12 +1569,6 @@ fetch('mints.json')
   })
   .catch(function(err){ console.error("Errore caricamento mints.json:", err); });
 
-/**
- * Set dei tipi ('rep','imp','prov') a cui appartiene una zecca.
- * - Se ci sono monete in collezione con quella zecca → tipi = periodi di quelle monete.
- * - Altrimenti fallback su mints.json (id 'imp-' → 'imp', 'prov-' → 'prov').
- * - Se non si sa nulla → Set vuoto.
- */
 function getMintTypes(name) {
   var target = canonicalMint(name);
   if (!target) return new Set();
@@ -1605,11 +1606,6 @@ function isMintOwned(name, ownedSet) {
   return ownedSet.has(canonicalMint(name));
 }
 
-/**
- * Visibilità della zecca col filtro corrente:
- *  - 'all' → visibile
- *  - altrimenti solo se il Set contiene il filtro corrente
- */
 function mintPassesFilter(name) {
   if (currentCoinFilter === 'all') return true;
   return getMintTypes(name).has(currentCoinFilter);
@@ -1619,7 +1615,6 @@ function renderMints() {
   if (!mintsLayer) return;
   mintsLayer.clearLayers();
 
-  // La cache dipende dalle monete: invalidala SEMPRE.
   MINT_TYPES_CACHE = null;
 
   if (currentMintMode === 'none') return;
@@ -1781,25 +1776,40 @@ var magSel = [];
 var DIMS = ['r','m','c','g','s'];
 
 function provSelection(){
-  var r=document.getElementById('f-reign').value;
-  return { r: r?[r]:[], m: magSel.slice(), c: geoSel.cities.slice(), g: geoSel.regions.slice(), s: geoSel.subs.slice() };
+  var rEl = document.getElementById('f-reign');
+  var r = rEl ? rEl.value : '';
+  return {
+    r: r ? [r] : [],
+    m: (magSel || []).slice(),
+    c: (geoSel.cities || []).slice(),
+    g: (geoSel.regions || []).slice(),
+    s: (geoSel.subs || []).slice()
+  };
 }
+
 function tupleOk(t, sel, skip){
   for(var i=0;i<DIMS.length;i++){
     var k=DIMS[i]; if(k===skip) continue;
-    if(sel[k].length && sel[k].indexOf(t[k])<0) return false;
+    if(!sel[k].length) continue;
+    if(t[k] == null) continue;
+    if(sel[k].indexOf(t[k])<0) return false;
   }
   return true;
 }
+
 function facet(k, sel){
   var seen={}, out=[];
   for(var i=0;i<PDB.tuples.length;i++){
     var t=PDB.tuples[i];
-    if(t[k]==null || seen[t[k]]) continue;
-    if(tupleOk(t,sel,k)){ seen[t[k]]=true; out.push(t[k]); }
+    if(t[k]==null) continue;
+    if(!tupleOk(t,sel,k)) continue;
+    if(seen[t[k]]) continue;
+    seen[t[k]]=true; 
+    out.push(t[k]);
   }
   return out;
 }
+
 function writeDim(k, vals){
   if(k==='r') document.getElementById('f-reign').value=vals[0]||'';
   else if(k==='m') magSel=vals;
@@ -1807,6 +1817,7 @@ function writeDim(k, vals){
   else if(k==='g') geoSel.regions=vals;
   else if(k==='s') geoSel.subs=vals;
 }
+
 function provEnforce(){
   if(!isProvMode()){ rebuildReignSelect(); return; }
   var changed=true, guard=0;
@@ -1823,7 +1834,9 @@ function provEnforce(){
   rebuildReignSelect();
   updateProvHint();
 }
+
 function reignSort(a,b){ return PDB.reigns.indexOf(a)-PDB.reigns.indexOf(b); }
+
 function rebuildReignSelect(){
   var sel=document.getElementById('f-reign'), cur=sel.value;
   var list = PDB.ready ? (isProvMode() ? facet('r',provSelection()).sort(reignSort) : PDB.reigns.slice()) : [];
@@ -1833,7 +1846,9 @@ function rebuildReignSelect(){
   list.forEach(function(r){ var o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
   sel.value=cur && list.indexOf(cur)>=0 ? cur : '';
 }
+
 function onReignChange(){ provEnforce(); pkRenderAll(); previewHighlight(); }
+
 function updateProvHint(){
   if(PDB.error) return;
   if(!isProvMode()){ setProvHint(''); return; }
@@ -1857,7 +1872,9 @@ function impSelection(){
 function impTupleOk(t, sel, skip){
   for(var j=0;j<IDIMS.length;j++){
     var k=IDIMS[j]; if(k===skip) continue;
-    if(sel[k].length && sel[k].indexOf(t[k])<0) return false;
+    if(!sel[k].length) continue;
+    if(t[k] == null) continue;
+    if(sel[k].indexOf(t[k])<0) return false;
   }
   return true;
 }
@@ -1865,8 +1882,11 @@ function impFacet(k, sel){
   var seen={}, out=[];
   for(var j=0;j<IDB.tuples.length;j++){
     var t=IDB.tuples[j];
-    if(t[k]==null || seen[t[k]]) continue;
-    if(impTupleOk(t,sel,k)){ seen[t[k]]=true; out.push(t[k]); }
+    if(t[k]==null) continue;
+    if(!impTupleOk(t,sel,k)) continue;
+    if(seen[t[k]]) continue;
+    seen[t[k]]=true; 
+    out.push(t[k]);
   }
   return out;
 }
@@ -1965,7 +1985,9 @@ function repSelection(){ return { i: repIssuerSel.slice() }; }
 function repTupleOk(t, sel, skip){
   for(var j=0;j<RDIMS.length;j++){
     var k=RDIMS[j]; if(k===skip) continue;
-    if(sel[k].length && sel[k].indexOf(t[k])<0) return false;
+    if(!sel[k].length) continue;
+    if(t[k] == null) continue;
+    if(sel[k].indexOf(t[k])<0) return false;
   }
   return true;
 }
@@ -1973,8 +1995,11 @@ function repFacet(k, sel){
   var seen={}, out=[];
   for(var j=0;j<RDB.tuples.length;j++){
     var t=RDB.tuples[j];
-    if(t[k]==null || seen[t[k]]) continue;
-    if(repTupleOk(t,sel,k)){ seen[t[k]]=true; out.push(t[k]); }
+    if(t[k]==null) continue;
+    if(!repTupleOk(t,sel,k)) continue;
+    if(seen[t[k]]) continue;
+    seen[t[k]]=true; 
+    out.push(t[k]);
   }
   return out;
 }
@@ -2045,7 +2070,6 @@ function repGeoRemove(key, id) {
     g.cities = g.cities.filter(c => subsIn.indexOf(RDB.cityToSub[c]) < 0);
   }
 }
-
 
 /* =====================================================================
    PICKERS

@@ -1820,15 +1820,6 @@ function updateProvHint(){
 
 /* =====================================================================
    PROVINCIAL GEO ADD/REMOVE (cascata gerarchica)
-   =====================================================================
-   Struttura provinciale: region → subregion → city/mint
-   Le province sono derivate da REGION_PROVINCES + coordinate città.
-   - add city    → sub + region + province derivate
-   - add sub     → region + province derivate
-   - add region  → province derivate
-   - remove region → sub e city di quella region
-   - remove sub    → city di quella sub
-   - remove province derivata → provExclusions
    ===================================================================== */
 function provGeoAdd(key, id){
   if (key === 'regions') {
@@ -1883,8 +1874,7 @@ function provGeoRemove(key, id){
   }
 }
 
-/* Materializza in geoSel.provs le province derivate da region/sub/city,
-   così i chip del picker "PROVINCES / REGIONS" le mostrano subito. */
+/* Materializza in geoSel.provs le province derivate */
 function provSyncProvinces(){
   var derived = resolveProvinces({
     provs: [],
@@ -1895,6 +1885,25 @@ function provSyncProvinces(){
   derived.forEach(function(p){
     if (geoSel.provs.indexOf(p) < 0) geoSel.provs.push(p);
     geoSel.provExclusions = geoSel.provExclusions.filter(function(x){ return x !== p; });
+  });
+}
+
+/* Ripristina i genitori (sub, region) di ogni city/sub selezionata.
+   Va chiamata DOPO provEnforce, perché provEnforce può averli rimossi
+   per motivi di compatibilità con reign/magistrate. */
+function provSyncHierarchy(){
+  // Per ogni city: garantisci sub e region
+  geoSel.cities.forEach(function(cid){
+    var c = cityById(cid); if(!c) return;
+    if (c.sub && geoSel.subs.indexOf(c.sub) < 0) geoSel.subs.push(c.sub);
+    var s = c.sub ? subById(c.sub) : null;
+    var reg = (s && s.region) || c.region;
+    if (reg && geoSel.regions.indexOf(reg) < 0) geoSel.regions.push(reg);
+  });
+  // Per ogni sub: garantisci region
+  geoSel.subs.forEach(function(sid){
+    var s = subById(sid); if(!s) return;
+    if (s.region && geoSel.regions.indexOf(s.region) < 0) geoSel.regions.push(s.region);
   });
 }
 
@@ -2326,7 +2335,7 @@ function pkRender(key){
 }
 function pkRenderAll(){ Object.keys(PICKERS).forEach(pkRender); updateGeoHint(); }
 
-/* === PK ADD / REMOVE con cascata gerarchica === */
+/* === PK ADD === */
 function pkAdd(key,id){
   if (IMP_KEY_MAP[key]) { impGeoAdd(IMP_KEY_MAP[key], id); pkAfterChange(key); return; }
   if (REP_KEY_MAP[key]) { repGeoAdd(REP_KEY_MAP[key], id); pkAfterChange(key); return; }
@@ -2335,15 +2344,11 @@ function pkAdd(key,id){
     provGeoAdd('provs', id);
   } else if (key === 'regions') {
     provGeoAdd('regions', id);
-    provSyncProvinces();
   } else if (key === 'subs') {
     provGeoAdd('subs', id);
-    provSyncProvinces();
   } else if (key === 'cities') {
     provGeoAdd('cities', id);
-    provSyncProvinces();
   } else {
-    // mag: nessuna propagazione geografica
     var P = PICKERS[key];
     var v = P.get().slice();
     if (v.indexOf(id) < 0) v.push(id);
@@ -2352,6 +2357,7 @@ function pkAdd(key,id){
   pkAfterChange(key);
 }
 
+/* === PK REMOVE === */
 function pkRemove(key,id){
   if (IMP_KEY_MAP[key]) { impGeoRemove(IMP_KEY_MAP[key], id); pkAfterChange(key); return; }
   if (REP_KEY_MAP[key]) { repGeoRemove(REP_KEY_MAP[key], id); pkAfterChange(key); return; }
@@ -2371,13 +2377,25 @@ function pkRemove(key,id){
   pkAfterChange(key);
 }
 
+/* === PK AFTER CHANGE === 
+   Ordine fondamentale:
+   1) provEnforce()        → filtra le selezioni in base alla compatibilità
+   2) provSyncHierarchy()  → RIPRISTINA i genitori (sub/region) delle city/sub
+   3) provSyncProvinces()  → materializza le province derivate nei chip
+   In questo modo, anche se provEnforce rimuove una region/sub perché "incompatibile"
+   con un reign/magistrate, provSyncHierarchy la rimette se serve a una city/sub selezionata. */
 function pkAfterChange(key){
   var root=document.getElementById(PICKERS[key].el); if(root) root.querySelector('.pk-in').value='';
   if(currentPeriod==='imp'){ impEnforce(); }
   else if(currentPeriod==='rep'){ repEnforce(); }
-  else { provEnforce(); }
+  else {
+    provEnforce();
+    provSyncHierarchy();
+    provSyncProvinces();
+  }
   pkRenderAll(); previewHighlight();
 }
+
 function pkCloseAll(){ document.querySelectorAll('.picker.open').forEach(function(p){ p.classList.remove('open'); }); }
 function updateGeoHint(){
   var hint = document.getElementById('geo-hint');

@@ -1175,6 +1175,9 @@ var detailId = null;
 var filterMode = 'all';
 var currentPeriod = 'prov';
 
+// FIX: dichiarata qui, prima di qualsiasi uso (evita TDZ)
+var currentCoinFilter = 'all';
+
 var TAG_ORDER = ['province','region','city','authority','magistrate','metal'];
 var DEFAULT_TAGS = TAG_ORDER.slice();
 
@@ -1214,13 +1217,7 @@ function save(){
   localStorage.setItem('numismatica_nid', String(nextId));
 }
 
-(function(){
-  var sel = document.getElementById('f-prov');
-  PROVS.forEach(function(p){
-    var o = document.createElement('option');
-    o.value = p; o.textContent = p; sel.appendChild(o);
-  });
-})();
+// FIX: rimosso il blocco che popolava #f-prov (elemento inesistente)
 
 function val2color(v, mx) {
   if (!v || !mx) return "rgb(" + STEPS[0].join(",") + ")";
@@ -1403,7 +1400,6 @@ function updateMap(){
    ===================================================================== */
 let allMintsData = [];
 let currentMintMode = 'none';
-let currentCoinFilter = 'all';
 let mintsLayer = L.layerGroup().addTo(map);
 
 fetch('mints.json')
@@ -2029,7 +2025,7 @@ var PICKERS = {
       if(!RDB.ready) return [];
       return RDB.issuers.map(i => ({id:i, label:i})).sort(byLabel);
     },
-    get: () => repIssuerSel,
+    get:() => repIssuerSel,
     set: v => { repIssuerSel = v; },
     label: id => id
   }
@@ -2171,8 +2167,9 @@ function previewHighlight(){
   updateGeoHint();
 }
 function resetForm(){
-  ['f-ref','f-mint','f-mag','f-auth','f-prov-imp','f-prov-auth','f-rep-auth','f-denom','f-date','f-desc','f-notes'].forEach(function(id){ $set(id,''); });
-  $set('f-metal',''); document.getElementById('f-prov').selectedIndex=0;
+  // FIX: rimosso riferimento a ID inesistenti
+  ['f-ref','f-prov-imp','f-prov-auth','f-rep-auth','f-denom','f-date','f-desc','f-notes'].forEach(function(id){ $set(id,''); });
+  $set('f-metal','');
   geoSel=emptyGeo(); magSel=[]; $set('f-reign','');
   impGeoSel = { regions: [], subs: [], subsubs: [], cities: [] };
   impAuthSel = []; impIssuerSel = [];
@@ -2187,8 +2184,7 @@ function openModal(id){
   if(editId!=null){
     var c=coins.find(function(x){ return x.id===editId; });
     if(c){
-      $set('f-ref',c.ref); $set('f-mint',c.mint);
-      $set('f-mag',c.mag); $set('f-auth',c.auth);
+      $set('f-ref',c.ref);
       $set('f-prov-imp',c.provImp||c.imp); $set('f-prov-auth',c.provAuth||c.auth);
       $set('f-rep-auth', c.auth);
       $set('f-metal',c.metal); $set('f-denom',c.denom); $set('f-date',c.date); $set('f-desc',c.desc); $set('f-notes',c.notes);

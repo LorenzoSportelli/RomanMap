@@ -805,10 +805,16 @@ function splitMulti(s){
 }
 function fetchFirst(paths){
   return paths.reduce(function(p,path){
-    return p.catch(function(){ return fetch(path).then(function(r){ if(!r.ok) throw new Error(path+' HTTP '+r.status); return r.text(); }); });
+    return p.catch(function(){
+      return fetch(path).then(function(r){
+        if(!r.ok) throw new Error(path+' HTTP '+r.status);
+        return r.arrayBuffer();
+      }).then(function(buf){
+        return new TextDecoder('utf-8').decode(buf);
+      });
+    });
   }, Promise.reject(new Error('no path')));
 }
-
 /* =====================================================================
    3. COSTRUZIONE DEL DATABASE PROVINCIALE
    ===================================================================== */

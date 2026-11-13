@@ -2733,18 +2733,32 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
       }
     }
   };
-  // --- FINE SETTINGS FUNCTIONS ---
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      document.getElementById('auth-screen').style.display = 'none';
-      window.currentUser = user;
-      
+      // Controlla se l'email è verificata
       if (!user.emailVerified) {
+        // Se NON è verificata, mostra la schermata di login e un avviso
+        document.getElementById('auth-screen').style.display = 'flex';
         document.getElementById('auth-verify-msg').style.display = 'block';
-      } else {
-        document.getElementById('auth-verify-msg').style.display = 'none';
+        
+        // Assicurati che l'utente non veda l'interfaccia del sito
+        window.currentUser = null; 
+        coins = [];
+        renderList();
+        
+        // Rimuovi eventuali info utente nell'header
+        const info = document.getElementById('user-info');
+        if (info) info.remove();
+        
+        // Non caricare le monete
+        return; 
       }
 
+      // Se l'email È verificata, procedi normalmente
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('auth-verify-msg').style.display = 'none';
+      window.currentUser = user;
+      
       let info = document.getElementById('user-info');
       if (!info) {
         document.getElementById('hdr-right').insertAdjacentHTML('afterbegin', '<div id="user-info"></div>');
@@ -2753,6 +2767,7 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
       info.innerHTML = `<span style="color:var(--text2)">${user.email}</span><button id="btn-logout" onclick="logoutUser()">LOGOUT</button>`;
       
       await loadCoinsFromFirebase(user.uid);
+      
     } else {
       document.getElementById('auth-screen').style.display = 'flex';
       window.currentUser = null;

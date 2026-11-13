@@ -2623,7 +2623,15 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
       await auth.currentUser.reload();
       if (auth.currentUser.emailVerified) {
         document.getElementById('auth-verify-msg').style.display = 'none';
-        showPopup("EMAIL VERIFIED", "Your account is now fully active. Welcome!");
+        showPopup("EMAIL VERIFIED", "Your account is now fully active. Please sign in with your credentials.");
+        
+        // --- NUOVO BLOCCO: Riporta l'interfaccia alla modalità LOGIN ---
+        isRegisterMode = false;
+        document.getElementById('auth-submit').textContent = 'SIGN IN';
+        document.getElementById('auth-switch-mode').textContent = "Don't have an account? Register";
+        document.getElementById('auth-password').value = ''; // Svuota la password per sicurezza
+        // -------------------------------------------------------------
+        
       } else {
         showPopup("NOT VERIFIED YET", "Please check your inbox and click the verification link.");
       }

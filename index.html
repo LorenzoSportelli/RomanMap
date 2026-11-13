@@ -1173,23 +1173,24 @@ function initTagMenu(){
   menu.addEventListener('click',function(e){ e.stopPropagation(); });
 }
 function save(){
-  // Salviamo in locale per sicurezza (come backup immediato)
+  // Salviamo in locale per sicurezza
   localStorage.setItem('numismatica_v2', JSON.stringify(coins));
   localStorage.setItem('numismatica_nid', String(nextId));
   
   // Se l'utente è loggato, salviamo su Firebase
   if (window.currentUser) {
+    // Prende la moneta che è stata appena creata o modificata (l'ultima della lista)
+    const currentCoin = coins[coins.length - 1]; 
+    
     import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js").then(({ getFirestore, doc, setDoc }) => {
       import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js").then(({ getApps }) => {
-        // Usiamo l'app già inizializzata
         const db = getFirestore(getApps()[0]);
-        const coin = coins[coins.length - 1]; // Prende l'ultima moneta (quella appena salvata)
         
         // Aggiungiamo l'ID dell'utente alla moneta
-        const coinData = { ...coin, userId: window.currentUser.uid };
+        const coinData = { ...currentCoin, userId: window.currentUser.uid };
         
-        // Salviamo su Firestore con l'ID della moneta come nome del documento
-        setDoc(doc(db, "coins", String(coin.id)), coinData)
+        // Salviamo o aggiorniamo su Firestore
+        setDoc(doc(db, "coins", String(currentCoin.id)), coinData)
           .catch((error) => console.error("Errore salvataggio Firebase:", error));
       });
     });
@@ -2260,6 +2261,7 @@ function saveCoin(){
     repSubs: isRep ? repGeoSel.subs.slice() : [],
     repSubsubs: isRep ? repGeoSel.subsubs.slice() : []
   };
+  
   if(editId!=null){
     var i=coins.findIndex(function(x){ return x.id===editId; });
     if(i>=0){ c.created=coins[i].created; coins[i]=c; }
@@ -2268,7 +2270,16 @@ function saveCoin(){
     c.created=Date.now();
     coins.push(c);
   }
+
+  // --- NUOVO BLOCCO: Assicura che la moneta salvata sia l'ultima dell'array ---
+  // Questo è necessario affinché la funzione save() la trovi e la invii a Firebase
+  coins = coins.filter(function(x){ return x.id !== c.id; });
+  coins.push(c);
+
+  // Salva (localStorage + Firebase)
   save();
+  
+  // Chiude la modale e aggiorna l'interfaccia
   closeModal();
   renderList();
   updateMap();
@@ -2505,12 +2516,12 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
 <div id="auth-screen">
   <div id="auth-box">
     <h2>ROMAN NUMISMATIC COLLECTION</h2>
-    <p style="font-size:0.8rem; color:var(--text2); margin-bottom:15px;">Accedi per gestire la tua collezione</p>
+    <p style="font-size:0.8rem; color:var(--text2); margin-bottom:15px;">Sign in to manage your collection</p>
     <div id="auth-error"></div>
     <input type="email" id="auth-email" placeholder="Email" autocomplete="username">
     <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password">
-    <button id="auth-submit" onclick="handleAuthSubmit()">ACCEDI</button>
-    <div class="auth-switch" id="auth-switch-mode" onclick="toggleAuthMode()">Non hai un account? Registrati</div>
+    <button id="auth-submit" onclick="handleAuthSubmit()">SIGN IN</button>
+    <div class="auth-switch" id="auth-switch-mode" onclick="toggleAuthMode()">Don't have an account? Register</div>
   </div>
 </div>
 
@@ -2537,8 +2548,8 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
 
   window.toggleAuthMode = function() {
     isRegisterMode = !isRegisterMode;
-    document.getElementById('auth-submit').textContent = isRegisterMode ? 'REGISTRATI' : 'ACCEDI';
-    document.getElementById('auth-switch-mode').textContent = isRegisterMode ? 'Hai già un account? Accedi' : 'Non hai un account? Registrati';
+    document.getElementById('auth-submit').textContent = isRegisterMode ? 'REGISTER' : 'SIGN IN';
+    document.getElementById('auth-switch-mode').textContent = isRegisterMode ? 'Already have an account? Log in' : 'Don\'t have an account? Register';
     document.getElementById('auth-error').style.display = 'none';
   };
 
@@ -2548,7 +2559,7 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     const btn = document.getElementById('auth-submit');
     const err = document.getElementById('auth-error');
     err.style.display = 'none';
-    btn.textContent = 'Caricamento...';
+    btn.textContent = 'Loading...';
 
     try {
       if (isRegisterMode) {
@@ -2559,7 +2570,7 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     } catch (e) {
       err.textContent = e.message.replace('Firebase: ', '');
       err.style.display = 'block';
-      btn.textContent = isRegisterMode ? 'REGISTRATI' : 'ACCEDI';
+      btn.textContent = isRegisterMode ? 'REGISTER' : 'SIGN IN';
     }
   };
 
@@ -2571,7 +2582,7 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     if (user) {
       document.getElementById('auth-screen').style.display = 'none';
       window.currentUser = user;
-      document.getElementById('user-info').innerHTML = `<span style="color:var(--text2)">${user.email}</span><button id="btn-logout" onclick="logoutUser()">ESCI</button>`;
+      document.getElementById('user-info').innerHTML = `<span style="color:var(--text2)">${user.email}</span><button id="btn-logout" onclick="logoutUser()">LOGOUT</button>`;
       document.getElementById('hdr-right').insertAdjacentHTML('afterbegin', '<div id="user-info"></div>');
       await loadCoinsFromFirebase(user.uid);
     } else {

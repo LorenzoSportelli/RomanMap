@@ -2671,17 +2671,6 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
   };
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      if (!user.emailVerified) {
-        document.getElementById('auth-screen').style.display = 'flex';
-        document.getElementById('auth-verify-msg').style.display = 'block';
-        window.currentUser = null; 
-        coins = [];
-        renderList();
-        const info = document.getElementById('user-info');
-        if (info) info.remove();
-        return; 
-      }
-
       document.getElementById('auth-screen').style.display = 'none';
       document.getElementById('auth-verify-msg').style.display = 'none';
       window.currentUser = user;
@@ -2694,6 +2683,10 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
       info.innerHTML = ''; 
       
       await loadCoinsFromFirebase(user.uid);
+      
+      if (!user.emailVerified) {
+        showPopup("EMAIL NOT VERIFIED", "You can use the app, but we recommend verifying your email from the Settings menu to secure your account.");
+      }
       
     } else {
       document.getElementById('auth-screen').style.display = 'flex';

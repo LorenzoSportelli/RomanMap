@@ -299,6 +299,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 </div>
 
 <div id="hdr">
+  <button id="btn-settings" onclick="toggleSettings()" style="background:transparent; border:none; cursor:pointer; margin-right:15px; display:flex; align-items:center;" title="Settings">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text2);">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+  </button>
   <div id="hdr-left">
     <div id="hdr-title">MAPPED ROMAN NUMISMATIC COLLECTION</div>
     <div id="hdr-sub">Provinces at AD 117</div>
@@ -2627,7 +2633,107 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
   window.logoutUser = function() {
     signOut(auth);
   };
+    // --- SETTINGS FUNCTIONS ---
+  
+  window.toggleSettings = function() {
+    const modal = document.getElementById('settings-modal');
+    if (modal.style.display === 'flex') {
+      modal.style.display = 'none';
+    } else {
+      modal.style.display = 'flex';
+      // Aggiorna l'email visualizzata
+      if (auth.currentUser) {
+        document.getElementById('current-email-display').textContent = auth.currentUser.email;
+      }
+      // Resetta i campi
+      document.getElementById('new-email').value = '';
+      document.getElementById('current-password').value = '';
+      document.getElementById('new-password').value = '';
+      switchSettingsTab('email'); // Torna alla tab email
+    }
+  };
 
+  window.switchSettingsTab = function(tab) {
+    document.getElementById('settings-email-panel').style.display = tab === 'email' ? 'block' : 'none';
+    document.getElementById('settings-password-panel').style.display = tab === 'password' ? 'block' : 'none';
+    
+    document.querySelectorAll('.settings-tab').forEach(function(btn) {
+      btn.style.borderBottom = 'none';
+      btn.style.color = 'var(--text2)';
+    });
+    const activeBtn = event.currentTarget;
+    if (activeBtn) {
+        activeBtn.style.borderBottom = '2px solid var(--text)';
+        activeBtn.style.color = 'var(--text)';
+    }
+  };
+
+  window.updateUserEmail = async function() {
+    const newEmail = document.getElementById('new-email').value;
+    if (!newEmail) {
+      showPopup("EMAIL REQUIRED", "Please enter a new email address.");
+      return;
+    }
+    if (!auth.currentUser) return;
+
+    try {
+      await auth.currentUser.updateEmail(newEmail);
+      await auth.currentUser.sendEmailVerification(); 
+      showPopup("EMAIL UPDATED", "Your email has been updated. Please check your new inbox to verify the address.");
+      document.getElementById('current-email-display').textContent = newEmail;
+      document.getElementById('new-email').value = '';
+      
+      const userInfo = document.getElementById('user-info');
+      if(userInfo) {
+        userInfo.innerHTML = `<span style="color:var(--text2)">${newEmail}</span><button id="btn-logout" onclick="logoutUser()">LOGOUT</button>`;
+      }
+    } catch (e) {
+      // GESTIONE ERRORE DI SESSIONE SCADUTA
+      if (e.code === 'auth/requires-recent-login') {
+        showPopup("SESSION EXPIRED", "For security reasons, you must log in again before changing your email. Please click LOGOUT, sign in, and try again.");
+      } else {
+        showPopup("ERROR", "Unable to update email: " + e.message.replace('Firebase: ', ''));
+      }
+    }
+  };
+
+  window.updateUserPassword = async function() {
+    const currentPassword = document.getElementById('current-password').value;
+    const newPassword = document.getElementById('new-password').value;
+    
+    if (!currentPassword || !newPassword) {
+      showPopup("FIELDS REQUIRED", "Please enter both your current and new password.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      showPopup("WEAK PASSWORD", "New password must be at least 6 characters.");
+      return;
+    }
+    if (!auth.currentUser) return;
+
+    try {
+      const { EmailAuthProvider, reauthenticateWithCredential } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
+      const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+      
+      await reauthenticateWithCredential(auth.currentUser, credential);
+      await auth.currentUser.updatePassword(newPassword);
+      
+      showPopup("PASSWORD UPDATED", "Your password has been changed successfully.");
+      document.getElementById('current-password').value = '';
+      document.getElementById('new-password').value = '';
+      
+    } catch (e) {
+      // GESTIONE ERRORI SPECIFICI
+      if (e.code === 'auth/wrong-password') {
+        showPopup("WRONG PASSWORD", "The current password you entered is incorrect. Please try again.");
+      } else if (e.code === 'auth/requires-recent-login') {
+        showPopup("SESSION EXPIRED", "For security reasons, your session is too old. Please log out and log back in to change your password.");
+      } else {
+        showPopup("ERROR", "Unable to update password: " + e.message.replace('Firebase: ', ''));
+      }
+    }
+  };
+  // --- FINE SETTINGS FUNCTIONS ---
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       document.getElementById('auth-screen').style.display = 'none';
@@ -2676,6 +2782,40 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     <h3 id="popup-title" style="font-family:'Inter',sans-serif; font-size:1rem; margin-bottom:15px; letter-spacing:0.05em;">MESSAGE</h3>
     <p id="popup-message" style="font-size:0.9rem; color:var(--text2); margin-bottom:20px; line-height:1.5;"></p>
     <button onclick="closePopup()" style="background:var(--text); color:var(--bg2); border:none; padding:10px 20px; font-family:'Inter',sans-serif; cursor:pointer; width:100%;">OK</button>
+  </div>
+</div>
+<!-- SETTINGS MODAL -->
+<div id="settings-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000000; align-items:center; justify-content:center;">
+  <div style="background:var(--bg2); border:1px solid var(--border2); padding:30px; width:350px; box-shadow:0 8px 40px #00000033;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h3 style="font-family:'Inter',sans-serif; font-size:1rem; letter-spacing:0.05em;">SETTINGS</h3>
+      <button onclick="toggleSettings()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text3);">&times;</button>
+    </div>
+    
+    <!-- Tabs -->
+    <div style="display:flex; gap:10px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+      <button class="settings-tab active" onclick="switchSettingsTab('email')" style="background:none; border:none; cursor:pointer; font-size:0.8rem; padding:5px; color:var(--text); border-bottom:2px solid var(--text);">Email</button>
+      <button class="settings-tab" onclick="switchSettingsTab('password')" style="background:none; border:none; cursor:pointer; font-size:0.8rem; padding:5px; color:var(--text2);">Password</button>
+    </div>
+
+    <!-- Email Panel -->
+    <div id="settings-email-panel">
+      <p style="font-size:0.8rem; color:var(--text2); margin-bottom:10px;">Current Email: <strong id="current-email-display"></strong></p>
+      <input type="email" id="new-email" placeholder="New Email" style="width:100%; padding:8px; margin-bottom:10px; border:1px solid var(--border); background:var(--bg3);">
+      <button onclick="updateUserEmail()" style="width:100%; padding:10px; background:var(--text); color:var(--bg2); border:none; cursor:pointer; margin-bottom:10px;">UPDATE EMAIL</button>
+    </div>
+
+    <!-- Password Panel -->
+    <div id="settings-password-panel" style="display:none;">
+      <input type="password" id="current-password" placeholder="Current Password" style="width:100%; padding:8px; margin-bottom:10px; border:1px solid var(--border); background:var(--bg3);">
+      <input type="password" id="new-password" placeholder="New Password" style="width:100%; padding:8px; margin-bottom:10px; border:1px solid var(--border); background:var(--bg3);">
+      <button onclick="updateUserPassword()" style="width:100%; padding:10px; background:var(--text); color:var(--bg2); border:none; cursor:pointer; margin-bottom:10px;">UPDATE PASSWORD</button>
+    </div>
+
+    <!-- Logout Button (sempre visibile) -->
+    <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:20px;">
+      <button onclick="logoutUser()" style="width:100%; padding:10px; background:transparent; border:1px solid var(--red); color:var(--red); cursor:pointer;">LOG OUT</button>
+    </div>
   </div>
 </div>
 </body>

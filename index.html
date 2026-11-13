@@ -2639,6 +2639,13 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
   };
 
   window.logoutUser = function() {
+    // Chiude la finestra delle impostazioni se è aperta
+    const settingsModal = document.getElementById('settings-modal');
+    if (settingsModal) {
+      settingsModal.style.display = 'none';
+    }
+    
+    // Esegue il logout da Firebase
     signOut(auth);
   };
     // --- SETTINGS FUNCTIONS ---

@@ -2518,18 +2518,29 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     <h2>ROMAN NUMISMATIC COLLECTION</h2>
     <p style="font-size:0.8rem; color:var(--text2); margin-bottom:15px;">Sign in to manage your collection</p>
     <div id="auth-error"></div>
+    
+    <!-- NUOVO: Avviso per email non verificata -->
+    <div id="auth-verify-msg" style="display:none; background:#fff3cd; color:#856404; padding:10px; font-size:0.8rem; margin-bottom:10px; border:1px solid #ffeeba;">
+      Please verify your email. <a href="#" onclick="checkEmailVerified(); return false;" style="color:#856404; text-decoration:underline; font-weight:bold;">Click here after verifying</a>.
+    </div>
+
     <input type="email" id="auth-email" placeholder="Email" autocomplete="username">
     <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password">
     <button id="auth-submit" onclick="handleAuthSubmit()">SIGN IN</button>
-    <div class="auth-switch" id="auth-switch-mode" onclick="toggleAuthMode()">Don't have an account? Register</div>
+    
+    <!-- NUOVO: Link per recupero password e switch login/registrazione -->
+    <div style="margin-top:10px; display:flex; flex-direction:column; gap:5px;">
+      <div class="auth-switch" id="auth-switch-mode" onclick="toggleAuthMode()">Don't have an account? Register</div>
+      <div class="auth-switch" onclick="handleForgotPassword()" style="font-size:0.75rem; color:var(--text3);">Forgot password?</div>
+    </div>
   </div>
 </div>
 
 <!-- SCRIPT DI FIREBASE E LOGICA -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-  import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCNUZOPwefVZFTsD66qvVgELWtkUoWJIJE",
@@ -2551,6 +2562,7 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     document.getElementById('auth-submit').textContent = isRegisterMode ? 'REGISTER' : 'SIGN IN';
     document.getElementById('auth-switch-mode').textContent = isRegisterMode ? 'Already have an account? Log in' : 'Don\'t have an account? Register';
     document.getElementById('auth-error').style.display = 'none';
+    document.getElementById('auth-verify-msg').style.display = 'none';
   };
 
   window.handleAuthSubmit = async function() {
@@ -2563,7 +2575,9 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
 
     try {
       if (isRegisterMode) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await sendEmailVerification(userCredential.user);
+        alert("Registration successful! Please check your email to verify your account.");
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
@@ -2571,6 +2585,32 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
       err.textContent = e.message.replace('Firebase: ', '');
       err.style.display = 'block';
       btn.textContent = isRegisterMode ? 'REGISTER' : 'SIGN IN';
+    }
+  };
+
+  window.handleForgotPassword = async function() {
+    const email = document.getElementById('auth-email').value;
+    if (!email) {
+      alert("Please enter your email address first, then click 'Forgot password'.");
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      alert("Password reset email sent! Check your inbox.");
+    } catch (e) {
+      alert("Error: " + e.message);
+    }
+  };
+
+  window.checkEmailVerified = async function() {
+    if (auth.currentUser) {
+      await auth.currentUser.reload();
+      if (auth.currentUser.emailVerified) {
+        document.getElementById('auth-verify-msg').style.display = 'none';
+        alert("Email verified! You can now use the site.");
+      } else {
+        alert("Email not verified yet. Please check your inbox and click the link.");
+      }
     }
   };
 
@@ -2582,8 +2622,20 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     if (user) {
       document.getElementById('auth-screen').style.display = 'none';
       window.currentUser = user;
-      document.getElementById('user-info').innerHTML = `<span style="color:var(--text2)">${user.email}</span><button id="btn-logout" onclick="logoutUser()">LOGOUT</button>`;
-      document.getElementById('hdr-right').insertAdjacentHTML('afterbegin', '<div id="user-info"></div>');
+      
+      if (!user.emailVerified) {
+        document.getElementById('auth-verify-msg').style.display = 'block';
+      } else {
+        document.getElementById('auth-verify-msg').style.display = 'none';
+      }
+
+      let info = document.getElementById('user-info');
+      if (!info) {
+        document.getElementById('hdr-right').insertAdjacentHTML('afterbegin', '<div id="user-info"></div>');
+        info = document.getElementById('user-info');
+      }
+      info.innerHTML = `<span style="color:var(--text2)">${user.email}</span><button id="btn-logout" onclick="logoutUser()">LOGOUT</button>`;
+      
       await loadCoinsFromFirebase(user.uid);
     } else {
       document.getElementById('auth-screen').style.display = 'flex';

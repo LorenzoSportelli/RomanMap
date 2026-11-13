@@ -2634,16 +2634,24 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
   };
 
   window.logoutUser = function() {
-    // Chiediamo conferma prima di uscire
-    if (confirm("Are you sure you want to log out?")) {
-      // Chiude la finestra delle impostazioni se è aperta
-      const settingsModal = document.getElementById('settings-modal');
-      if (settingsModal) {
-        settingsModal.style.display = 'none';
-      }
-      // Esegue il logout da Firebase
-      signOut(auth);
+    // Invece di uscire subito, mostriamo la finestra di conferma
+    document.getElementById('logout-confirm-modal').style.display = 'flex';
+    // Chiudiamo le impostazioni se erano aperte
+    const settingsModal = document.getElementById('settings-modal');
+    if (settingsModal) {
+      settingsModal.style.display = 'none';
     }
+  };
+
+  window.closeLogoutConfirm = function() {
+    // Chiude la finestra senza fare nulla
+    document.getElementById('logout-confirm-modal').style.display = 'none';
+  };
+
+  window.confirmLogout = function() {
+    // Chiude la finestra e esegue il logout
+    document.getElementById('logout-confirm-modal').style.display = 'none';
+    signOut(auth);
   };
 
     // --- FUNZIONE RECUPERO PASSWORD (mancante) ---
@@ -2858,6 +2866,17 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     <!-- Logout Button (sempre visibile) -->
     <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:20px;">
       <button onclick="logoutUser()" style="width:100%; padding:10px; background:transparent; border:1px solid var(--red); color:var(--red); cursor:pointer;">LOG OUT</button>
+    </div>
+  </div>
+</div>
+<!-- LOGOUT CONFIRMATION POPUP -->
+<div id="logout-confirm-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000000; align-items:center; justify-content:center;">
+  <div style="background:var(--bg2); border:1px solid var(--border2); padding:30px; width:320px; text-align:center; box-shadow:0 8px 40px #00000033;">
+    <h3 style="font-family:'Inter',sans-serif; font-size:1rem; margin-bottom:15px; letter-spacing:0.05em;">LOG OUT</h3>
+    <p style="font-size:0.9rem; color:var(--text2); margin-bottom:20px; line-height:1.5;">Are you sure you want to log out?</p>
+    <div style="display:flex; gap:10px;">
+      <button onclick="closeLogoutConfirm()" style="flex:1; background:transparent; border:1px solid var(--border2); color:var(--text2); padding:10px; cursor:pointer; font-family:'Inter',sans-serif;">CANCEL</button>
+      <button onclick="confirmLogout()" style="flex:1; background:var(--text); color:var(--bg2); border:none; padding:10px; cursor:pointer; font-family:'Inter',sans-serif;">LOG OUT</button>
     </div>
   </div>
 </div>

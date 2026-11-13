@@ -2557,6 +2557,16 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
 
   let isRegisterMode = false;
 
+  window.showPopup = function(title, message) {
+    document.getElementById('popup-title').textContent = title;
+    document.getElementById('popup-message').textContent = message;
+    document.getElementById('custom-popup').style.display = 'flex';
+  };
+
+  window.closePopup = function() {
+    document.getElementById('custom-popup').style.display = 'none';
+  };
+  
   window.toggleAuthMode = function() {
     isRegisterMode = !isRegisterMode;
     document.getElementById('auth-submit').textContent = isRegisterMode ? 'REGISTER' : 'SIGN IN';
@@ -2577,7 +2587,7 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
       if (isRegisterMode) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await sendEmailVerification(userCredential.user);
-        alert("Registration successful! Please check your email to verify your account.");
+        showPopup("REGISTRATION SUCCESSFUL", "Please check your email inbox to verify your account.");
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
@@ -2591,14 +2601,14 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
   window.handleForgotPassword = async function() {
     const email = document.getElementById('auth-email').value;
     if (!email) {
-      alert("Please enter your email address first, then click 'Forgot password'.");
+      showPopup("EMAIL REQUIRED", "Please enter your email address first, then click 'Forgot password'.");
       return;
     }
     try {
       await sendPasswordResetEmail(auth, email);
-      alert("Password reset email sent! Check your inbox.");
+      showPopup("EMAIL SENT", "We have sent a password reset link to your email. Please check your inbox (and spam folder).");
     } catch (e) {
-      alert("Error: " + e.message);
+      showPopup("ERROR", "Unable to send email: " + e.message.replace('Firebase: ', ''));
     }
   };
 
@@ -2607,9 +2617,9 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
       await auth.currentUser.reload();
       if (auth.currentUser.emailVerified) {
         document.getElementById('auth-verify-msg').style.display = 'none';
-        alert("Email verified! You can now use the site.");
+        showPopup("EMAIL VERIFIED", "Your account is now fully active. Welcome!");
       } else {
-        alert("Email not verified yet. Please check your inbox and click the link.");
+        showPopup("NOT VERIFIED YET", "Please check your inbox and click the verification link.");
       }
     }
   };
@@ -2660,6 +2670,13 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     if (typeof renderMints === 'function') renderMints();
   };
 </script>
-  
+<!-- CUSTOM POPUP -->
+<div id="custom-popup" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000000; align-items:center; justify-content:center;">
+  <div style="background:var(--bg2); border:1px solid var(--border2); padding:30px; width:320px; text-align:center; box-shadow:0 8px 40px #00000033;">
+    <h3 id="popup-title" style="font-family:'Inter',sans-serif; font-size:1rem; margin-bottom:15px; letter-spacing:0.05em;">MESSAGE</h3>
+    <p id="popup-message" style="font-size:0.9rem; color:var(--text2); margin-bottom:20px; line-height:1.5;"></p>
+    <button onclick="closePopup()" style="background:var(--text); color:var(--bg2); border:none; padding:10px 20px; font-family:'Inter',sans-serif; cursor:pointer; width:100%;">OK</button>
+  </div>
+</div>
 </body>
 </html>

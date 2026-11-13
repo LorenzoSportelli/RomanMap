@@ -2594,27 +2594,22 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await sendEmailVerification(userCredential.user);
         showPopup("REGISTRATION SUCCESSFUL", "Please check your email inbox to verify your account.");
+        btn.textContent = 'REGISTER'; // Ripristina il testo del pulsante
       } else {
+        // Effettua il login
         await signInWithEmailAndPassword(auth, email, password);
+        
+        // --- NUOVO BLOCCO: Forza l'aggiornamento dell'interfaccia ---
+        // Dato che onAuthStateChanged potrebbe non scattare in tempo, 
+        // puliamo la schermata manualmente per far vedere che il login è avvenuto.
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('auth-verify-msg').style.display = 'none';
+        // -------------------------------------------------------------
       }
     } catch (e) {
       err.textContent = e.message.replace('Firebase: ', '');
       err.style.display = 'block';
       btn.textContent = isRegisterMode ? 'REGISTER' : 'SIGN IN';
-    }
-  };
-
-  window.handleForgotPassword = async function() {
-    const email = document.getElementById('auth-email').value;
-    if (!email) {
-      showPopup("EMAIL REQUIRED", "Please enter your email address first, then click 'Forgot password'.");
-      return;
-    }
-    try {
-      await sendPasswordResetEmail(auth, email);
-      showPopup("EMAIL SENT", "We have sent a password reset link to your email. Please check your inbox (and spam folder).");
-    } catch (e) {
-      showPopup("ERROR", "Unable to send email: " + e.message.replace('Firebase: ', ''));
     }
   };
 

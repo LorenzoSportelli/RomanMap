@@ -2634,14 +2634,16 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
   };
 
   window.logoutUser = function() {
-    // Chiude la finestra delle impostazioni se è aperta
-    const settingsModal = document.getElementById('settings-modal');
-    if (settingsModal) {
-      settingsModal.style.display = 'none';
+    // Chiediamo conferma prima di uscire
+    if (confirm("Are you sure you want to log out?")) {
+      // Chiude la finestra delle impostazioni se è aperta
+      const settingsModal = document.getElementById('settings-modal');
+      if (settingsModal) {
+        settingsModal.style.display = 'none';
+      }
+      // Esegue il logout da Firebase
+      signOut(auth);
     }
-    
-    // Esegue il logout da Firebase
-    signOut(auth);
   };
 
     // --- FUNZIONE RECUPERO PASSWORD (mancante) ---
@@ -2763,20 +2765,13 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     if (user) {
       // Controlla se l'email è verificata
       if (!user.emailVerified) {
-        // Se NON è verificata, mostra la schermata di login e un avviso
         document.getElementById('auth-screen').style.display = 'flex';
         document.getElementById('auth-verify-msg').style.display = 'block';
-        
-        // Assicurati che l'utente non veda l'interfaccia del sito
         window.currentUser = null; 
         coins = [];
         renderList();
-        
-        // Rimuovi eventuali info utente nell'header
         const info = document.getElementById('user-info');
         if (info) info.remove();
-        
-        // Non caricare le monete
         return; 
       }
 
@@ -2790,13 +2785,20 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
         document.getElementById('hdr-right').insertAdjacentHTML('afterbegin', '<div id="user-info"></div>');
         info = document.getElementById('user-info');
       }
-      info.innerHTML = `<span style="color:var(--text2)">${user.email}</span><button id="btn-logout" onclick="logoutUser()">LOGOUT</button>`;
+      // QUI ABBIAMO TOLTO L'EMAIL E IL PULSANTE LOGOUT DALL'HEADER
+      info.innerHTML = ''; 
       
       await loadCoinsFromFirebase(user.uid);
       
     } else {
+      // Se l'utente NON è loggato, resetta tutto
       document.getElementById('auth-screen').style.display = 'flex';
       window.currentUser = null;
+      
+      // RIMETTE IL PULSANTE IN MODALITÀ SIGN IN E SVUOTA LA PASSWORD
+      document.getElementById('auth-submit').textContent = 'SIGN IN';
+      document.getElementById('auth-password').value = '';
+      
       const info = document.getElementById('user-info');
       if (info) info.remove();
       coins = [];

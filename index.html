@@ -2755,18 +2755,23 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     if (!auth.currentUser) return;
 
     try {
-      const { EmailAuthProvider, reauthenticateWithCredential } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
+      // Importa le funzioni necessarie dal modulo corretto
+      const { EmailAuthProvider, reauthenticateWithCredential, updatePassword } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
+      
+      // 1. Crea le credenziali con la vecchia password
       const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
       
+      // 2. Riautentica l'utente (richiesto per sicurezza)
       await reauthenticateWithCredential(auth.currentUser, credential);
-      await auth.currentUser.updatePassword(newPassword);
+      
+      // 3. Ora può cambiare la password usando la funzione importata
+      await updatePassword(auth.currentUser, newPassword);
       
       showPopup("PASSWORD UPDATED", "Your password has been changed successfully.");
       document.getElementById('current-password').value = '';
       document.getElementById('new-password').value = '';
       
     } catch (e) {
-      // GESTIONE ERRORI SPECIFICI
       if (e.code === 'auth/wrong-password') {
         showPopup("WRONG PASSWORD", "The current password you entered is incorrect. Please try again.");
       } else if (e.code === 'auth/requires-recent-login') {

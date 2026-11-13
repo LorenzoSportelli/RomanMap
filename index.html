@@ -2720,7 +2720,12 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     if (!auth.currentUser) return;
 
     try {
-      await auth.currentUser.updateEmail(newEmail);
+      // Importa la funzione updateEmail dal modulo corretto
+      const { updateEmail } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
+      
+      // Usa la funzione importata, passando l'utente e la nuova email
+      await updateEmail(auth.currentUser, newEmail);
+      
       await auth.currentUser.sendEmailVerification(); 
       showPopup("EMAIL UPDATED", "Your email has been updated. Please check your new inbox to verify the address.");
       document.getElementById('current-email-display').textContent = newEmail;
@@ -2728,10 +2733,9 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
       
       const userInfo = document.getElementById('user-info');
       if(userInfo) {
-        userInfo.innerHTML = `<span style="color:var(--text2)">${newEmail}</span><button id="btn-logout" onclick="logoutUser()">LOGOUT</button>`;
+        userInfo.innerHTML = ''; 
       }
     } catch (e) {
-      // GESTIONE ERRORE DI SESSIONE SCADUTA
       if (e.code === 'auth/requires-recent-login') {
         showPopup("SESSION EXPIRED", "For security reasons, you must log in again before changing your email. Please click LOGOUT, sign in, and try again.");
       } else {

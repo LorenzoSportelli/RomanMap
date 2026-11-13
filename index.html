@@ -2564,6 +2564,13 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
   let isRegisterMode = false;
 
   window.showPopup = function(title, message) {
+    // 1. Chiude la finestra delle impostazioni se è aperta
+    const settingsModal = document.getElementById('settings-modal');
+    if (settingsModal) {
+      settingsModal.style.display = 'none';
+    }
+    
+    // 2. Mostra il popup
     document.getElementById('popup-title').textContent = title;
     document.getElementById('popup-message').textContent = message;
     document.getElementById('custom-popup').style.display = 'flex';

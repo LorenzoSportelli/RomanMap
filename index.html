@@ -2643,6 +2643,22 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     // Esegue il logout da Firebase
     signOut(auth);
   };
+
+    // --- FUNZIONE RECUPERO PASSWORD (mancante) ---
+  window.handleForgotPassword = async function() {
+    const email = document.getElementById('auth-email').value;
+    if (!email) {
+      showPopup("EMAIL REQUIRED", "Please enter your email address first, then click 'Forgot password'.");
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      showPopup("EMAIL SENT", "We have sent a password reset link to your email. Please check your inbox (and spam folder).");
+    } catch (e) {
+      showPopup("ERROR", "Unable to send email: " + e.message.replace('Firebase: ', ''));
+    }
+  };
+  // ---------------------------------------------
     // --- SETTINGS FUNCTIONS ---
   
   window.toggleSettings = function() {

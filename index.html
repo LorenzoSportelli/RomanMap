@@ -258,6 +258,34 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   border-radius: 50%;
   box-shadow: 0 2px 5px rgba(0,0,0,0.4);
 }
+
+
+/* --- STILI PER LOGIN E LOGOUT --- */
+#auth-screen {
+  position: fixed; inset: 0; background: var(--bg); z-index: 999999;
+  display: flex; align-items: center; justify-content: center;
+}
+#auth-box {
+  background: var(--bg2); border: 1px solid var(--border2); padding: 30px;
+  width: 350px; text-align: center; box-shadow: 0 8px 40px #00000022;
+}
+#auth-box h2 { font-family: 'Inter', sans-serif; font-size: 1.1rem; margin-bottom: 20px; letter-spacing: .1em; }
+#auth-box input {
+  width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border);
+  background: var(--bg3); font-family: 'Inter', sans-serif;
+}
+#auth-box button {
+  width: 100%; padding: 10px; background: var(--text); color: var(--bg2);
+  border: none; cursor: pointer; font-family: 'Inter', sans-serif; margin-bottom: 10px;
+}
+#auth-box button:hover { background: #333; }
+#auth-error { color: var(--red); font-size: .8rem; margin-bottom: 10px; display: none; }
+.auth-switch { font-size: .8rem; color: var(--text2); cursor: pointer; text-decoration: underline; }
+#user-info { display: flex; align-items: center; gap: 10px; font-size: .75rem; font-family: 'Inter', sans-serif; margin-right: 15px; }
+#btn-logout { background: transparent; border: 1px solid var(--border); padding: 3px 8px; cursor: pointer; font-size: .65rem; }
+#btn-logout:hover { background: var(--red); color: white; border-color: var(--red); }
+
+  
 </style>
 </head>
 <body>
@@ -1145,8 +1173,27 @@ function initTagMenu(){
   menu.addEventListener('click',function(e){ e.stopPropagation(); });
 }
 function save(){
+  // Salviamo in locale per sicurezza (come backup immediato)
   localStorage.setItem('numismatica_v2', JSON.stringify(coins));
   localStorage.setItem('numismatica_nid', String(nextId));
+  
+  // Se l'utente è loggato, salviamo su Firebase
+  if (window.currentUser) {
+    import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js").then(({ getFirestore, doc, setDoc }) => {
+      import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js").then(({ getApps }) => {
+        // Usiamo l'app già inizializzata
+        const db = getFirestore(getApps()[0]);
+        const coin = coins[coins.length - 1]; // Prende l'ultima moneta (quella appena salvata)
+        
+        // Aggiungiamo l'ID dell'utente alla moneta
+        const coinData = { ...coin, userId: window.currentUser.uid };
+        
+        // Salviamo su Firestore con l'ID della moneta come nome del documento
+        setDoc(doc(db, "coins", String(coin.id)), coinData)
+          .catch((error) => console.error("Errore salvataggio Firebase:", error));
+      });
+    });
+  }
 }
 function val2color(v, mx) {
   if (!v || !mx) return "rgb(" + STEPS[0].join(",") + ")";
@@ -2370,10 +2417,26 @@ function askDelete(id){ deleteId=id; document.getElementById('confirm').classLis
 function closeConfirm(){ deleteId=null; document.getElementById('confirm').classList.remove('open'); }
 function doDelete(){
   if(deleteId!=null){
-    coins=coins.filter(function(c){ return c.id!==deleteId; });
-    if(detailId===deleteId) closeDetail();
-    save(); renderList(); updateMap();
+    const idToDelete = deleteId;
+    coins = coins.filter(function(c){ return c.id!==idToDelete; });
+    if(detailId===idToDelete) closeDetail();
+    
+    // Salva nel localStorage
+    save(); 
+    renderList(); 
+    updateMap();
     if (typeof renderMints === 'function') renderMints();
+
+    // Elimina da Firebase
+    if (window.currentUser) {
+      import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js").then(({ getFirestore, doc, deleteDoc }) => {
+        import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js").then(({ getApps }) => {
+          const db = getFirestore(getApps()[0]);
+          deleteDoc(doc(db, "coins", String(idToDelete)))
+            .catch((error) => console.error("Errore eliminazione Firebase:", error));
+        });
+      });
+    }
   }
   closeConfirm();
 }
@@ -2437,5 +2500,103 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
   renderList();
 })();
 </script>
+
+<!-- SCHERMATA DI LOGIN -->
+<div id="auth-screen">
+  <div id="auth-box">
+    <h2>ROMAN NUMISMATIC COLLECTION</h2>
+    <p style="font-size:0.8rem; color:var(--text2); margin-bottom:15px;">Accedi per gestire la tua collezione</p>
+    <div id="auth-error"></div>
+    <input type="email" id="auth-email" placeholder="Email" autocomplete="username">
+    <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password">
+    <button id="auth-submit" onclick="handleAuthSubmit()">ACCEDI</button>
+    <div class="auth-switch" id="auth-switch-mode" onclick="toggleAuthMode()">Non hai un account? Registrati</div>
+  </div>
+</div>
+
+<!-- SCRIPT DI FIREBASE E LOGICA -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCNUZOPweFVZFTSd66qvVgELWtkuOwWJIjE",
+    authDomain: "rncm-84799.firebaseapp.com",
+    projectId: "rncm-84799",
+    storageBucket: "rncm-84799.firebasestorage.app",
+    messagingSenderId: "48204932245",
+    appId: "1:48204932245:web:e066f8251d4d5f49b8a79c"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let isRegisterMode = false;
+
+  window.toggleAuthMode = function() {
+    isRegisterMode = !isRegisterMode;
+    document.getElementById('auth-submit').textContent = isRegisterMode ? 'REGISTRATI' : 'ACCEDI';
+    document.getElementById('auth-switch-mode').textContent = isRegisterMode ? 'Hai già un account? Accedi' : 'Non hai un account? Registrati';
+    document.getElementById('auth-error').style.display = 'none';
+  };
+
+  window.handleAuthSubmit = async function() {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+    const btn = document.getElementById('auth-submit');
+    const err = document.getElementById('auth-error');
+    err.style.display = 'none';
+    btn.textContent = 'Caricamento...';
+
+    try {
+      if (isRegisterMode) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+    } catch (e) {
+      err.textContent = e.message.replace('Firebase: ', '');
+      err.style.display = 'block';
+      btn.textContent = isRegisterMode ? 'REGISTRATI' : 'ACCEDI';
+    }
+  };
+
+  window.logoutUser = function() {
+    signOut(auth);
+  };
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      document.getElementById('auth-screen').style.display = 'none';
+      window.currentUser = user;
+      document.getElementById('user-info').innerHTML = `<span style="color:var(--text2)">${user.email}</span><button id="btn-logout" onclick="logoutUser()">ESCI</button>`;
+      document.getElementById('hdr-right').insertAdjacentHTML('afterbegin', '<div id="user-info"></div>');
+      await loadCoinsFromFirebase(user.uid);
+    } else {
+      document.getElementById('auth-screen').style.display = 'flex';
+      window.currentUser = null;
+      const info = document.getElementById('user-info');
+      if (info) info.remove();
+      coins = [];
+      renderList();
+    }
+  });
+
+  window.loadCoinsFromFirebase = async function(uid) {
+    const coinsRef = collection(db, "coins");
+    const q = query(coinsRef, where("userId", "==", uid));
+    const querySnapshot = await getDocs(q);
+    coins = [];
+    querySnapshot.forEach((doc) => {
+      coins.push(doc.data());
+    });
+    renderList();
+    updateMap();
+    if (typeof renderMints === 'function') renderMints();
+  };
+</script>
+  
 </body>
 </html>

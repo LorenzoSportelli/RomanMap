@@ -2459,7 +2459,8 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
       <strong id="verify-email-display" style="color:var(--text);"></strong><br><br>
       Click the link in your inbox, then press the button below.
     </p>
-    <button onclick="checkVerificationNow()" style="width:100%; padding:12px; background:var(--text); color:var(--bg2); border:none; cursor:pointer; font-family:'Inter',sans-serif; letter-spacing:0.08em;">I HAVE VERIFIED MY EMAIL</button>
+    <button onclick="checkVerificationNow()" style="width:100%; padding:12px; background:var(--text); color:var(--bg2); border:none; cursor:pointer; font-family:'Inter',sans-serif; letter-spacing:0.08em; margin-bottom:10px;">I HAVE VERIFIED MY EMAIL</button>
+    <button onclick="resendVerificationEmail()" style="width:100%; padding:10px; background:transparent; border:1px solid var(--border2); color:var(--text2); cursor:pointer; font-family:'Inter',sans-serif; font-size:0.75rem; margin-bottom:15px;">RESEND VERIFICATION EMAIL</button>
     <div style="margin-top:15px;">
       <span onclick="confirmLogout()" style="font-size:0.75rem; color:var(--text3); cursor:pointer; text-decoration:underline;">Logout and use another account</span>
     </div>
@@ -2524,8 +2525,10 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
         showPopup("REGISTRATION SUCCESSFUL", "Please check your email inbox to verify your account.");
         btn.textContent = 'REGISTER';
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
-        
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        if (!userCredential.user.emailVerified) {
+          await sendEmailVerification(userCredential.user);
+        }
         document.getElementById('auth-screen').style.display = 'none';
       }
     } catch (e) {
@@ -2728,6 +2731,18 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     }
   };
 
+  window.resendVerificationEmail = async function() {
+    if (auth.currentUser) {
+      try {
+        const { sendEmailVerification } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
+        await sendEmailVerification(auth.currentUser);
+        showPopup("EMAIL SENT", "A new verification link has been sent to your email. Please check your inbox (and spam folder).");
+      } catch (e) {
+        showPopup("ERROR", e.message.replace('Firebase: ', ''));
+      }
+    }
+  };
+  
   window.loadCoinsFromFirebase = async function(uid) {
     const coinsRef = collection(db, "coins");
     const q = query(coinsRef, where("userId", "==", uid));

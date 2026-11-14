@@ -2522,8 +2522,12 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
       if (isRegisterMode) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await sendEmailVerification(userCredential.user);
+        
+        isRegisterMode = false;
+        document.getElementById('auth-submit').textContent = 'SIGN IN';
+        document.getElementById('auth-switch-mode').textContent = "Don't have an account? Register";
+        
         showPopup("REGISTRATION SUCCESSFUL", "Please check your email inbox to verify your account.");
-        btn.textContent = 'REGISTER';
       } else {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         if (!userCredential.user.emailVerified) {

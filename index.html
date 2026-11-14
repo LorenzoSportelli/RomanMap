@@ -2440,10 +2440,6 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     <h2>MAPPED ROMAN NUMISMATIC COLLECTION</h2>
     <p style="font-size:0.8rem; color:var(--text2); margin-bottom:15px;">Sign in to manage your collection</p>
     <div id="auth-error"></div>
-    
-    <div id="auth-verify-msg" style="display:none; background:#fff3cd; color:#856404; padding:10px; font-size:0.8rem; margin-bottom:10px; border:1px solid #ffeeba;">
-      Please verify your email. <a href="#" onclick="checkEmailVerified(); return false;" style="color:#856404; text-decoration:underline; font-weight:bold;">Click here after verifying</a>.
-    </div>
 
     <input type="email" id="auth-email" placeholder="Email" autocomplete="username">
     <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password">
@@ -2455,7 +2451,20 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     </div>
   </div>
 </div>
-
+<div id="verify-block-screen" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:999998; align-items:center; justify-content:center; flex-direction:column;">
+  <div style="background:var(--bg2); border:1px solid var(--border2); padding:40px; width:420px; text-align:center; box-shadow:0 8px 40px #00000022;">
+    <h2 style="font-family:'Inter',sans-serif; font-size:1rem; letter-spacing:0.1em; margin-bottom:20px;">EMAIL VERIFICATION REQUIRED</h2>
+    <p style="font-size:0.9rem; color:var(--text2); margin-bottom:20px; line-height:1.6;">
+      We sent a verification link to:<br>
+      <strong id="verify-email-display" style="color:var(--text);"></strong><br><br>
+      Click the link in your inbox, then press the button below.
+    </p>
+    <button onclick="checkVerificationNow()" style="width:100%; padding:12px; background:var(--text); color:var(--bg2); border:none; cursor:pointer; font-family:'Inter',sans-serif; letter-spacing:0.08em;">I HAVE VERIFIED MY EMAIL</button>
+    <div style="margin-top:15px;">
+      <span onclick="confirmLogout()" style="font-size:0.75rem; color:var(--text3); cursor:pointer; text-decoration:underline;">Logout and use another account</span>
+    </div>
+  </div>
+</div>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -2472,6 +2481,8 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
+  import { setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  setPersistence(auth, browserLocalPersistence).catch(() => {});
   const db = getFirestore(app);
 
   let isRegisterMode = false;
@@ -2496,7 +2507,6 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     document.getElementById('auth-submit').textContent = isRegisterMode ? 'REGISTER' : 'SIGN IN';
     document.getElementById('auth-switch-mode').textContent = isRegisterMode ? 'Already have an account? Log in' : 'Don\'t have an account? Register';
     document.getElementById('auth-error').style.display = 'none';
-    document.getElementById('auth-verify-msg').style.display = 'none';
   };
 
   window.handleAuthSubmit = async function() {
@@ -2517,30 +2527,11 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
         await signInWithEmailAndPassword(auth, email, password);
         
         document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('auth-verify-msg').style.display = 'none';
       }
     } catch (e) {
       err.textContent = e.message.replace('Firebase: ', '');
       err.style.display = 'block';
       btn.textContent = isRegisterMode ? 'REGISTER' : 'SIGN IN';
-    }
-  };
-
-  window.checkEmailVerified = async function() {
-    if (auth.currentUser) {
-      await auth.currentUser.reload();
-      if (auth.currentUser.emailVerified) {
-        document.getElementById('auth-verify-msg').style.display = 'none';
-        showPopup("EMAIL VERIFIED", "Your account is now fully active. Please sign in with your credentials.");
-        
-        isRegisterMode = false;
-        document.getElementById('auth-submit').textContent = 'SIGN IN';
-        document.getElementById('auth-switch-mode').textContent = "Don't have an account? Register";
-        document.getElementById('auth-password').value = '';
-        
-      } else {
-        showPopup("NOT VERIFIED YET", "Please check your inbox and click the verification link.");
-      }
     }
   };
 
@@ -2594,6 +2585,7 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
   window.switchSettingsTab = function(tab) {
     document.getElementById('settings-email-panel').style.display = tab === 'email' ? 'block' : 'none';
     document.getElementById('settings-password-panel').style.display = tab === 'password' ? 'block' : 'none';
+    document.getElementById('settings-2fa-panel').style.display = tab === '2fa' ? 'block' : 'none';
     
     document.querySelectorAll('.settings-tab').forEach(function(btn) {
       btn.style.borderBottom = 'none';
@@ -2669,38 +2661,72 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
       }
     }
   };
+
+  window.enable2FA = async function() {
+    if (!auth.currentUser || !auth.currentUser.emailVerified) {
+      showPopup("ERROR", "Verify your email first.");
+      return;
+    }
+    try {
+      const { multiFactor, TotpMultiFactorGenerator } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
+      const mfaSession = await multiFactor(auth.currentUser).getSession();
+      const totpSecret = await TotpMultiFactorGenerator.generateSecret(mfaSession);
+      const url = totpSecret.generateQrCodeUrl(auth.currentUser.email, "RNCM");
+      showPopup("SCAN QR CODE", "Open this URL in your browser to see the QR code, scan it with your authenticator app, then confirm in the next step:\n\n" + url);
+      const code = prompt("Enter the 6-digit code from your authenticator app:");
+      if (!code) return;
+      const assertion = TotpMultiFactorGenerator.assertionForEnrollment(totpSecret, code);
+      await multiFactor(auth.currentUser).enroll(assertion, "Authenticator App");
+      showPopup("SUCCESS", "2FA enabled successfully.");
+    } catch (e) {
+      showPopup("ERROR", e.message.replace('Firebase: ', ''));
+    }
+  };
+
+  
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      document.getElementById('auth-screen').style.display = 'none';
-      document.getElementById('auth-verify-msg').style.display = 'none';
       window.currentUser = user;
-      
+      if (!user.emailVerified) {
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('verify-block-screen').style.display = 'flex';
+        document.getElementById('verify-email-display').textContent = user.email;
+        const info = document.getElementById('user-info');
+        if (info) info.remove();
+        return;
+      }
+      document.getElementById('verify-block-screen').style.display = 'none';
+      document.getElementById('auth-screen').style.display = 'none';
       let info = document.getElementById('user-info');
       if (!info) {
         document.getElementById('hdr-right').insertAdjacentHTML('afterbegin', '<div id="user-info"></div>');
         info = document.getElementById('user-info');
       }
-      info.innerHTML = ''; 
-      
+      info.innerHTML = '';
       await loadCoinsFromFirebase(user.uid);
-      
-      if (!user.emailVerified) {
-        showPopup("EMAIL NOT VERIFIED", "You can use the app, but we recommend verifying your email from the Settings menu to secure your account.");
-      }
-      
     } else {
       document.getElementById('auth-screen').style.display = 'flex';
+      document.getElementById('verify-block-screen').style.display = 'none';
       window.currentUser = null;
-      
       document.getElementById('auth-submit').textContent = 'SIGN IN';
       document.getElementById('auth-password').value = '';
-      
       const info = document.getElementById('user-info');
       if (info) info.remove();
       coins = [];
       renderList();
     }
   });
+
+  window.checkVerificationNow = async function() {
+    if (auth.currentUser) {
+      await auth.currentUser.reload();
+      if (auth.currentUser.emailVerified) {
+        window.location.reload();
+      } else {
+        showPopup("NOT VERIFIED YET", "Please check your inbox and click the verification link.");
+      }
+    }
+  };
 
   window.loadCoinsFromFirebase = async function(uid) {
     const coinsRef = collection(db, "coins");
@@ -2732,6 +2758,7 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
     <div style="display:flex; gap:10px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:10px;">
       <button class="settings-tab active" onclick="switchSettingsTab('email')" style="background:none; border:none; cursor:pointer; font-size:0.8rem; padding:5px; color:var(--text); border-bottom:2px solid var(--text);">Email</button>
       <button class="settings-tab" onclick="switchSettingsTab('password')" style="background:none; border:none; cursor:pointer; font-size:0.8rem; padding:5px; color:var(--text2);">Password</button>
+      <button class="settings-tab" onclick="switchSettingsTab('2fa')" style="background:none; border:none; cursor:pointer; font-size:0.8rem; padding:5px; color:var(--text2);">2FA</button>
     </div>
 
     <div id="settings-email-panel">
@@ -2745,7 +2772,10 @@ makeDraggable(document.getElementById('detail-box'), document.getElementById('de
       <input type="password" id="new-password" placeholder="New Password" style="width:100%; padding:8px; margin-bottom:10px; border:1px solid var(--border); background:var(--bg3);">
       <button onclick="updateUserPassword()" style="width:100%; padding:10px; background:var(--text); color:var(--bg2); border:none; cursor:pointer; margin-bottom:10px;">UPDATE PASSWORD</button>
     </div>
-
+    <div id="settings-2fa-panel" style="display:none;">
+      <p style="font-size:0.8rem; color:var(--text2); margin-bottom:10px;">Secure your account with an authenticator app.</p>
+      <button onclick="enable2FA()" style="width:100%; padding:10px; background:var(--text); color:var(--bg2); border:none; cursor:pointer;">ENABLE 2FA</button>
+    </div>
     <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:20px;">
       <button onclick="logoutUser()" style="width:100%; padding:10px; background:transparent; border:1px solid var(--red); color:var(--red); cursor:pointer;">LOG OUT</button>
     </div>
